@@ -92,6 +92,12 @@
 .qty button:hover{border-color:var(--koi);color:var(--koi)}
 .qty span{min-width:2ch;text-align:center;font-weight:500}
 .qty .rm{width:auto;height:auto;border:0;margin-left:.6rem;color:var(--ink-3);font-size:.82rem;letter-spacing:.12em;text-transform:uppercase}
+.line .notebtn{grid-column:1/-1;justify-self:start;margin-top:.5rem;padding:0;border:0;background:none;color:var(--koi);font-size:.85rem;border-bottom:1px solid currentColor}
+.line .note{grid-column:1/-1;margin-top:.6rem}
+.line .note input{width:100%;min-height:42px;padding:.55rem .75rem;border:1px solid var(--line-2);border-radius:2px;background:#fff;font-size:.95rem}
+.line .note input:focus{outline:none;border-color:var(--koi);box-shadow:0 0 0 3px rgba(24,115,188,.12)}
+.line .note small{display:block;color:var(--ink-3);font-size:.78rem;margin-top:.3rem}
+.line .has{grid-column:1/-1;margin-top:.45rem;font-size:.88rem;color:var(--gold-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .total{display:flex;justify-content:space-between;align-items:baseline;padding:1.4rem 0 1.2rem;font:400 1.6rem/1 var(--serif)}
 .total b{font-weight:400;color:var(--koi-deep)}
 .empty,.done{text-align:center;padding:3rem 0;color:var(--ink-2)}
@@ -203,12 +209,19 @@ function initSearch() {
 
 /* ---------- varukorg ---------- */
 const cart = new Map();
+const noteOpen = new Set();
 let stage = "cart", lastOrder = null;
-const cartTotal = () => [...cart].reduce((s, [id, q]) => s + ITEMS[id].price * q, 0);
-const cartQty = () => [...cart.values()].reduce((a, b) => a + b, 0);
+const cartTotal = () => [...cart].reduce((s, [id, c]) => s + ITEMS[id].price * c.qty, 0);
+const cartQty = () => [...cart.values()].reduce((a, c) => a + c.qty, 0);
 
-function add(id) { cart.set(id, (cart.get(id) || 0) + 1); syncCart(); toast(`Tillagd · ${ITEMS[id].name}`); }
-function setQty(id, q) { q <= 0 ? cart.delete(id) : cart.set(id, q); syncCart(); if (!cart.size) stage = "cart"; renderDrawer(); }
+/* cart: id -> { qty, note } */
+function add(id) { const c = cart.get(id); cart.set(id, { qty: (c ? c.qty : 0) + 1, note: c ? c.note : "" }); syncCart(); toast(`Tillagd · ${ITEMS[id].name}`); }
+function setQty(id, q) {
+  const c = cart.get(id) || { qty: 0, note: "" };
+  q <= 0 ? cart.delete(id) : cart.set(id, { qty: q, note: c.note });
+  syncCart(); if (!cart.size) stage = "cart"; renderDrawer();
+}
+function setNote(id, note) { const c = cart.get(id); if (c) cart.set(id, { qty: c.qty, note: note.slice(0, 120) }); }
 
 function syncCart() {
   const n = cartQty();
@@ -218,9 +231,9 @@ function syncCart() {
   $("#obar").classList.toggle("on", n > 0);
   $("#fab")?.classList.toggle("off", n > 0);
   $$("[data-add]").forEach(b => {
-    const q = cart.get(b.dataset.add);
-    b.classList.toggle("in", !!q);
-    b.innerHTML = q ? `<span class="q">${q}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
+    const c = cart.get(b.dataset.add);
+    b.classList.toggle("in", !!c);
+    b.innerHTML = c ? `<span class="q">${c.qty}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
   });
 }
 
@@ -249,6 +262,7 @@ function renderDrawer() {
       <div class="big foil">${esc(o.no)}</div>
       <p><b style="color:var(--ink)">Summa ${o.total} kr</b></p>
       <p>${TABLE ? "Köket har fått beställningen och börjar direkt. Betala med Swish eller kort när ni går." : `Hämtas ${esc(o.when)}. Vi sms:ar ${esc(o.phone)} när maten är klar.`}</p>
+      ${o.email ? `<p style="font-size:.9rem">En bekräftelse är skickad till ${esc(o.email)}.</p>` : ""}
       ${o.demo ? `<p style="font-size:.85rem">Demoläge – inget skickades.</p>` : ""}</div>`;
     foot.innerHTML = `<button class="btn block" type="button" data-close>Stäng</button>`;
     return;
@@ -259,8 +273,14 @@ function renderDrawer() {
     foot.innerHTML = `<button class="btn gold block" type="button" data-close>Till menyn</button>`;
     return;
   }
-  const lines = [...cart].map(([id, q]) => `<div class="line"><span class="nm">${esc(ITEMS[id].name)}</span><span class="pr">${ITEMS[id].price * q} kr</span>
-    <span class="qty"><button type="button" data-q="${id}" data-d="-1" aria-label="Minska">−</button><span>${q}</span><button type="button" data-q="${id}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${id}" data-d="-99">Ta bort</button></span></div>`).join("");
+  const lines = [...cart].map(([id, c]) => `<div class="line"><span class="nm">${esc(ITEMS[id].name)}</span><span class="pr">${ITEMS[id].price * c.qty} kr</span>
+    <span class="qty"><button type="button" data-q="${id}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${id}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${id}" data-d="-99">Ta bort</button></span>
+    ${noteOpen.has(id) || c.note
+      ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[id].name)}</span>
+           <input type="text" maxlength="120" data-note="${id}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
+           <small>Allergi? Skriv det här och i meddelandet till köket.</small></label>`
+      : `<button class="notebtn" type="button" data-noteopen="${id}">+ Önskemål för den här rätten</button>`}
+  </div>`).join("");
   const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>`;
 
   if (stage === "cart") {
@@ -276,10 +296,11 @@ function renderDrawer() {
         <div class="field"><label for="oTime">Tid</label><select id="oTime" name="time"></select></div></div>`}
       <div class="field"><label for="oName">Namn${TABLE ? " (valfritt)" : ""}</label><input id="oName" name="name" autocomplete="name"></div>
       <div class="field"><label for="oPhone">Mobilnummer${TABLE ? " (valfritt)" : ""}</label><input id="oPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel">${TABLE ? "" : "<small>Vi sms:ar när maten är klar.</small>"}</div>
+      <div class="field"><label for="oMail">E-post (valfritt)</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se"><small>Vi skickar en bekräftelse med hela beställningen.</small></div>
       <div class="field"><span class="lbl">Betalning</span><div class="choice">
         <label><input type="radio" name="pay" value="swish" checked>Swish</label>
         <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div></div>
-      <div class="field"><label for="oMsg">Till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, utan vårlök, extra chilimajonnäs …"></textarea></div>
+      <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div id="orderErr" class="err" hidden></div>
     </form>`;
@@ -303,12 +324,12 @@ async function submitOrder(e) {
   const payload = {
     type: TABLE ? "table-order" : "pickup-order", table: TABLE || null, name, phone,
     pickupDate: pick ? pick.date : null, pickupTime: pick ? f.time.value : null,
-    payment: f.pay.value, message: f.message.value.trim(), website: f.website.value,
-    items: [...cart].map(([id, qty]) => ({ id, qty }))
+    payment: f.pay.value, message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
+    items: [...cart].map(([id, c]) => ({ id, qty: c.qty, note: c.note }))
   };
   try {
     const r = await send(payload);
-    lastOrder = { no: r.no, total: r.total ?? cartTotal(), phone, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
+    lastOrder = { no: r.no, total: r.total ?? cartTotal(), phone, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
     cart.clear(); syncCart(); stage = "done"; renderDrawer();
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;
@@ -344,7 +365,7 @@ async function syncAvailability() {
       if (!ok && !tag) { tag = document.createElement("span"); tag.className = "out"; tag.textContent = "Slut idag"; row.append(tag); }
       if (ok && tag) tag.remove();
       if (info && info.price !== ITEMS[id].price) { ITEMS[id].price = info.price; b.dataset.price = info.price; row.querySelector(".pr").textContent = kr(info.price); }
-      if (!ok && cart.has(id)) { cart.delete(id); toast(`${ITEMS[id].name} är slut idag`); }
+      if (!ok && cart.has(id)) { cart.delete(id); noteOpen.delete(id); toast(`${ITEMS[id].name} är slut idag`); }
     });
     syncCart();
     if (!$("#drawer").hidden) renderDrawer();
@@ -359,8 +380,10 @@ document.addEventListener("click", e => {
   else if (t.hasAttribute("data-close")) closeDrawer();
   else if (t.hasAttribute("data-checkout")) { stage = "checkout"; renderDrawer(); setTimeout(() => $("#drawerBody").scrollTo({ top: $("#orderForm").offsetTop - 16, behavior: "smooth" }), 50); }
   else if (t.hasAttribute("data-back")) { stage = "cart"; renderDrawer(); }
-  else if (t.dataset.q) setQty(t.dataset.q, (cart.get(t.dataset.q) || 0) + Number(t.dataset.d));
+  else if (t.dataset.q) setQty(t.dataset.q, (cart.get(t.dataset.q)?.qty || 0) + Number(t.dataset.d));
+  else if (t.dataset.noteopen) { noteOpen.add(t.dataset.noteopen); renderDrawer(); $(`[data-note="${t.dataset.noteopen}"]`)?.focus(); }
 });
+document.addEventListener("input", e => { if (e.target.dataset.note) setNote(e.target.dataset.note, e.target.value); });
 document.addEventListener("submit", e => { if (e.target.id === "orderForm") submitOrder(e); });
 $("#scrim").addEventListener("click", closeDrawer);
 addEventListener("keydown", e => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });

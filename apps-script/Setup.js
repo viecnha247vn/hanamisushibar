@@ -1,7 +1,17 @@
 /** Installation och meny i kalkylarket. */
 
+/** Dialogrutor fungerar bara när skriptet körs från kalkylarket. Körs det från editorn loggar vi i stället. */
+function ui_() {
+  try { return SpreadsheetApp.getUi(); } catch (e) { return null; }
+}
+function say_(message) {
+  const ui = ui_();
+  if (ui) ui.alert(message); else console.log(message);
+}
+
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('Hanami')
+  const ui = ui_(); if (!ui) return;
+  ui.createMenu('Hanami')
     .addItem('Publicera webbplatsen', 'publishSite')
     .addSeparator()
     .addItem('Nollställ "Slut idag"', 'resetSoldOut')
@@ -74,7 +84,7 @@ function setup() {
   log_('INFO', 'Setup', 'Klar');
 
   const missing = ['NOTIFY_EMAIL', 'SITE_URL', 'VERCEL_DEPLOY_HOOK'].filter(k => !props.getProperty(k));
-  SpreadsheetApp.getUi().alert('Installationen är klar ✅\n\n' +
+  say_('Installationen är klar ✅\n\n' +
     'Nästa steg:\n1. Distribuera → Ny distribution → Webbapp (Kör som: Jag, Åtkomst: Alla)\n' +
     '2. Hanami → Visa API-nyckel för Vercel\n' +
     (missing.length ? '\nSaknade skriptegenskaper: ' + missing.join(', ') : ''));
@@ -118,7 +128,7 @@ function statusRules_(sh, values, colors) {
 function showSecret() {
   const s = prop_('API_SECRET');
   const url = ScriptApp.getService().getUrl();
-  SpreadsheetApp.getUi().alert(
+  say_(
     'Lägg in i Vercel → Settings → Environment Variables:\n\n' +
     'GAS_SECRET = ' + (s || '(kör setup först)') + '\n\n' +
     'GAS_URL = ' + (url || '(distribuera som webbapp först)') + '\n\n' +

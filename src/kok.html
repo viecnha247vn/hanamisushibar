@@ -49,6 +49,7 @@ main{padding:14px}
 ul{margin:2px 0;padding:0;list-style:none;font-size:18px;line-height:1.45}
 ul li b{display:inline-block;min-width:2.2ch}
 .note{background:#FFF3C4;padding:6px 10px;border-radius:8px}
+.inote{margin:2px 0 6px 2.2ch;padding:3px 8px;background:#FFF3C4;border-radius:6px;font-size:15px;color:#7A5E24}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
 .acts .btn{flex:1}
 .status{font-size:13px;font-weight:600;padding:2px 8px;border-radius:999px;background:#eee}
@@ -249,7 +250,7 @@ function orderCard(o, fresh){
   return `<article class="card ${esc(o.status)} ${done ? "done" : ""} ${fresh ? "fresh" : ""}">
     <div class="top"><span class="no">${esc(o.no)}</span><span class="big">${esc(o.kind === "table" ? o.receivedTime : o.pickupTime)}</span></div>
     <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span></div>
-    <ul>${o.items.map(i => `<li>${i.qty ? `<b>${i.qty}</b> × ` : ""}${esc(i.name)}</li>`).join("")}</ul>
+    <ul>${o.items.map(i => `<li>${i.qty ? `<b>${i.qty}</b> × ` : ""}${esc(i.name)}${i.note ? `<div class="inote">↳ ${esc(i.note)}</div>` : ""}</li>`).join("")}</ul>
     ${o.message ? `<div class="note">${esc(o.message)}</div>` : ""}
     <div class="meta">${[o.name && esc(o.name), o.phone && `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`, esc(o.payment), `<b>${o.total} kr</b>`,
       o.smsReady && "sms " + esc(o.smsReady), o.printed ? "🖨 " + esc(o.printed) : "🖨 väntar", o.kind === "pickup" ? "mottagen " + esc(o.receivedTime) : ""].filter(Boolean).join(" · ")}</div>

@@ -26,9 +26,27 @@ test("menyn läses från arket", () => {
 });
 let order;
 test("beställning räknar pris från arket, inte från webbläsaren", () => {
-  order = E.call("order", { kind: "pickup", name: "Anna", phone: "+46701234567", pickupDate: today, pickupTime: "18:00", whenText: "idag kl 18:00",
-    items: [{ id: "maki-1", qty: 1, price: 1 }, { id: "poke-1", qty: 2 }] });
+  order = E.call("order", { kind: "pickup", name: "Anna", phone: "+46701234567", email: "anna@exempel.se",
+    pickupDate: today, pickupTime: "18:00", whenText: "idag kl 18:00",
+    items: [{ id: "maki-1", qty: 1, price: 1, note: "utan avokado" }, { id: "poke-1", qty: 2 }] });
   assert.equal(order.ok, true); assert.equal(order.total, 145 + 2 * 165); assert.match(order.no, /^H\d+$/);
+});
+test("radnotering sparas och följer med till kök och utskrift", () => {
+  const row = E.sheets["Beställningar"].data.find(r => r[1] === order.no);
+  assert.ok(String(row.join(" ")).includes("utan avokado"));
+  const job = E.call("printJob", { no: order.no }).job;
+  assert.equal(job.items[0].note, "utan avokado");
+  assert.equal(E.call("adminOrders", { date: today }).orders[0].items[0].note, "utan avokado");
+});
+test("gästen får bekräftelse per e-post", () => {
+  const mail = E.log.mails.find(m => (m.to || "") === "anna@exempel.se");
+  assert.ok(mail, "inget mejl till gästen");
+  assert.match(mail.subject, new RegExp(order.no));
+  assert.ok(mail.htmlBody.includes("utan avokado"), "radnoteringen saknas i mejlet");
+  const sh = E.sheets["Beställningar"];
+  const col = sh.data[0].indexOf("Bekräftelse");
+  const row = sh.data.find(r => r[1] === order.no);
+  assert.match(String(row[col] || ""), /^\d\d:\d\d$/, "Bekräftelse-kolumnen fylldes inte i");
 });
 test("okänd rätt och 0-kronorsrätt nekas", () => {
   assert.equal(E.call("order", { kind: "table", table: "1", items: [{ id: "finns-inte", qty: 1 }] }).status, 400);
@@ -53,7 +71,8 @@ test("status Klar skickar sms en gång", () => {
   assert.match(E.log.sms.at(-1).payload.message, /klar att hämtas/);
 });
 test("bokning + bekräftelse via köksvyn", () => {
-  const b = E.call("booking", { date: today, time: "19:00", guests: 3, name: "Erik", phone: "+46709876543", whenText: "idag kl 19:00" });
+  const b = E.call("booking", { date: today, time: "19:00", guests: 3, name: "Erik", phone: "+46709876543", email: "erik@exempel.se", whenText: "idag kl 19:00" });
+  assert.ok(E.log.mails.some(m => (m.to || "") === "erik@exempel.se"), "gästen fick ingen bokningsbekräftelse");
   assert.equal(b.ok, true);
   E.call("adminStatus", { kind: "booking", no: b.no, status: "Bekräftad" });
   assert.match(E.log.sms.at(-1).payload.message, /Ditt bord är bokat/);
@@ -61,9 +80,11 @@ test("bokning + bekräftelse via köksvyn", () => {
 });
 test("ändring av Status direkt i arket skickar sms", () => {
   const b = E.call("booking", { date: today, time: "19:30", guests: 2, name: "Sara", phone: "+46700000000", whenText: "idag kl 19:30" });
-  const sh = E.sheets["Bokningar"]; const row = sh.data.findIndex(r => r[1] === b.no) + 1;
-  sh.data[row - 1][8] = "Avböjd";
-  E.api.handleEdit({ range: sh.getRange(row, 9), value: "Avböjd" });
+  const sh = E.sheets["Bokningar"];
+  const statusCol = sh.data[0].indexOf("Status") + 1;          // kolumnen kan flytta när nya fält tillkommer
+  const row = sh.data.findIndex(r => r[1] === b.no) + 1;
+  sh.data[row - 1][statusCol - 1] = "Avböjd";
+  E.api.handleEdit({ range: sh.getRange(row, statusCol), value: "Avböjd" });
   assert.match(E.log.sms.at(-1).payload.message, /fullbokat/);
 });
 test("dold rätt försvinner från menyn direkt efter redigering", () => {

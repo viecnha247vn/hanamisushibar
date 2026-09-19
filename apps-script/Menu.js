@@ -91,18 +91,17 @@ function resetSoldOut() {
 
 /** Meny i arket: Hanami → Publicera webbplatsen */
 function publishSite() {
-  const ui = SpreadsheetApp.getUi();
   const hook = prop_('VERCEL_DEPLOY_HOOK');
-  if (!hook) { ui.alert('VERCEL_DEPLOY_HOOK saknas i Skriptegenskaper.'); return; }
+  if (!hook) { say_('VERCEL_DEPLOY_HOOK saknas i Skriptegenskaper.'); return; }
   const problems = validateMenu_();
-  if (problems.length) { ui.alert('Rätta menyn först:\n\n' + problems.slice(0, 15).join('\n')); return; }
+  if (problems.length) { say_('Rätta menyn först:\n\n' + problems.slice(0, 15).join('\n')); return; }
   clearMenuCache_();
   const res = UrlFetchApp.fetch(hook, { method: 'post', muteHttpExceptions: true });
   if (res.getResponseCode() < 300) {
     SpreadsheetApp.getActive().toast('Webbplatsen byggs om. Klart om ungefär en minut.', 'Hanami', 8);
     log_('INFO', 'Publicera', 'Deploy hook anropad');
   } else {
-    ui.alert('Kunde inte starta publicering (' + res.getResponseCode() + ').');
+    say_('Kunde inte starta publicering (' + res.getResponseCode() + ').');
     log_('ERROR', 'Publicera', res.getContentText());
   }
 }

@@ -15,7 +15,8 @@ function createOrder_(p) {
     if (it.soldOut) throw new ApiError(409, it.name + ' är tyvärr slut idag. Ta bort den och försök igen.');
     if (!(it.price > 0)) throw new ApiError(400, it.name + ' kan inte beställas separat.');
     if (!(qty >= 1 && qty <= 50)) throw new ApiError(400, 'Ogiltigt antal.');
-    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price };
+    const note = String(r.note == null ? '' : r.note).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
+    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price, note: note };
   });
   const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
   const isTable = p.kind === 'table';
@@ -30,11 +31,13 @@ function createOrder_(p) {
     'Hämtas tid': isTable ? '' : p.pickupTime,
     'Namn': p.name || '',
     'Telefon': p.phone || '',
+    'E-post': p.email || '',
     'Betalning': p.payment === 'kort' ? 'Kort i kassan' : 'Swish',
-    'Beställning': lines.map(l => l.qty + ' × ' + l.name).join('\n'),
+    'Beställning': lines.map(l => l.qty + ' × ' + l.name + (l.note ? '\n     ↳ ' + l.note : '')).join('\n'),
     'Summa': total,
     'Kommentar': p.message || '',
     'Status': 'Ny',
+    'Bekräftelse': '',
     'Utskriven': '',
     'Rader (data)': JSON.stringify(lines)
   });
@@ -44,10 +47,14 @@ function createOrder_(p) {
     subject: (isTable ? '🍽 Bord ' + p.table : '🛍 Hämtning ' + p.whenText) + ' · ' + no + ' · ' + total + ' kr',
     title: 'Ny beställning ' + no,
     rows: [['Typ', when], ['Namn', p.name || '–'], ['Telefon', pretty_(p.phone) || '–'],
-           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['Kommentar', p.message || '–']],
+           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']],
     items: lines, total: total
   });
   if (!isTable) sms_(p.phone, SMS.orderReceived(no, p.whenText));
+  if (p.email && mailOrderConfirmation_({ no: no, kind: p.kind, table: p.table, when: p.whenText, name: p.name,
+        phone: p.phone, email: p.email, payment: p.payment, message: p.message, items: lines, total: total })) {
+    setCell_(SHEET.ORDERS, 'Ordernr', no, 'Bekräftelse', now_('HH:mm'));
+  }
   return { no: no, total: total };
 }
 
@@ -55,15 +62,19 @@ function createBooking_(p) {
   const no = nextNumber_('B');
   appendObject_(sheet_(SHEET.BOOKINGS), {
     'Mottagen': now_(), 'Boknr': no, 'Datum': p.date, 'Tid': p.time, 'Gäster': Number(p.guests),
-    'Namn': p.name, 'Telefon': p.phone, 'Meddelande': p.message || '', 'Status': 'Väntar'
+    'Namn': p.name, 'Telefon': p.phone, 'E-post': p.email || '', 'Meddelande': p.message || '', 'Status': 'Väntar', 'Bekräftelse': ''
   });
   notifyRestaurant_({
     subject: '📅 Bokning ' + no + ' · ' + p.whenText + ' · ' + p.guests + ' pers',
     title: 'Ny bokningsförfrågan ' + no,
-    rows: [['När', p.whenText], ['Gäster', p.guests], ['Namn', p.name], ['Telefon', pretty_(p.phone)], ['Meddelande', p.message || '–']],
+    rows: [['När', p.whenText], ['Gäster', p.guests], ['Namn', p.name], ['Telefon', pretty_(p.phone)], ['E-post', p.email || '–'], ['Meddelande', p.message || '–']],
     footer: 'Bekräfta eller avböj i köksvyn eller i fliken Bokningar (kolumn Status). Gästen får sms automatiskt.'
   });
   sms_(p.phone, SMS.bookingReceived(no, p.guests, p.whenText));
+  if (p.email && mailBookingConfirmation_({ no: no, when: p.whenText, guests: p.guests, name: p.name,
+        phone: p.phone, email: p.email, message: p.message })) {
+    setCell_(SHEET.BOOKINGS, 'Boknr', no, 'Bekräftelse', now_('HH:mm'));
+  }
   return { no: no };
 }
 

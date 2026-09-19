@@ -25,7 +25,10 @@ export function orderReceipt(o, cfg) {
 
   // Rader
   r.bold(true).size(1, 2);
-  for (const it of o.items) r.row(`${String(it.qty || "").padStart(2)}  ${it.name}`, it.price ? `${it.qty * it.price}` : "", { indent: 4 });
+  for (const it of o.items) {
+    r.row(`${String(it.qty || "").padStart(2)}  ${it.name}`, it.price ? `${it.qty * it.price}` : "", { indent: 4 });
+    if (it.note) r.paragraph(`    >> ${it.note}`, 6);   // önskemål direkt under raden
+  }
   r.size(1, 1).bold(false);
 
   // Kommentar – tydligt

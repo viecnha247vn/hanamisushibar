@@ -51,4 +51,13 @@ function nextNumber_(prefix) {
   return prefix + n;
 }
 
+/** Sätter ett värde i en rad som hittas via nyckelkolumnen. */
+function setCell_(sheetName, keyCol, keyValue, col, value) {
+  const sh = sheet_(sheetName);
+  const row = findRow_(sh, keyCol, keyValue);
+  if (!row) return false;
+  sh.getRange(row, colMap_(sh)[col]).setValue(value);
+  return true;
+}
+
 const pretty_ = phone => String(phone || '').replace(/^\+46/, '0');

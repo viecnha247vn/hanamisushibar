@@ -93,6 +93,12 @@ Hai trang:
 - **`/`** – trang chủ: hero, ưu đãi (lunch/happy hour/student, tự hiện "Gäller nu"), 6 nhóm món nổi bật (giá "från" tính tự động từ menu), cách đặt tại bàn, giờ mở cửa (hôm nay tự sáng), bản đồ chỉ tải khi bấm, form đặt bàn.
 - **`/meny`** – menu đầy đủ: tìm kiếm, thanh danh mục dính, giỏ hàng, thanh đặt hàng dưới đáy, chế độ bàn (`/meny?bord=5`). Link cũ `/?bord=5` tự chuyển sang đây.
 
+**Ghi chú và xác nhận**
+- Mỗi món trong giỏ có nút **"+ Önskemål för den här rätten"** để ghi yêu cầu riêng (tối đa 120 ký tự), ví dụ "utan avokado". Ghi chú này đi theo món qua Sheet → màn hình bếp → phiếu in, luôn nằm ngay dưới tên món.
+- Ngoài ra vẫn có ô **Meddelande till köket** cho yêu cầu chung của cả đơn, chỗ ghi dị ứng.
+- Khách điền **e-post** (không bắt buộc) thì nhận mail xác nhận: đơn hàng có đầy đủ món, ghi chú, tổng tiền, giờ lấy; đặt bàn thì nhận bản sao yêu cầu kèm lưu ý bàn chỉ chắc chắn khi quán xác nhận. Cột **Bekräftelse** trong Sheet ghi giờ đã gửi.
+- Mail gửi qua tài khoản Google của quán. Gmail thường giới hạn 100 mail/ngày, tính cả mail báo cho quán lẫn mail cho khách, tức khoảng 50 đơn mỗi ngày. Vượt mức thì dùng Google Workspace (1 500/ngày).
+
 Mọi hiệu ứng tắt khi thiết bị bật *giảm chuyển động*. Nội dung vẫn hiện đủ nếu JavaScript lỗi.
 
 Tệp giao diện:

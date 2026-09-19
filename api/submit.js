@@ -2,7 +2,7 @@
 // Här kontrolleras format, öppettider och tider. Priser och rätter kontrolleras i Apps Script mot fliken Meny.
 import settings from "../data/settings.js";
 import { gas } from "../lib/gas.js";
-import { wrap, send, body, HttpError, clean, cleanMultiline, phoneE164, nowLocal, addDays, toMinutes, hoursFor, isDate } from "../lib/util.js";
+import { wrap, send, body, HttpError, clean, cleanMultiline, phoneE164, email, nowLocal, addDays, toMinutes, hoursFor, isDate } from "../lib/util.js";
 import { whenText } from "../lib/when.js";
 
 export default wrap(async (req, res) => {
@@ -19,10 +19,11 @@ async function order(p) {
   const now = nowLocal();
   if (!Array.isArray(p.items) || !p.items.length) throw new HttpError(400, "Varukorgen är tom.");
   if (p.items.length > 60) throw new HttpError(400, "För många rader.");
-  const items = p.items.map(r => ({ id: clean(r.id, 40), qty: Math.floor(Number(r.qty)) }));
+  const items = p.items.map(r => ({ id: clean(r.id, 40), qty: Math.floor(Number(r.qty)), note: clean(r.note, 120) }));
   if (items.some(i => !/^[a-z0-9-]+$/.test(i.id) || !(i.qty >= 1 && i.qty <= 50))) throw new HttpError(400, "Ogiltig beställning.");
 
-  const out = { kind: isTable ? "table" : "pickup", items, payment: p.payment === "kort" ? "kort" : "swish", message: cleanMultiline(p.message, 500) };
+  const out = { kind: isTable ? "table" : "pickup", items, payment: p.payment === "kort" ? "kort" : "swish",
+    message: cleanMultiline(p.message, 500), email: email(p.email) };
 
   if (isTable) {
     const table = clean(p.table, 10);
@@ -70,7 +71,8 @@ async function booking(p) {
   const name = clean(p.name, 80);
   if (name.length < 2) throw new HttpError(400, "Ange ditt namn.");
   const r = await gas("booking", {
-    date, time, guests, name, phone: phoneE164(p.phone), message: cleanMultiline(p.message, 500), whenText: whenText(date, time)
+    date, time, guests, name, phone: phoneE164(p.phone), email: email(p.email),
+    message: cleanMultiline(p.message, 500), whenText: whenText(date, time)
   });
   return { ok: true, no: r.no };
 }
