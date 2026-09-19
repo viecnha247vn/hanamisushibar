@@ -16,7 +16,25 @@ Apps Script + GitHub + Vercel + máy in Epson TM-T88VII
 | 7 | In QR bàn, cài `/kok` trên iPad, hướng dẫn nhân viên | Quán | Đơn thử từ bàn in ra ở bếp |
 | 8 | Chạy thử 1 ngày trước khi quảng bá | Cả hai | Không có lỗi trong tab **Logg** |
 
-### Biến môi trường Vercel
+### Một hàm serverless duy nhất
+
+Vercel gói Hobby chỉ cho tối đa 12 serverless function mỗi lần deploy. Vì vậy toàn bộ API đi qua **một** file duy nhất `api/[...route].js`, file này chuyển tiếp sang các handler trong `lib/routes/`:
+
+| Đường dẫn | Handler |
+|---|---|
+| `/api/submit` | `lib/routes/submit.js` – đặt món và đặt bàn |
+| `/api/admin` | `lib/routes/admin.js` – màn hình bếp (cần `x-admin-key`) |
+| `/api/availability` | `lib/routes/availability.js` – giá và món hết, cache 60 giây |
+| `/api/health` | `lib/routes/health.js` – kiểm tra kết nối Google Sheet |
+| `/api/print` | `lib/routes/print.js` – cầu nối Raspberry Pi (dự phòng) |
+| `/api/sdp/<SDP_KEY>` | `lib/routes/sdp.js` – Epson Server Direct Print |
+| `/api/cloudprnt/<KEY>` | `lib/routes/cloudprnt.js` – Star CloudPRNT (dự phòng) |
+
+Thêm đường dẫn mới: viết handler trong `lib/routes/` rồi khai báo trong bảng `ROUTES` của router. Số lượng endpoint không còn bị giới hạn.
+
+Lưu ý: thư mục ảnh đặt tên `static/bilder/` chứ không phải `meny`, vì `/meny` đã là đường dẫn của trang menu; trùng tên sẽ làm trang menu không mở được.
+
+## Biến môi trường Vercel
 
 | Biến | Bắt buộc | Lấy ở đâu |
 |---|---|---|
@@ -84,7 +102,10 @@ Nguyên tắc phối: **vàng = chữ**, **xanh = thao tác** (nút, link, focus
 |---|---|
 | Font | **Playfair Display** cho tiêu đề (dòng nhấn in nghiêng), **Jost** cho nội dung, nút, nhãn |
 | Nhãn, nút | chữ hoa giãn 0,22em, bo góc 2 px; nút vàng có ánh sáng quét |
-| Màn hình chào | **Cá koi bơi vào rồi nhập thành logo**: hình cá được tách từ chính logo (vector hoá từ `logo.png`), bơi theo đường cong với thân uốn lượn và bong bóng, đĩa xanh bật lên, cá lượn vào đúng vị trí, logo gốc hiện lên, chữ Hanami vàng nhũ, rồi logo **trượt sang đúng chỗ của nó trên trang chủ** (không cắt cảnh). Khoảng 4 giây, chỉ một lần mỗi phiên, bỏ qua khi quét QR bàn hoặc thiết bị bật giảm chuyển động |
+| Màn hình chào | Hai con koi (trắng và xanh) bơi vòng âm dương 3,5 giây rồi nhập thành logo, logo bay về chỗ trong hero. Chỉ chạy một lần mỗi phiên, bỏ qua khi quét QR bàn hoặc thiết bị bật giảm chuyển động |
+| Phim món ăn | Nằm trong mục **Boka bord**, dưới phần giới thiệu bên trái form (máy tính) hoặc phía trên form (điện thoại, khung 4:3). Tự phát không tiếng, lặp lại, **chỉ phát khi cuộn tới** (IntersectionObserver) để tiết kiệm pin và dữ liệu; có nút bật tiếng. File `static/intro.mp4` 1,2 MB + ảnh bìa `intro-poster.jpg` |
+| Koi theo cuộn trang | Bốn con koi hoa văn thật: **Kohaku** (trắng đỏ), **Showa** (đen đỏ trắng), **Yamabuki Ogon** (vàng kim), **Sanke** (trắng đỏ chấm đen). Hoa văn là các mảng nằm trong hệ toạ độ thân cá và uốn cùng sóng bơi, thêm bụng sáng lưng tối cho có khối. Bốn con ở ba độ sâu: gần thì to, nhanh, rõ; xa thì nhỏ, chậm, mờ. Tốc độ và nhịp quẫy đuôi ăn theo tốc độ cuộn, có quán tính; đổi chiều cuộn thì cá **quay đầu từ từ** kèm quẫy mạnh hơn chứ không lật ngược. Cá chỉ hiện trong dải lề nhờ mặt nạ, không đè lên chữ; điện thoại giữ hai con |
+| Ảnh món ăn | 11 ảnh của quán gắn vào 11 danh mục (`static/bilder/<id>-{s,m,l}.webp/jpg` cho banner 16:7 trên `/meny`, `<id>-sq` vuông cho 6 thẻ nổi bật trang chủ). Mỗi ảnh có ba cỡ, WebP kèm JPG dự phòng, tải lười (lazy) nên trang menu vẫn nhẹ. Thêm ảnh cho danh mục mới: đặt file đúng tên vào `static/bilder/`, build tự nhận, không cần sửa code |
 | Hiệu ứng khác | tiêu đề bắn chữ từ phải, thẻ ánh gương hồng, cành anh đào đung đưa, cánh hoa rơi chậm |
 | Nút nổi | **Boka & Beställ** (vàng) → hộp ba lựa chọn; trên trang chủ chỉ hiện sau khi cuộn qua hai nút chính |
 | Logo | cá koi xanh trong vòng trăng hồng |

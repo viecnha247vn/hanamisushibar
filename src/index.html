@@ -58,6 +58,11 @@
 .dishes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .dish{display:flex;flex-direction:column;min-height:250px;padding:28px;text-decoration:none;transition:border-color .3s,transform .3s var(--ease)}
 .dish:hover{border-color:var(--koi);transform:translateY(-3px)}
+.dish.has-img{padding-top:0}
+.dish-img{display:block;margin:0 -28px 1.2rem;aspect-ratio:16/10;overflow:hidden;background:var(--sakura-3)}
+.dish-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.4s var(--ease)}
+.dish:hover .dish-img img{transform:scale(1.05)}
+.dish.has-img .n{position:absolute;top:14px;left:18px;color:#fff;-webkit-text-stroke:0;text-shadow:0 2px 14px rgba(11,21,32,.5)}
 .dish .n{font:italic 400 2.6rem/1 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
 .dish h3{font-size:1.75rem;margin:auto 0 .5rem}
 .dish p{color:var(--ink-2);font-size:.95rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -101,6 +106,16 @@
 .book li{display:flex;gap:.9rem;color:var(--ink-2)}
 .book li::before{content:"";flex:0 0 18px;height:1px;background:var(--koi);margin-top:.8em}
 .book .form{padding:clamp(24px,3.5vw,40px)}
+.film{position:relative;margin:2.2rem 0 0;max-width:340px;aspect-ratio:3/4;border-radius:4px;overflow:hidden;background:#0B1520;box-shadow:0 24px 50px rgba(27,42,58,.18)}
+.film::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);pointer-events:none}
+.film video{width:100%;height:100%;object-fit:cover;display:block}
+.film figcaption{position:absolute;left:14px;top:12px;padding:.35rem .6rem;background:rgba(252,249,248,.85);backdrop-filter:blur(6px);border-radius:2px}
+.film figcaption .eyebrow{font-size:10px}
+.film-sound{position:absolute;right:12px;bottom:12px;width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(11,21,32,.45);backdrop-filter:blur(6px);cursor:pointer}
+.film-sound svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round}
+.film-sound svg path:first-child{fill:#fff;stroke:none}
+.film-sound.on{border-color:var(--gold-light)}
+@media (max-width:860px){.film{max-width:none;aspect-ratio:4/3;margin-top:1.6rem}.film video{object-position:50% 40%}}
 .done{text-align:center;padding:1.5rem 0}
 .done .big{font:italic 400 3rem/1 var(--serif);margin:.8rem 0;color:var(--koi-deep)}
 .done p{color:var(--ink-2)}
@@ -241,6 +256,15 @@
         <li>Större sällskap – ring {{PHONE}}</li>
         <li>Skriv allergier eller barnstol i meddelandet</li>
       </ul>
+      <figure class="film reveal" id="bookFilm">
+        <video id="bookVid" playsinline muted loop preload="metadata" poster="/intro-poster.jpg" aria-label="Smakprov från köket">
+          <source src="/intro.mp4" type="video/mp4">
+        </video>
+        <button class="film-sound" id="bookSound" type="button" aria-label="Ljud på">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path id="bsOff" d="M16 9l5 5m0-5l-5 5"/><path id="bsOn" d="M16.5 8.5a5 5 0 0 1 0 7" style="display:none"/></svg>
+        </button>
+        <figcaption><span class="eyebrow">Från köket</span></figcaption>
+      </figure>
     </div>
     <div class="card form">
       <form id="bookForm" novalidate>
@@ -287,6 +311,19 @@ function bookSlots(dateStr) {
 }
 
 function initBooking() {
+  /* filmen i bokningsdelen: spelar (ljudlöst) bara när den syns – sparar batteri och data */
+  (() => {
+    const v = $("#bookVid"), b = $("#bookSound");
+    if (!v) return;
+    new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) v.play().catch(() => {}); else v.pause(); }), { threshold: .35 }).observe(v);
+    b?.addEventListener("click", () => {
+      v.muted = !v.muted; b.classList.toggle("on", !v.muted);
+      $("#bsOff").style.display = v.muted ? "" : "none";
+      $("#bsOn").style.display = v.muted ? "none" : "";
+      b.setAttribute("aria-label", v.muted ? "Ljud på" : "Ljud av");
+    });
+  })();
+
   const f = $("#bookForm"), date = $("#bDate"), time = $("#bTime"), err = $("#bookErr");
   const t = nowSE();
   date.min = isoDate(t);

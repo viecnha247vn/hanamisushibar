@@ -1,5 +1,5 @@
 // Bygger dist/: renderar menyn till statisk HTML (bra för Google) och kopierar filer.
-import { readFileSync, writeFileSync, mkdirSync, cpSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, cpSync, rmSync } from "node:fs";
 import seedMenu from "../data/menu.seed.js";
 import settings from "../data/settings.js";
 import { gas } from "../lib/gas.js";
@@ -33,10 +33,27 @@ const tag = id =>
   id === "lunch" ? `<span class="tag" data-for="lunch">Mån–fre ${settings.lunch.from}–${settings.lunch.to}</span>` :
   id === "happy" ? `<span class="tag" data-for="happy">${settings.happyHour.from}–${settings.happyHour.to} varje dag</span>` : "";
 
+/* Kategoribilder i static/bilder/<id>-{s,m,l}.{webp,jpg}. Saknas bilden får kategorin ingen banderoll. */
+const IMG_ALT = {
+  sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
+  maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
+  bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Lunchbento med yakitori, vårrullar och maki",
+  varmt: "Varmrätter: yakitori, vårrullar och edamame", poke: "Poke bowl med lax, avokado och mango"
+};
+const hasImg = id => existsSync(`static/bilder/${id}-l.webp`);
+const banner = c => hasImg(c.id) ? `
+  <figure class="cat-img">
+    <picture>
+      <source type="image/webp" srcset="/bilder/${c.id}-s.webp 480w, /bilder/${c.id}-m.webp 800w, /bilder/${c.id}-l.webp 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)">
+      <img src="/bilder/${c.id}-m.jpg" srcset="/bilder/${c.id}-s.jpg 480w, /bilder/${c.id}-m.jpg 800w, /bilder/${c.id}-l.jpg 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)" width="1400" height="613" alt="${esc(IMG_ALT[c.id] || c.name)}" loading="lazy" decoding="async">
+    </picture>
+  </figure>` : "";
+const square = id => hasImg(id) ? `<picture class="dish-img"><source type="image/webp" srcset="/bilder/${id}-sq.webp"><img src="/bilder/${id}-sq.jpg" width="640" height="640" alt="" loading="lazy" decoding="async"></picture>` : "";
+
 const chips = menu.map(c => `<a href="#cat-${c.id}" data-id="${c.id}">${esc(c.name)}</a>`).join("");
 const menuHtml = menu.map((c, n) => `
 <section class="cat" id="cat-${c.id}" aria-labelledby="h-${c.id}">
-  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}">${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}</div>
+  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}">${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}</div>${banner(c)}
   <div class="items">
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
@@ -62,7 +79,8 @@ const highlights = FEATURED.map(([id, text], n) => {
   const c = menu.find(x => x.id === id);
   if (!c) return "";
   const prices = c.items.map(i => i.price).filter(p => p > 0);
-  return `      <a class="card dish" href="/meny#cat-${c.id}">
+  return `      <a class="card dish${hasImg(c.id) ? " has-img" : ""}" href="/meny#cat-${c.id}">
+        ${square(c.id)}
         <span class="n" aria-hidden="true">${two(n + 1)}</span>
         <h3>${esc(c.name.replace(/, friterad$/i, ""))}</h3>
         <p>${esc(text)}</p>
