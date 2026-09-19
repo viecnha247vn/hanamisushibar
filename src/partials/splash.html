@@ -28,7 +28,9 @@
 (function(){
   document.documentElement.classList.add("js");
   var s = document.getElementById("splash"), skip = false;
-  try { skip = sessionStorage.getItem("hanami-splash") || /[?&]bord=/.test(location.search) || matchMedia("(prefers-reduced-motion: reduce)").matches; sessionStorage.setItem("hanami-splash", "1"); } catch (e) {}
+  /* Visas vid varje sidladdning. Hoppas bara över vid bordsbeställning (gästen ska rakt in i menyn)
+     och för den som valt mindre rörelse i systeminställningarna. */
+  try { skip = /[?&]bord=/.test(location.search) || matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
   if (skip) { s.remove(); document.documentElement.classList.add("no-splash"); return; }
   document.documentElement.classList.add("splashing");
 
