@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<script>if (/[?&]bord=/.test(location.search)) location.replace("/meny" + location.search);</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hanami Sushi Bar Ängelholm – Sushi, poke & bento · Beställ take away & boka bord</title>
+<meta name="description" content="Hanami Sushi Bar på Östergatan 53 i Ängelholm. Nigiri, maki, poke bowls, bento och bubble tea. Beställ take away online, boka bord eller beställ direkt vid bordet. Lunch mån–fre 11–14, happy hour 16–17.">
+<link rel="canonical" href="https://hanamisushibar.se/">
+<!--HEAD-->
+<style>
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:min(100svh,880px);display:flex;align-items:center;padding:calc(var(--hdr) + 48px) 0 72px;overflow:hidden;
+  background:radial-gradient(900px 640px at 78% 42%,#FBEEF2,transparent 62%),radial-gradient(700px 500px at 8% 92%,rgba(24,115,188,.08),transparent 60%),var(--bg)}
+.hero .wrap{position:relative;z-index:1;width:100%;display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,6vw,80px);align-items:center}
+.hero h1{text-transform:uppercase;letter-spacing:.02em;font-size:clamp(2.5rem,6.8vw,4.9rem);line-height:1.02;margin:1.2rem 0 .6rem;color:var(--koi-deep)}
+.hero .sub{font:italic 400 clamp(1.5rem,3.4vw,2.3rem)/1.2 var(--serif);margin-bottom:1.4rem;color:var(--gold-2)}
+.hero .actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2.2rem}
+.hero .meta{display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:2rem;color:var(--ink-2);font-size:.95rem}
+.hero .meta a{text-decoration:none}
+.hero .meta .status{display:none}
+@media (max-width:900px){.hero .meta .status{display:inline-flex}}
+.hero .meta a:hover{color:var(--koi)}
+.moon{position:relative;aspect-ratio:1;width:100%;max-width:440px;justify-self:center;display:grid;place-items:center}
+.moon::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 42% 38%,#FFF,#F9E3E9 45%,#F3C1CF 68%,rgba(243,193,207,0) 72%);box-shadow:0 30px 60px rgba(228,143,168,.25)}
+.moon::after{content:"";position:absolute;inset:7%;border-radius:50%;border:1px solid rgba(184,146,63,.45);animation:spin 60s linear infinite;border-top-color:var(--koi);border-right-color:transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+.moon img{position:relative;width:52%;height:auto;filter:drop-shadow(0 24px 40px rgba(15,61,110,.3));animation:float 7s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.moon .kanji{position:absolute;right:-2%;top:12%;writing-mode:vertical-rl;font:400 1rem/1 var(--serif);letter-spacing:.6em;color:var(--sakura-2)}
+.moon .cap{position:absolute;bottom:4%;left:50%;transform:translateX(-50%);white-space:nowrap}
+.scroll-cue{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:1;width:1px;height:48px;background:linear-gradient(var(--koi),transparent);animation:cue 2.4s ease-in-out infinite}
+@keyframes cue{0%{transform:translateX(-50%) scaleY(0);transform-origin:top}50%{transform:translateX(-50%) scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:translateX(-50%) scaleY(0);transform-origin:bottom}}
+@media (max-width:860px){
+  .hero{min-height:0;padding-top:calc(var(--hdr) + 28px)}
+  .hero .wrap{grid-template-columns:1fr}
+  .moon{max-width:260px;order:-1;margin-bottom:-.5rem}
+  .moon .kanji{right:-6%}
+  .scroll-cue{display:none}
+}
+
+/* ---------- erbjudanden ---------- */
+.offers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.offers .card{padding:clamp(24px,3.5vw,40px)}
+.offer .k{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.4rem}
+.offer h3{font-size:1.7rem;margin-bottom:.6rem}
+.offer p{color:var(--ink-2)}
+.offer .price{display:flex;align-items:baseline;gap:.5rem;margin-top:1.4rem}
+.offer .price b{font:400 2.4rem/1 var(--serif)}
+.offer .price span{color:var(--ink-3);font-size:.9rem}
+.offer .price b{color:var(--koi-deep)}
+.now{display:inline-flex;align-items:center;gap:.45rem;font:500 10.5px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ok);padding:.45rem .7rem;border:1px solid rgba(47,143,91,.35);background:#EAF6EF;border-radius:2px}
+.now::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{50%{opacity:.3}}
+@media (max-width:860px){.offers{grid-template-columns:1fr}}
+
+/* ---------- från köket ---------- */
+.dishes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.dish{display:flex;flex-direction:column;min-height:250px;padding:28px;text-decoration:none;transition:border-color .3s,transform .3s var(--ease)}
+.dish:hover{border-color:var(--koi);transform:translateY(-3px)}
+.dish .n{font:italic 400 2.6rem/1 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
+.dish h3{font-size:1.75rem;margin:auto 0 .5rem}
+.dish p{color:var(--ink-2);font-size:.95rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dish .ft{display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line-2)}
+.dish .ft b{font:400 1.25rem/1 var(--serif);color:var(--koi-deep)}
+.dish .ft svg{width:20px;height:20px;color:var(--koi);transition:transform .3s var(--ease)}
+.dish:hover .ft svg{transform:translateX(5px)}
+.center-cta{display:flex;justify-content:center;margin-top:44px}
+@media (max-width:960px){.dishes{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){.dishes{grid-template-columns:1fr}.dish{min-height:0}.dish h3{margin-top:1.6rem}}
+
+/* ---------- vid bordet ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,4vw,48px);counter-reset:s;list-style:none;margin:0;padding:0}
+.steps li{position:relative;padding-top:1.6rem;border-top:1px solid rgba(228,143,168,.5)}
+.steps li::before{counter-increment:s;content:"0" counter(s);position:absolute;top:-.8em;left:0;padding-right:.8rem;background:linear-gradient(180deg,#FBEEF2,#F9EAEF);font:italic 400 1.4rem/1 var(--serif);color:var(--koi)}
+.steps h3{margin-bottom:.5rem}
+.steps p{color:var(--ink-2)}
+@media (max-width:760px){.steps{grid-template-columns:1fr;gap:36px}}
+
+/* ---------- besök ---------- */
+.visit{display:grid;grid-template-columns:.9fr 1.1fr;gap:18px}
+.visit .info{padding:clamp(24px,3.5vw,40px);display:flex;flex-direction:column;gap:1.4rem}
+.visit address{font-style:normal;font:400 1.5rem/1.35 var(--serif);color:var(--koi-deep)}
+.visit .btns{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:auto}
+.map{position:relative;min-height:420px;padding:0;display:grid;place-items:center;text-align:center}
+.map .ph{display:grid;justify-items:center;gap:1rem;padding:2rem;position:relative;z-index:1}
+.map .ph svg.pin{width:40px;height:40px;color:var(--koi)}
+.map .ph p{color:var(--ink-3);font-size:.88rem;max-width:34ch}
+.map .grid{position:absolute;inset:0;opacity:.5;background:
+  linear-gradient(115deg,transparent 46%,rgba(24,115,188,.16) 46%,rgba(24,115,188,.16) 47%,transparent 47%),
+  linear-gradient(28deg,transparent 58%,rgba(228,143,168,.3) 58%,rgba(228,143,168,.3) 59%,transparent 59%),
+  linear-gradient(160deg,transparent 30%,rgba(27,42,58,.06) 30%,rgba(27,42,58,.06) 31.5%,transparent 31.5%),
+  repeating-linear-gradient(0deg,transparent 0 38px,rgba(27,42,58,.05) 38px 39px),
+  repeating-linear-gradient(90deg,transparent 0 38px,rgba(27,42,58,.05) 38px 39px)}
+.map iframe{position:absolute;inset:0;width:100%;height:100%;border:0;filter:saturate(.8)}
+@media (max-width:860px){.visit{grid-template-columns:1fr}.map{min-height:320px}}
+
+/* ---------- boka ---------- */
+.book{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(32px,6vw,80px);align-items:start}
+.book ul{list-style:none;margin:1.8rem 0 0;padding:0;display:grid;gap:.9rem}
+.book li{display:flex;gap:.9rem;color:var(--ink-2)}
+.book li::before{content:"";flex:0 0 18px;height:1px;background:var(--koi);margin-top:.8em}
+.book .form{padding:clamp(24px,3.5vw,40px)}
+.done{text-align:center;padding:1.5rem 0}
+.done .big{font:italic 400 3rem/1 var(--serif);margin:.8rem 0;color:var(--koi-deep)}
+.done p{color:var(--ink-2)}
+@media (max-width:860px){.book{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<!--SPLASH-->
+<!--SYMBOLS-->
+<!--HEADER-->
+
+<main>
+<section class="hero" id="top">
+  <svg class="branch" style="width:min(760px,90vw);left:-150px;top:40px;--r:6deg;--ox:0%;--oy:15%;--dur:15s;opacity:.5" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>
+  <svg class="branch" style="width:min(560px,70vw);right:-190px;bottom:-30px;--r:196deg;--ox:0%;--oy:15%;--dur:18s;--dl:-6s;opacity:.3" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>
+  <div class="petals" id="petals" aria-hidden="true" style="position:absolute;inset:0;overflow:hidden"></div>
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">{{STREET_UP}} · {{CITY_UP}}</span>
+      <h1 class="shoot" data-text="Hanami Sushi Bar">Hanami Sushi Bar</h1>
+      <p class="sub foil">Rullad när du beställer.</p>
+      <p class="lede">Nigiri, maki, poke bowls och bento – lagat i köket när beställningen kommer in. Ta med hem, boka bord eller beställ direkt från bordet.</p>
+      <div class="actions">
+        <a class="btn gold" href="/meny">Beställ take away</a>
+        <a class="btn" href="#boka" data-book-link>Boka bord</a>
+      </div>
+      <div class="meta">
+        <span class="status" data-status>Öppettider</span>
+        <a href="tel:{{TEL}}">{{PHONE}}</a>
+      </div>
+    </div>
+    <div class="moon" aria-hidden="true">
+      <img src="/logo.png" alt="" width="260" height="260">
+      <span class="kanji">花見</span>
+      <span class="cap eyebrow center">Sushi · Poke · Bento</span>
+    </div>
+  </div>
+  <span class="scroll-cue" aria-hidden="true"></span>
+</section>
+
+<section class="blk band" aria-labelledby="h-offers">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Just nu</span>
+      <h2 id="h-offers">Lunch, happy hour <em class="foil">&amp; studentpris</em></h2>
+    </div>
+    <div class="offers">
+      <article class="card offer">
+        <div class="k"><span class="label">Mån–fre · {{LUNCH_TIME}}</span><span class="now" data-now="lunch" hidden>Gäller nu</span></div>
+        <h3>Dagens lunch</h3>
+        <p>Sushi mix eller bowl. Dryck och misosoppa ingår.</p>
+        <div class="price"><span>från</span><b class="foil">{{LUNCH_FROM}}</b><span>kr</span></div>
+      </article>
+      <article class="card offer">
+        <div class="k"><span class="label">Varje dag · {{HAPPY_TIME}}</span><span class="now" data-now="happy" hidden>Gäller nu</span></div>
+        <h3>Happy hour</h3>
+        <p>Stora sushi mix till lägre pris. Över 450 kr ingår en påse räkchips.</p>
+        <div class="price"><span>30 bitar</span><b class="foil" style="--fd:-3s">{{HAPPY_FROM}}</b><span>kr</span></div>
+      </article>
+      <article class="card offer">
+        <div class="k"><span class="label">Hela dagen</span></div>
+        <h3>Student</h3>
+        <p>Visa giltig studentlegitimation. Kan inte kombineras med happy hour.</p>
+        <div class="price"><b class="foil" style="--fd:-6s">10 %</b><span>rabatt</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="blk" aria-labelledby="h-dishes">
+  <svg class="branch" style="width:520px;right:-200px;top:30px;--r:170deg;--ox:0%;--oy:15%;--dur:16s;--dl:-3s" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Från köket</span>
+      <h2 id="h-dishes">{{COUNT}} rätter, <em class="foil">en meny</em></h2>
+      <p>Allt rullas och tillagas när beställningen kommer in – därför blandar vi inte sorter i samma makirulle.</p>
+    </div>
+    <div class="dishes">
+<!--HIGHLIGHTS-->
+    </div>
+    <div class="center-cta reveal"><a class="btn gold" href="/meny">Se hela menyn &amp; beställ</a></div>
+  </div>
+</section>
+
+<section class="blk band" id="bordet" aria-labelledby="h-table">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Vid bordet</span>
+      <h2 id="h-table">Beställ utan <em class="foil">att vänta</em></h2>
+    </div>
+    <ol class="steps reveal">
+      <li><h3>Skanna koden</h3><p>QR‑koden på bordet öppnar menyn med ditt bordsnummer. Ingen app, inget konto.</p></li>
+      <li><h3>Välj tillsammans</h3><p>Alla vid bordet kan lägga till i samma beställning från sin egen mobil.</p></li>
+      <li><h3>Köket börjar direkt</h3><p>Beställningen skrivs ut i köket direkt. Betala med Swish eller kort när ni går.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="blk" id="hitta" aria-labelledby="h-visit">
+  <div class="wrap">
+    <div class="head reveal">
+      <span class="eyebrow">Besök oss</span>
+      <h2 id="h-visit">Mitt i <em class="foil">{{CITY}}</em></h2>
+    </div>
+    <div class="visit">
+      <div class="card info">
+        <address>{{STREET}}<br>{{POSTAL}}</address>
+        <div>
+          <div class="label" style="margin-bottom:.4rem">Öppettider</div>
+          <div class="hours">{{HOURS_ROWS}}</div>
+        </div>
+        <div class="btns">
+          <a class="btn gold" href="https://www.google.com/maps/dir/?api=1&amp;destination={{MAPQ}}" target="_blank" rel="noopener"><svg width="16" height="16" aria-hidden="true"><use href="#i-pin"/></svg>Vägbeskrivning</a>
+          <a class="btn" href="tel:{{TEL}}"><svg width="16" height="16" aria-hidden="true"><use href="#i-phone"/></svg>{{PHONE}}</a>
+        </div>
+      </div>
+      <div class="card map" id="map">
+        <div class="grid" aria-hidden="true"></div>
+        <div class="ph">
+          <svg class="pin" aria-hidden="true"><use href="#i-pin"/></svg>
+          <button class="btn" type="button" id="mapBtn">Visa karta</button>
+          <p>Kartan laddas från Google Maps först när du klickar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="blk band" id="boka" aria-labelledby="h-book">
+  <svg class="branch" style="width:600px;left:-220px;bottom:-60px;--r:-4deg;--ox:0%;--oy:15%;--dur:19s" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>
+  <div class="wrap book">
+    <div class="head reveal" style="margin:0">
+      <span class="eyebrow">Boka bord</span>
+      <h2 id="h-book">Ett bord <em class="foil">för er</em></h2>
+      <p>Skicka en förfrågan så bekräftar vi med sms så snart vi kan.</p>
+      <ul>
+        <li>Online upp till {{MAXG}} personer</li>
+        <li>Större sällskap – ring {{PHONE}}</li>
+        <li>Skriv allergier eller barnstol i meddelandet</li>
+      </ul>
+    </div>
+    <div class="card form">
+      <form id="bookForm" novalidate>
+        <div class="row2">
+          <div class="field"><label for="bDate">Datum</label><input id="bDate" name="date" type="date" required></div>
+          <div class="field"><label for="bTime">Tid</label><select id="bTime" name="time" required></select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="bGuests">Antal gäster</label><select id="bGuests" name="guests"></select></div>
+          <div class="field"><label for="bName">Namn</label><input id="bName" name="name" autocomplete="name" required></div>
+        </div>
+        <div class="field"><label for="bPhone">Mobilnummer</label><input id="bPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required><small>Bekräftelsen kommer via sms.</small></div>
+        <div class="field"><label for="bMsg">Meddelande</label><textarea id="bMsg" name="message" placeholder="Allergier, barnstol, födelsedag …"></textarea></div>
+        <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div id="bookErr" class="err" hidden></div>
+        <button class="btn gold block" type="submit">Skicka bokningsförfrågan</button>
+        <p class="note">Bordet är bokat först när du fått vår bekräftelse.</p>
+      </form>
+      <div id="bookDone" class="done" hidden>
+        <span class="eyebrow center">Förfrågan skickad</span>
+        <div class="big foil" id="bookNo">B1001</div>
+        <p id="bookDoneText"></p>
+        <button class="btn" type="button" style="margin-top:1.4rem" id="bookAgain">Ny bokning</button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!--FOOTER-->
+<!--FAB-->
+
+<script>
+<!--COMMON_JS-->
+
+/* ================= startsidan ================= */
+function bookSlots(dateStr) {
+  const d = new Date(dateStr + "T12:00:00"), hrs = hoursOn(d); if (!hrs) return [];
+  const now = nowSE(), today = isoDate(now) === dateStr, nowH = now.getHours() + now.getMinutes() / 60 + 0.5;
+  const out = [];
+  for (let h = hrs[0]; h <= hrs[1] - 1; h += 0.5) if (!today || h >= nowH) out.push(`${pad(Math.floor(h))}:${h % 1 ? "30" : "00"}`);
+  return out;
+}
+
+function initBooking() {
+  const f = $("#bookForm"), date = $("#bDate"), time = $("#bTime"), err = $("#bookErr");
+  const t = nowSE();
+  date.min = isoDate(t);
+  date.max = isoDate(new Date(t.getTime() + SETTINGS.bookingDaysAhead * 864e5));
+  date.value = hoursOn(t) && bookSlots(isoDate(t)).length ? isoDate(t) : isoDate(nextOpening(t).d);
+  $("#bGuests").innerHTML = Array.from({ length: SETTINGS.maxBookingGuests }, (_, i) =>
+    `<option value="${i + 1}" ${i === 1 ? "selected" : ""}>${i + 1} ${i ? "personer" : "person"}</option>`).join("");
+  const fill = () => {
+    const s = bookSlots(date.value || "");
+    time.innerHTML = s.length ? s.map(x => `<option>${x}</option>`).join("") : `<option value="">Stängt den dagen</option>`;
+  };
+  date.addEventListener("change", fill); fill();
+
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!f.date.value || !f.time.value) { err.textContent = "Välj en dag då vi har öppet."; err.hidden = false; return; }
+    if (f.name.value.trim().length < 2 || f.phone.value.replace(/\D/g, "").length < 8) { err.textContent = "Fyll i namn och mobilnummer så vi kan bekräfta."; err.hidden = false; return; }
+    err.hidden = true;
+    const btn = f.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Skickar …";
+    const p = { type: "booking", date: f.date.value, time: f.time.value, guests: +f.guests.value, name: f.name.value.trim(), phone: f.phone.value.trim(), message: f.message.value.trim(), website: f.website.value };
+    try {
+      const r = await send(p);
+      const d = new Date(p.date + "T12:00:00");
+      $("#bookNo").textContent = r.no;
+      $("#bookDoneText").textContent = `${p.guests} ${p.guests > 1 ? "personer" : "person"}, ${dayNames[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1} kl ${p.time}. Vi bekräftar via sms till ${p.phone}.` + (r.demo ? " (Demoläge – inget skickades.)" : "");
+      f.hidden = true; $("#bookDone").hidden = false;
+    } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+    btn.disabled = false; btn.textContent = "Skicka bokningsförfrågan";
+  });
+  $("#bookAgain").addEventListener("click", () => { f.reset(); fill(); $("#bookDone").hidden = true; f.hidden = false; });
+}
+
+function goBook() {
+  $("#boka").scrollIntoView({ behavior: "smooth" });
+  setTimeout(() => $("#bDate").focus({ preventScroll: true }), 650);
+}
+
+function initMap() {
+  $("#mapBtn").addEventListener("click", () => {
+    const f = document.createElement("iframe");
+    f.title = "Karta – Hanami Sushi Bar";
+    f.loading = "lazy";
+    f.referrerPolicy = "no-referrer-when-downgrade";
+    f.src = "https://www.google.com/maps?q={{MAPQ}}&output=embed";
+    $("#map").replaceChildren(f);
+  });
+}
+
+initCommon();
+initBooking();
+initMap();
+initPetals($("#petals"));
+initPick({ onBook: goBook });
+// Flytande knappen visas först när hero-knapparna scrollats bort (annars dubbelt och överlappande)
+if ("IntersectionObserver" in window) {
+  new IntersectionObserver(([e]) => $("#fab").classList.toggle("off", e.isIntersecting)).observe($(".hero .actions"));
+}
+$$("[data-book-link]").forEach(a => a.addEventListener("click", e => { e.preventDefault(); goBook(); }));
+</script>
+</body>
+</html>

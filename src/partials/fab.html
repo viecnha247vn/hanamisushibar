@@ -1,0 +1,30 @@
+<button class="fab" id="fab" type="button" aria-haspopup="dialog" data-pick-open>
+  <svg aria-hidden="true"><use href="#i-bag"/></svg>Boka &amp; Beställ
+</button>
+
+<dialog class="pick" id="pick" aria-labelledby="pickTitle">
+  <button class="x" type="button" data-pick-close aria-label="Stäng"><svg width="14" height="14"><use href="#i-x"/></svg></button>
+  <div class="ph">
+    <span class="eyebrow">Hanami Sushi Bar</span>
+    <h2 id="pickTitle" style="font-size:2rem">Vad vill du <em class="foil">göra?</em></h2>
+  </div>
+  <div class="opts">
+    <a class="opt" href="/meny" data-pick="order">
+      <span class="ic"><svg><use href="#i-bag"/></svg></span>
+      <span><b>Beställ take away</b><span>Välj rätter och hämtningstid – vi sms:ar när maten är klar.</span></span>
+      <i><svg width="18" height="18"><use href="#i-arrow"/></svg></i>
+    </a>
+    <a class="opt" href="/#boka" data-pick="book">
+      <span class="ic"><svg><use href="#i-cal"/></svg></span>
+      <span><b>Boka bord</b><span>Upp till {{MAXG}} personer online. Vi bekräftar med sms.</span></span>
+      <i><svg width="18" height="18"><use href="#i-arrow"/></svg></i>
+    </a>
+    <div class="opt info">
+      <span class="ic"><svg><use href="#i-table"/></svg></span>
+      <span><b>Beställ vid bordet</b><span>Sitter du hos oss? Skanna QR‑koden på bordet – beställningen går direkt till köket.</span></span>
+    </div>
+    <a class="btn ghost block" href="tel:{{TEL}}" style="margin-top:.4rem"><svg width="16" height="16" aria-hidden="true"><use href="#i-phone"/></svg>Ring {{PHONE}}</a>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>

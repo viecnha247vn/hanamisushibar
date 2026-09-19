@@ -1,0 +1,120 @@
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="pond"><i></i><i></i><i></i></div>
+  <div class="stage" id="stage">
+    <svg class="koi" id="koi" viewBox="0 0 1352 1352" overflow="visible" aria-hidden="true">
+      <defs>
+        <radialGradient id="kg" cx="38%" cy="32%" r="80%"><stop offset="0" stop-color="#2E8FD8"/><stop offset=".55" stop-color="#1873BC"/><stop offset="1" stop-color="#0F4C8F"/></radialGradient>
+        <filter id="wob" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.004" numOctaves="1" seed="7" result="n">
+            <animate attributeName="baseFrequency" values="0.006 0.004;0.009 0.005;0.006 0.004" dur="1.1s" repeatCount="indefinite"/>
+          </feTurbulence>
+          <feDisplacementMap id="wobMap" in="SourceGraphic" in2="n" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>
+      <circle id="disc" cx="676" cy="630" r="592" fill="url(#kg)" transform-origin="676 630"/>
+      <g id="fishG" transform-origin="589 763"><g id="fishW" filter="url(#wob)"><path d="M499 871 489 908 483 951 483 1013 485 1019 485 1027 495 1065 509 1095 526 1119 544 1137 572 1157 591 1168 621 1182 624 1182 626 1184 629 1184 631 1186 634 1186 636 1188 645 1190 653 1194 724 1213 773 1223 790 1225 804 1229 811 1229 825 1233 831 1233 834 1235 854 1239 874 1247 894 1257 916 1272 937 1294 955 1322 953 1301 951 1297 951 1291 947 1275 945 1272 945 1268 923 1221 906 1197 894 1185 876 1172 867 1163 863 1156 862 1145 868 1130 884 1113 900 1089 919 1049 933 1014 945 991 955 977 962 970 973 964 972 962 948 965 925 975 889 1007 849 1046 823 1064 803 1074 769 1085 734 1091 721 1091 712 1093 671 1093 664 1091 656 1091 627 1083 600 1070 575 1052 558 1035 546 1020 531 996 523 980 511 949 501 904ZM469 431 450 431 445 433 438 433 416 439 393 449 369 464 354 476 322 509 296 546 271 596 249 662 249 667 245 678 238 714 253 691 283 654 309 628 352 594 367 571 395 522 412 497 436 467 456 447 471 438 474 435ZM834 413 821 407 789 397 732 386 720 386 709 384 664 384 624 389 623 392 626 399 626 403 638 427 677 462 683 474 685 484 685 495 683 504 683 530 685 537 691 548 691 553 687 557 670 557 663 554 658 549 652 523 644 505 635 491 620 474 598 458 558 437 534 419 531 419 509 431 488 445 467 462 435 496 420 516 402 545 377 596 367 621 367 624 365 626 357 651 357 655 355 658 351 679 349 683 349 689 345 706 345 714 343 720 341 742 341 783 354 791 391 803 411 813 420 821 428 832 432 842 432 855 428 857 376 834 359 830 344 832 345 848 349 872 351 876 351 882 357 905 359 908 359 912 371 944 381 964 393 983 410 1005 438 1033 465 1056 460 1037 456 1003 456 960 458 951 458 939 464 904 470 881 479 854 491 827 491 824 487 819 483 809 477 771 460 734 456 708 458 696 466 676 474 648 478 619 481 618 495 632 500 644 501 663 498 675 498 690 504 706 513 717 518 728 518 763 520 775 548 739 577 710 600 691 651 659 693 638 731 622 757 608 778 593 796 575 812 553 827 526 837 501 851 455 852 438 849 427 840 417Z" fill="#fff" fill-rule="evenodd"/></g></g>
+      <g id="bubbles" fill="#fff"><circle class="b" cx="810" cy="371" r="12" style="--i:0"/><circle class="b" cx="810" cy="301" r="26" style="--i:1"/><circle class="b" cx="762" cy="203" r="34" style="--i:2"/><circle class="b" cx="815" cy="76" r="54" style="--i:3"/></g>
+      <g id="trail" fill="#fff" opacity=".9"></g>
+      <image id="png" href="/logo.png" width="1352" height="1352" opacity="0"/>
+    </svg>
+    <div class="t foil" id="splashT">Hanami</div>
+    <span class="eyebrow center" id="splashE">Sushi bar · Ängelholm</span>
+  </div>
+</div>
+<script>
+(function(){
+  document.documentElement.classList.add("js");
+  var s = document.getElementById("splash"), skip = false;
+  try { skip = sessionStorage.getItem("hanami-splash") || /[?&]bord=/.test(location.search) || matchMedia("(prefers-reduced-motion: reduce)").matches; sessionStorage.setItem("hanami-splash", "1"); } catch (e) {}
+  if (skip) { s.remove(); document.documentElement.classList.add("no-splash"); return; }
+  document.documentElement.classList.add("splashing");
+
+  /* ---------- hjälp ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return v<a?a:v>b?b:v; };
+  var easeOut = function(t){ return 1-Math.pow(1-t,3); };
+  var easeInOut = function(t){ return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; };
+  var elastic = function(t){ return t===0?0:t===1?1:Math.pow(2,-9*t)*Math.sin((t*10-.75)*(2*Math.PI/3))+1; };
+
+  /* Simbana i logotypens koordinater – slutar exakt i logotypens fiskposition, sista biten upp åt vänster som fisken pekar */
+  var FC = [589,763];
+  var P = [[-1700,-100],[-1000,250],[-350,950],[450,1500],[1250,1450],[1400,1000],[1050,1120],FC];
+  function spline(t){                                  /* Catmull-Rom över P, t 0..1 -> [x,y,tangent] */
+    var n = P.length-1, f = t*n, i = clamp(Math.floor(f),0,n-1), u = f-i;
+    var p0 = P[Math.max(i-1,0)], p1 = P[i], p2 = P[i+1], p3 = P[Math.min(i+2,n)];
+    var c = function(a,b,d,e){ return .5*((2*b)+(-a+d)*u+(2*a-5*b+4*d-e)*u*u+(-a+3*b-3*d+e)*u*u*u); };
+    var dc = function(a,b,d,e){ return .5*((-a+d)+2*(2*a-5*b+4*d-e)*u+3*(-a+3*b-3*d+e)*u*u); };
+    return [c(p0[0],p1[0],p2[0],p3[0]), c(p0[1],p1[1],p2[1],p3[1]), Math.atan2(dc(p0[1],p1[1],p2[1],p3[1]), dc(p0[0],p1[0],p2[0],p3[0]))];
+  }
+  var HEAD = Math.atan2(-1050,-250);                    /* fiskens egen riktning i logotypen (stjärt -> huvud) */
+
+  var fishG = $("fishG"), wob = $("wobMap"), disc = $("disc"), png = $("png"), trail = $("trail"), koi = $("koi");
+  var bubbles = Array.prototype.slice.call(document.querySelectorAll("#bubbles .b"));
+  bubbles.forEach(function(b){ b.style.opacity = 0; });
+  disc.style.transform = "scale(0)";
+  var T = { swim: 2600, settle: 560, pop: 2000, fade: 380, hold: 560 };
+  var t0 = null, lastTrail = 0, done = false;
+
+  function frame(now){
+    if (!t0) t0 = now;
+    var t = now - t0;
+    /* 1. fisken simmar */
+    var ps = clamp(t / T.swim, 0, 1), pe = easeInOut(ps);
+    var s = spline(pe), rot = s[2] - HEAD;
+    var settle = clamp((t - T.swim) / T.settle, 0, 1);   /* 2. glider på plats: rotation -> 0, vaggning -> 0 */
+    rot = rot * (1 - easeOut(settle));
+    var wag = Math.sin(t / 95) * 6 * (1 - settle);
+    var scale = .62 + .38 * easeOut(clamp(t / (T.swim + T.settle), 0, 1));
+    fishG.setAttribute("transform", "translate(" + (s[0]-FC[0]) + " " + (s[1]-FC[1]) + ") rotate(" + ((rot*180/Math.PI)+wag) + " " + FC[0] + " " + FC[1] + ") scale(" + scale + ")");
+    fishG.style.transformOrigin = FC[0] + "px " + FC[1] + "px";
+    wob.setAttribute("scale", 46 * (1 - settle));
+    /* bubblor efter huvudet */
+    if (t - lastTrail > 140 && settle < 1) {
+      lastTrail = t;
+      var c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", s[0] + Math.cos(s[2]) * 380 + (Math.random()*60-30)); c.setAttribute("cy", s[1] + Math.sin(s[2]) * 380);
+      c.setAttribute("r", 8 + Math.random() * 14); c.dataset.born = t; trail.appendChild(c);
+    }
+    Array.prototype.forEach.call(trail.children, function(c){
+      var age = t - c.dataset.born, life = 900;
+      if (age > life) { c.remove(); return; }
+      c.setAttribute("cy", c.getAttribute("cy") - 1.4); c.setAttribute("opacity", 1 - age / life);
+    });
+    /* 3. skivan poppar upp bakom fisken */
+    var pp = clamp((t - T.pop) / 700, 0, 1);
+    disc.style.transform = "scale(" + elastic(pp) + ")";
+    /* 4. logotypens bubblor stiger */
+    bubbles.forEach(function(b, i){
+      var q = clamp((t - (T.swim + 150 + i * 110)) / 380, 0, 1);
+      b.style.opacity = q; b.setAttribute("transform", "translate(0 " + (40 * (1 - easeOut(q))) + ")");
+    });
+    /* 5. tona in originallogotypen */
+    var fp = clamp((t - (T.swim + T.settle)) / T.fade, 0, 1);
+    png.setAttribute("opacity", fp);
+    if (fp > 0) { $("splashT").classList.add("in"); $("splashE").classList.add("in"); }
+    if (t < T.swim + T.settle + T.fade + T.hold) requestAnimationFrame(frame); else handoff();
+  }
+
+  /* 6. logotypen glider över till sin plats i sidhuvudet/hero ("FLIP") */
+  function handoff(){
+    if (done) return; done = true;
+    var target = document.querySelector(".moon img") || document.querySelector(".brand img");
+    var stage = $("stage");
+    stage.querySelectorAll(".t,.eyebrow").forEach(function(e){ e.classList.add("out"); });
+    if (target) {
+      var a = koi.getBoundingClientRect(), b = target.getBoundingClientRect();
+      var k = b.width / a.width;
+      koi.style.transformOrigin = "0 0";
+      koi.style.transform = "translate(" + (b.left - a.left) + "px," + (b.top - a.top) + "px) scale(" + k + ")";
+      document.documentElement.classList.add("logo-arriving");
+    }
+    s.classList.add("gone");
+    setTimeout(function(){ document.documentElement.classList.remove("splashing"); document.dispatchEvent(new Event("splash:done")); }, 380);
+    setTimeout(function(){ document.documentElement.classList.remove("logo-arriving"); }, 720);
+    setTimeout(function(){ s.remove(); }, 1000);
+  }
+  window.addEventListener("load", function(){ requestAnimationFrame(frame); });
+  setTimeout(function(){ if (!t0) requestAnimationFrame(frame); }, 1200);   /* starta även om något på sidan laddar långsamt */
+  setTimeout(handoff, 7000);                                                   /* säkerhetsnät */
+})();
+</script>
