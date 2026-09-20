@@ -4,6 +4,7 @@ export default {
   phone: "0431-472999",
   address: "Östergatan 53, 262 31 Ängelholm",
   siteHost: "hanamisushibar.se",
+  email: "kontakt@hanamisushibar.se",
   swish: "1231874809",                 // Swish-nummer (företag) som gästen betalar till
   instagram: "hanamisushi99999",
   timezone: "Europe/Stockholm",

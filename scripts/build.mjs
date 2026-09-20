@@ -43,7 +43,7 @@ const IMG_ALT = {
   happy: "Sushifat med nigiri, maki och uramaki på mörkt träbräde",
   tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
-  varmt: "Yakiniku: biff med ris, sallad, edamame och chilimajonnäs", poke: "Poke bowl med lax, avokado och mango"
+  varmt: "Kycklingspett med ris, sallad och sesam", poke: "Poke bowl med lax, avokado och mango"
 };
 const hasImg = id => existsSync(`static/bilder/${id}-l.webp`);
 const banner = c => hasImg(c.id) ? `
@@ -51,7 +51,8 @@ const banner = c => hasImg(c.id) ? `
     <picture>
       <source type="image/webp" srcset="/bilder/${c.id}-s.webp 480w, /bilder/${c.id}-m.webp 800w, /bilder/${c.id}-l.webp 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)">
       <img src="/bilder/${c.id}-m.jpg" srcset="/bilder/${c.id}-s.jpg 480w, /bilder/${c.id}-m.jpg 800w, /bilder/${c.id}-l.jpg 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)" width="1400" height="613" alt="${esc(IMG_ALT[c.id] || c.name)}" loading="lazy" decoding="async">
-    </picture>
+    </picture>${c.id === "varmt" ? `
+    <span class="steam" aria-hidden="true"><i style="--x:22%;--w:20%;--d:7.5s"></i><i style="--x:38%;--w:16%;--d:9s;--dl:2.4s"></i><i style="--x:58%;--w:22%;--d:8.2s;--dl:4.2s"></i></span>` : ""}
   </figure>` : "";
 const square = id => hasImg(id) ? `<picture class="dish-img"><source type="image/webp" srcset="/bilder/${id}-sq.webp"><img src="/bilder/${id}-sq.jpg" width="640" height="640" alt="" loading="lazy" decoding="async"></picture>` : "";
 
@@ -106,6 +107,7 @@ const jsonld = {
   logo: "https://hanamisushibar.se/logo-512.png",
   image: "https://hanamisushibar.se/logo-512.png",
   telephone: "+46" + settings.phone.replace(/\D/g, "").slice(1),
+  email: settings.email,
   servesCuisine: ["Japansk", "Sushi", "Poke"],
   priceRange: "$$",
   acceptsReservations: "True",
@@ -127,7 +129,7 @@ const jsonld = {
 };
 
 const clientSettings = {
-  phone: settings.phone, swish: settings.swish, name: settings.name, allergens: settings.allergens, hours: settings.hours, closedDates: settings.closedDates, lunch: settings.lunch, happyHour: settings.happyHour,
+  phone: settings.phone, email: settings.email, swish: settings.swish, name: settings.name, allergens: settings.allergens, hours: settings.hours, closedDates: settings.closedDates, lunch: settings.lunch, happyHour: settings.happyHour,
   pickupLeadMinutes: settings.pickupLeadMinutes, pickupDaysAhead: settings.pickupDaysAhead, bookingDaysAhead: settings.bookingDaysAhead,
   maxBookingGuests: settings.maxBookingGuests
 };
@@ -151,7 +153,7 @@ const lunchItems = (menu.find(c => c.id === "lunch")?.items || []).map(i => i.pr
 const happyItems = (menu.find(c => c.id === "happy")?.items || []).map(i => i.price).filter(Boolean);
 const vars = {
   STREET: street, STREET_UP: street.toUpperCase(), POSTAL: postal, CITY: city, CITY_UP: city.toUpperCase(),
-  PHONE: settings.phone, TEL: tel, MAPQ: mapq, YEAR: String(new Date().getFullYear()), MAXG: String(settings.maxBookingGuests),
+  PHONE: settings.phone, TEL: tel, EMAIL: settings.email, MAPQ: mapq, YEAR: String(new Date().getFullYear()), MAXG: String(settings.maxBookingGuests),
   COUNT: String(ids.length),
   LUNCH_FROM: String(lunchItems.length ? Math.min(...lunchItems) : ""), LUNCH_TIME: `${two(settings.lunch.from)}–${two(settings.lunch.to)}`,
   HAPPY_FROM: String(happyItems.length ? Math.min(...happyItems) : ""), HAPPY_TIME: `${two(settings.happyHour.from)}–${two(settings.happyHour.to)}`,
