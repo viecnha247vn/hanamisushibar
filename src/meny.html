@@ -295,15 +295,22 @@ const cartHas = test => [...cart.values()].some(c => test(c.id));
 function dropId(id) { for (const [k, c] of cart) if (c.id === id) { cart.delete(k); noteOpen.delete(k); } }
 /* Happy hour-rätter kan bara läggas till och beställas medan happy hour pågår (samma regel kontrolleras på servern) */
 const isHappy = id => id.startsWith("happy-");
-/* Swish-knapp: länken öppnar appen med belopp, mottagare och ordernummer ifyllt.
-   På Android når en vanlig https-länk inte appen, därför intent-länk med fallback.
-   På datorn visas i stället en QR-kod med samma länk. */
+/* Swish-knapp. Två format som båda fyller i betalningen:
+   1. https://app.swish.nu/1/p/sw/?sw=…&amt=…&cur=SEK&msg=…  – Swish egen länk (universal link/app link),
+      visar "Ladda ner Swish" om appen saknas och läses även av telefonens kamera som QR.
+   2. swish://payment?data=<URL-kodad JSON>  – appens egen scheme, reservlänk under knappen.
+      version måste vara talet 1, belopp med decimalpunkt, inga editable-nycklar (allt låst).
+   På Android öppnar en https-länk inte alltid appen, därför intent-länk med fallback.
+   På datorn visas QR-koden med format 1 i stället. */
 const swishLink = (amt, msg) => `https://app.swish.nu/1/p/sw/?sw=${SETTINGS.swish}&amt=${amt}&cur=SEK&msg=${encodeURIComponent(msg)}&src=qr`;
 const isAndroid = /Android/i.test(navigator.userAgent);
 const isPhone = isAndroid || /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
 const swishHref = (amt, msg) => isAndroid
   ? `intent://${swishLink(amt, msg).slice(8)}#Intent;scheme=https;package=se.bankgirot.swish;S.browser_fallback_url=${encodeURIComponent(swishLink(amt, msg))};end`
   : swishLink(amt, msg);
+const swishScheme = (amt, msg) => "swish://payment?data=" + encodeURIComponent(JSON.stringify({
+  version: 1, payee: { value: String(SETTINGS.swish) }, amount: { value: Number(amt) }, message: { value: String(msg) }
+}));
 function drawSwishQr(amt, msg) {
   const el = $("#swishQr"); if (!el) return;
   const draw = () => { if (window.qrSvg && $("#swishQr")) $("#swishQr").innerHTML = qrSvg(swishLink(amt, msg), 168); };
@@ -440,7 +447,8 @@ function renderDrawer() {
       ${o.payment === "swish" ? `<div class="swish"><b>Swisha ${o.total} kr till ${swishNo}</b>
         <span class="sm">${esc(SETTINGS.name)} · meddelande ${esc(o.no)}</span>
         ${isPhone
-          ? `<a class="btn gold block" href="${swishHref(o.total, o.no)}">Öppna Swish</a><span class="sm">Belopp och ordernummer är redan ifyllda.</span>`
+          ? `<a class="btn gold block" href="${swishHref(o.total, o.no)}">Öppna Swish</a>
+             <span class="sm">Belopp och ordernummer är redan ifyllda. Öppnas inte appen? <a href="${swishScheme(o.total, o.no)}">Prova den här länken</a>.</span>`
           : `<div class="qr" id="swishQr" aria-hidden="true"></div><span class="sm">Skanna med Swish-appen i mobilen – belopp och ordernummer följer med.</span>`}</div>` : ""}
       ${o.email ? `<p style="font-size:.9rem">En bekräftelse är skickad till ${esc(o.email)}.</p>` : ""}
       ${o.demo ? `<p style="font-size:.85rem">Demoläge – inget skickades.</p>` : ""}</div>`;
