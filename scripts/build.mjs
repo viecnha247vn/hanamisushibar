@@ -54,8 +54,9 @@ const square = id => hasImg(id) ? `<picture class="dish-img"><source type="image
 
 const chips = menu.map(c => `<a href="#cat-${c.id}" data-id="${c.id}">${esc(c.name)}</a>`).join("");
 const menuHtml = menu.map((c, n) => `
-<section class="cat" id="cat-${c.id}" aria-labelledby="h-${c.id}">
-  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}">${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}</div>${banner(c)}
+<section class="cat${c.id === "happy" ? " hh" : ""}" id="cat-${c.id}" aria-labelledby="h-${c.id}">${c.id === "happy" ? `
+  <svg class="branch hh-branch" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>` : ""}
+  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}">${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
   <div class="items">
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
