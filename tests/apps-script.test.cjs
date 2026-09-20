@@ -141,4 +141,13 @@ test("betald-markering sparas och följer med till kvittot", () => {
   assert.equal(E.call("printJob", { no: o.no }).job.paid, false);
   assert.equal(E.call("adminPaid", { no: "H0", paid: true }).status, 404);
 });
+test("dricks läggs på summan och syns på kvittot", () => {
+  const o = E.call("order", { kind: "table", table: "7", tip: 20, items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(o.total, 145 + 20);
+  assert.equal(E.call("printJob", { no: o.no }).job.tip, 20);
+  const row = E.sheets["Beställningar"].data.find(r => r[1] === o.no);
+  assert.equal(Number(row[11]), 20);
+  assert.equal(E.call("order", { kind: "table", table: "7", tip: 5000, items: [{ id: "maki-1", qty: 1 }] }).status, 400);
+  assert.equal(E.call("order", { kind: "table", table: "7", tip: -5, items: [{ id: "maki-1", qty: 1 }] }).status, 400);
+});
 console.log(`\n${passed} tester OK`);

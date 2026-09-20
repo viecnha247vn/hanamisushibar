@@ -356,6 +356,15 @@ Mỗi thẻ đơn trong köksvy có nút **Markera betald**. Bấm là ghi giờ
 - Hệ thống **không tự biết** khách đã Swish hay chưa. Nhân viên xem app Swish rồi bấm tay. Muốn tự động thì phải làm Swish Handel.
 - Cột `Betald` là cột mới, nên sau khi đẩy code phải **chạy `setup()` một lần** trong Apps Script để thêm cột vào Sheet.
 
+### 7.4 Dricks (tiền tip)
+
+Ở bước thanh toán, khách chọn 5, 10, 15, 20 % hoặc tự nhập số tiền (tối đa 2000 kr). Nút gửi đơn hiện tổng đã cộng tip.
+
+- Tip được tính lại trên server theo giá trong fliken Meny, không tin số từ trình duyệt.
+- Lưu ở cột `Dricks` (cột mới) trong fliken Beställningar. Cột `Summa` là tổng đã gồm tip.
+- Phiếu in có dòng `Dricks` ngay trên dòng `Summa`. Mail cho khách và mail cho quán cũng hiện tip.
+- Cột `Dricks` là cột mới, nên sau khi đẩy code phải **chạy `setup()` một lần** trong Apps Script.
+
 ## 8. Khi có sự cố
 
 | Dấu hiệu | Kiểm tra |

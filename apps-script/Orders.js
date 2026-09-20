@@ -23,7 +23,11 @@ function createOrder_(p) {
     return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price + extra,
              note: [detail, note].filter(String).join(' · ') };
   });
-  const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
+  const sum = lines.reduce((s, l) => s + l.qty * l.price, 0);
+  // Dricks: gästen väljer procent eller egen summa. Räknas om här mot arkets priser.
+  const tip = Math.round(Number(p.tip) || 0);
+  if (!(tip >= 0 && tip <= 2000 && tip <= sum)) throw new ApiError(400, 'Ogiltig dricks.');
+  const total = sum + tip;
   const isTable = p.kind === 'table';
 
   // Köket kan höja förberedelsetiden i köksvyn – kontrolleras här, där värdet bor
@@ -46,6 +50,7 @@ function createOrder_(p) {
     'E-post': p.email || '',
     'Betalning': p.payment === 'kort' ? 'Kort i kassan' : 'Swish',
     'Beställning': lines.map(l => l.qty + ' × ' + l.name + (l.note ? '\n     ↳ ' + l.note : '')).join('\n'),
+    'Dricks': tip || '',
     'Summa': total,
     'Kommentar': p.message || '',
     'Status': 'Ny',
@@ -60,12 +65,13 @@ function createOrder_(p) {
     subject: (isTable ? '🍽 Bord ' + p.table : '🛍 Hämtning ' + p.whenText) + ' · ' + no + ' · ' + total + ' kr',
     title: 'Ny beställning ' + no,
     rows: [['Typ', when], ['Namn', p.name || '–'], ['Telefon', pretty_(p.phone) || '–'],
-           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']],
-    items: lines, total: total
+           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']]
+           .concat(tip ? [['Dricks', tip + ' kr']] : []),
+    items: lines, tip: tip, total: total
   });
   if (!isTable) sms_(p.phone, SMS.orderReceived(no, p.whenText));
   if (p.email && mailOrderConfirmation_({ no: no, kind: p.kind, table: p.table, when: p.whenText, name: p.name,
-        phone: p.phone, email: p.email, payment: p.payment, message: p.message, items: lines, total: total })) {
+        phone: p.phone, email: p.email, payment: p.payment, message: p.message, items: lines, tip: tip, total: total })) {
     setCell_(SHEET.ORDERS, 'Ordernr', no, 'Bekräftelse', now_('HH:mm'));
   }
   return { no: no, total: total };
@@ -104,7 +110,8 @@ function listOrders_(date) {
       name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-      message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven'], paid: !!r['Betald']
+      message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven'], paid: !!r['Betald'],
+      tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
     }))
     .reverse();
 }
@@ -136,7 +143,8 @@ function printQueue_() {
       name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-      message: r['Kommentar'], paid: !!r['Betald']
+      message: r['Kommentar'], paid: !!r['Betald'],
+      tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
     }));
 }
 
@@ -153,7 +161,8 @@ function printJob_(no) {
     name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
     items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
     total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-    message: r['Kommentar'], status: r['Status'], paid: !!r['Betald']
+    message: r['Kommentar'], status: r['Status'], paid: !!r['Betald'],
+    tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
   };
 }
 

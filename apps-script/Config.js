@@ -30,7 +30,7 @@ const SHEET = {
 
 const HEADERS = {
   ORDERS: ['Mottagen', 'Ordernr', 'Typ', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Namn', 'Telefon', 'E-post', 'Betalning',
-           'Beställning', 'Summa', 'Kommentar', 'Status', 'Sms klar', 'Bekräftelse', 'Utskriven', 'Betald', 'Rader (data)'],
+           'Beställning', 'Dricks', 'Summa', 'Kommentar', 'Status', 'Sms klar', 'Bekräftelse', 'Utskriven', 'Betald', 'Rader (data)'],
   BOOKINGS: ['Mottagen', 'Boknr', 'Datum', 'Tid', 'Gäster', 'Namn', 'Telefon', 'E-post', 'Meddelande', 'Status', 'Sms bekräftad', 'Bekräftelse'],
   MENU: ['Kategori-id', 'Kategori', 'Kategoritext', 'Id', 'Namn', 'Pris', 'Beskrivning', 'Visas på webben', 'Slut idag'],
   LOG: ['Tid', 'Nivå', 'Händelse', 'Detaljer']

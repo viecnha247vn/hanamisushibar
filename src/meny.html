@@ -131,6 +131,9 @@
 .done .swish .btn{margin:.9rem 0 .2rem}
 .done .swish .qr{margin:.9rem auto 0;width:168px;line-height:0}
 .done .swish{margin:1rem auto 0;padding:.8rem 1rem;max-width:26rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3);color:var(--ink);line-height:1.6}
+.total.sub{border-top:0;padding-top:0;font-size:.95rem;color:var(--ink-2)}
+.choice.tips label{padding:.6rem .85rem;font-size:.92rem}
+#tipKr{width:100%;min-height:46px;padding:.6rem .8rem;border:1px solid var(--line-2);border-radius:2px;background:#fff}
 .line .dt{grid-column:1/-1;font-size:.86rem;line-height:1.45;color:var(--ink-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .line .dt b{font-weight:500;color:var(--gold-deep)}
 .item .mx{grid-column:1;margin-top:.15rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--koi)}
@@ -288,6 +291,10 @@ function initSearch() {
 const cart = new Map();
 const noteOpen = new Set();
 let stage = "cart", lastOrder = null, lineSeq = 0;
+/* Dricks: 0 = ingen, tal = procent, "egen" = valfri summa i kronor */
+let tipPct = 0, tipCustom = 0;
+const tipValue = () => tipPct === "egen" ? Math.max(0, Math.min(2000, Math.round(tipCustom || 0))) : Math.round(cartTotal() * tipPct / 100);
+const payTotal = () => cartTotal() + tipValue();
 const unitPrice = c => ITEMS[c.id].price + (c.extra || 0);
 const cartTotal = () => [...cart.values()].reduce((s, c) => s + unitPrice(c) * c.qty, 0);
 const cartQty = () => [...cart.values()].reduce((a, c) => a + c.qty, 0);
@@ -473,7 +480,9 @@ function renderDrawer() {
              Våra rätter kan innehålla ${SETTINGS.allergens.join(", ")}. Allt tillagas i samma kök, så vi kan inte garantera att en rätt är helt fri från ett ämne.</small></label>`
       : `<button class="notebtn" type="button" data-noteopen="${k}">+ Önskemål för den här rätten</button>`}
   </div>`).join("");
-  const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>`;
+  const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>` +
+    (stage === "checkout" && tipValue() ? `<div class="total sub"><span>Dricks</span><b>${tipValue()} kr</b></div>
+       <div class="total"><span>Att betala</span><b>${payTotal()} kr</b></div>` : "");
 
   if (stage === "cart") {
     body.innerHTML = lines + total;
@@ -489,16 +498,21 @@ function renderDrawer() {
       <div class="field"><label for="oName">Namn${TABLE ? " (valfritt)" : ""}</label><input id="oName" name="name" autocomplete="name"></div>
       <div class="field"><label for="oPhone">Mobilnummer${TABLE ? " (valfritt)" : ""}</label><input id="oPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel">${TABLE ? "" : "<small>Vi sms:ar när maten är klar.</small>"}</div>
       <div class="field"><label for="oMail">E-post (valfritt)</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se"><small>Vi skickar en bekräftelse med hela beställningen.</small></div>
+      <div class="field"><span class="lbl">Dricks (valfritt)</span>
+        <div class="choice tips">${[0, 5, 10, 15, 20].map(v => `<label><input type="radio" name="tip" value="${v}"${tipPct === v ? " checked" : ""}>${v ? v + " %" : "Ingen"}</label>`).join("")}
+          <label><input type="radio" name="tip" value="egen"${tipPct === "egen" ? " checked" : ""}>Egen summa</label></div>
+        ${tipPct === "egen" ? `<input type="number" id="tipKr" min="0" max="2000" step="1" inputmode="numeric" placeholder="Belopp i kr" value="${tipCustom || ""}">` : ""}
+        <small id="tipInfo">${tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Tack, men ingen dricks behövs – vi blir lika glada ändå."}</small></div>
       <div class="field"><span class="lbl">Betalning</span><div class="choice">
         <label><input type="radio" name="pay" value="swish" checked>Swish</label>
         <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div>
-        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Swisha gärna direkt när beställningen är skickad – ange ditt ordernummer som meddelande.<br>Swisha gärna direkt – då kan vi fokusera på maten.</small></div>
+        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Ange ditt ordernummer som meddelande.<br>Swisha gärna direkt – då kan vi fokusera på maten.</small></div>
       <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
         <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div id="orderErr" class="err" hidden></div>
     </form>`;
-  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${cartTotal()} kr</button>
+  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr</button>
     <button class="btn ghost block" type="button" data-back>Tillbaka</button>`;
   if (!TABLE) {
     const fill = () => { $("#oTime").innerHTML = opts[$("#oDay").value].slots.map(s => `<option>${s}</option>`).join(""); };
@@ -519,16 +533,16 @@ async function submitOrder(e) {
   const payload = {
     type: TABLE ? "table-order" : "pickup-order", table: TABLE || null, name, phone,
     pickupDate: pick ? pick.date : null, pickupTime: pick ? f.time.value : null,
-    payment: f.pay.value, message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
+    payment: f.pay.value, tip: tipValue(), message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
     items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
   try {
     const r = await send(payload);
-    lastOrder = { no: r.no, total: r.total ?? cartTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
-    cart.clear(); syncCart(); stage = "done"; renderDrawer();
+    lastOrder = { no: r.no, total: r.total ?? payTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
+    cart.clear(); tipPct = 0; tipCustom = 0; syncCart(); stage = "done"; renderDrawer();
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;
-    btn.disabled = false; btn.textContent = TABLE ? "Skicka till köket" : "Skicka beställning";
+    btn.disabled = false; btn.textContent = `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
     if (/slut idag|finns inte längre/.test(ex.message)) syncAvailability();
   }
 }
@@ -583,8 +597,18 @@ document.addEventListener("click", e => {
   else if (t.dataset.q) setQty(t.dataset.q, (cart.get(t.dataset.q)?.qty || 0) + Number(t.dataset.d));
   else if (t.dataset.noteopen) { noteOpen.add(t.dataset.noteopen); renderDrawer(); $(`[data-note="${t.dataset.noteopen}"]`)?.focus(); }
 });
-document.addEventListener("input", e => { if (e.target.dataset.note) setNote(e.target.dataset.note, e.target.value); });
-document.addEventListener("change", e => { if (e.target.dataset.mxroll && mixState) mixState.maki[Number(e.target.dataset.mxroll)] = e.target.value; });
+document.addEventListener("input", e => {
+  if (e.target.dataset.note) setNote(e.target.dataset.note, e.target.value);
+  if (e.target.id === "tipKr") {                       // uppdatera utan att rita om, så fältet behåller fokus
+    tipCustom = Number(e.target.value) || 0;
+    $("#tipInfo").textContent = tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Ingen dricks.";
+    $("#orderSubmit").textContent = `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.dataset.mxroll && mixState) mixState.maki[Number(e.target.dataset.mxroll)] = e.target.value;
+  if (e.target.name === "tip") { tipPct = e.target.value === "egen" ? "egen" : Number(e.target.value); renderDrawer(); $("#tipKr")?.focus(); }
+});
 $("#mixdlg").addEventListener("click", e => { if (e.target.id === "mixdlg") closeMix(); });
 document.addEventListener("submit", e => { if (e.target.id === "orderForm") submitOrder(e); });
 $("#scrim").addEventListener("click", closeDrawer);
