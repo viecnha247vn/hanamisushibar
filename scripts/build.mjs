@@ -37,7 +37,8 @@ const tag = id =>
 const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
-  bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Lunchfat med yakitori, vårrullar, gyoza och edamame",
+  bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Nigiri, maki och uramaki på svart fat",
+  tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
   varmt: "Yakiniku: biff med ris, sallad, edamame och chilimajonnäs", poke: "Poke bowl med lax, avokado och mango"
 };

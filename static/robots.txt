@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /kok
-Disallow: /api/
-Sitemap: https://hanamisushibar.se/sitemap.xml
