@@ -492,7 +492,7 @@ function renderDrawer() {
       <div class="field"><span class="lbl">Betalning</span><div class="choice">
         <label><input type="radio" name="pay" value="swish" checked>Swish</label>
         <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div>
-        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Swisha gärna direkt när beställningen är skickad – ange ditt ordernummer som meddelande.</small></div>
+        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Swisha gärna direkt när beställningen är skickad – ange ditt ordernummer som meddelande.<br>Swisha gärna direkt – då kan vi fokusera på maten.</small></div>
       <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
         <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -551,7 +551,8 @@ async function syncAvailability() {
   if (!ENDPOINT) return;
   try {
     const r = await fetch("/api/availability"); if (!r.ok) return;
-    const { items } = await r.json();
+    const { items, leadMinutes } = await r.json();
+    if (leadMinutes) SETTINGS.pickupLeadMinutes = leadMinutes;   // köket kan höja tiden när det är fullt
     $$("[data-add]").forEach(b => {
       const id = b.dataset.add, info = items[id], row = b.closest(".item");
       const ok = !!(info && info.available);

@@ -60,11 +60,36 @@ function menuForWeb_() {
   return cats;
 }
 
+/**
+ * Förberedelsetid i minuter: hur långt fram tidigaste hämtning ligger.
+ * Köket ändrar den i köksvyn, t.ex. när det är fullt. 0 = webbplatsens standard.
+ */
+function lead_() {
+  const v = Math.round(Number(prop_('PICKUP_LEAD', '0')));
+  return v >= 5 && v <= 180 ? v : 0;
+}
+
+function setLead_(minutes) {
+  const v = Math.round(Number(minutes));
+  if (!(v >= 5 && v <= 180)) throw new ApiError(400, 'Förberedelsetiden måste vara mellan 5 och 180 minuter.');
+  PropertiesService.getScriptProperties().setProperty('PICKUP_LEAD', String(v));
+  log_('INFO', 'Förberedelsetid', v + ' min');
+  return { leadMinutes: v };
+}
+
 /** Aktuella priser och slut-status – hämtas av webbsidan vid varje besök (cachas 60 s hos Vercel). */
 function availability_() {
   const out = {};
   readMenuRows_().forEach(i => { out[i.id] = { price: i.price, available: i.visible && !i.soldOut }; });
   return out;
+}
+
+/** Klockslag "HH:MM" till minuter, och dagens datum/minut i restaurangens tidszon. */
+function toMin_(t) { const m = /^(\d{1,2}):(\d{2})$/.exec(String(t || '')); return m ? Number(m[1]) * 60 + Number(m[2]) : NaN; }
+function nowParts_() {
+  const d = new Date();
+  return { date: Utilities.formatDate(d, APP.TZ, 'yyyy-MM-dd'),
+           minutes: Number(Utilities.formatDate(d, APP.TZ, 'HH')) * 60 + Number(Utilities.formatDate(d, APP.TZ, 'mm')) };
 }
 
 function menuForKitchen_() {

@@ -25,6 +25,13 @@ function createOrder_(p) {
   });
   const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
   const isTable = p.kind === 'table';
+
+  // Köket kan höja förberedelsetiden i köksvyn – kontrolleras här, där värdet bor
+  if (!isTable) {
+    const lead = lead_(), nowP = nowParts_(), m = toMin_(p.pickupTime);
+    if (lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
+      throw new ApiError(400, 'Köket behöver ' + lead + ' minuter just nu. Välj en senare hämtningstid.');
+  }
   const no = nextNumber_('H');
 
   appendObject_(sheet_(SHEET.ORDERS), {
@@ -44,6 +51,7 @@ function createOrder_(p) {
     'Status': 'Ny',
     'Bekräftelse': '',
     'Utskriven': '',
+    'Betald': '',
     'Rader (data)': JSON.stringify(lines)
   });
 
@@ -96,7 +104,7 @@ function listOrders_(date) {
       name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-      message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven']
+      message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven'], paid: !!r['Betald']
     }))
     .reverse();
 }
@@ -128,7 +136,7 @@ function printQueue_() {
       name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-      message: r['Kommentar']
+      message: r['Kommentar'], paid: !!r['Betald']
     }));
 }
 
@@ -145,7 +153,7 @@ function printJob_(no) {
     name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
     items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
     total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-    message: r['Kommentar'], status: r['Status']
+    message: r['Kommentar'], status: r['Status'], paid: !!r['Betald']
   };
 }
 
@@ -155,6 +163,14 @@ function markPrinted_(no, printed) {
   if (!row) throw new ApiError(404, 'Hittar inte ' + no + '.');
   sh.getRange(row, colMap_(sh)['Utskriven']).setValue(printed ? now_('HH:mm') : '');
   return no;
+}
+
+/** Markerar en beställning som betald (eller tar bort markeringen). Köket ser det i köksvyn och på kvittot. */
+function setPaid_(no, paid) {
+  const sh = sheet_(SHEET.ORDERS);
+  if (!findRow_(sh, 'Ordernr', no)) throw new ApiError(404, 'Hittar inte ' + no + '.');
+  setCell_(SHEET.ORDERS, 'Ordernr', no, 'Betald', paid ? now_('HH:mm') : '');
+  return { no: no, paid: !!paid };
 }
 
 function safeJson_(s) { try { return JSON.parse(s); } catch (e) { return null; } }

@@ -115,4 +115,30 @@ test("byte i sushimix: tillägg läggs på arkets pris och valen följer med til
   assert.match(row[10], /Maki: 5 California · extra ingefära/);
   assert.equal(E.call("order", { kind: "table", table: "2", items: [{ id: "sushi-4", qty: 1, extra: -10 }] }).status, 400);
 });
+test("köket kan höja förberedelsetiden och för tidiga hämtningar nekas", () => {
+  assert.equal(E.call("adminSettings").leadMinutes, 0);
+  E.call("adminLead", { minutes: 90 });
+  assert.equal(E.call("adminSettings").leadMinutes, 90);
+  assert.equal(E.call("availability").leadMinutes, 90);
+  const nowMin = Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "HH")) * 60 +
+                 Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "mm"));
+  const soon = pad2(Math.floor(((nowMin + 20) % 1440) / 60)) + ":" + pad2((nowMin + 20) % 60);
+  const r = E.call("order", { kind: "pickup", name: "Anna", phone: "+46701234567", pickupDate: today, pickupTime: soon,
+    whenText: "idag", items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(r.status, 400);
+  assert.match(r.error, /90 minuter/);
+  assert.equal(E.call("adminLead", { minutes: 2 }).status, 400);
+  E.call("adminLead", { minutes: 15 });
+});
+function pad2(n) { return String(n).padStart(2, "0"); }
+test("betald-markering sparas och följer med till kvittot", () => {
+  const o = E.call("order", { kind: "table", table: "5", items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(E.call("printJob", { no: o.no }).job.paid, false);
+  E.call("adminPaid", { no: o.no, paid: true });
+  assert.equal(E.call("printJob", { no: o.no }).job.paid, true);
+  assert.equal(E.call("adminOrders", { date: today }).orders.find(x => x.no === o.no).paid, true);
+  E.call("adminPaid", { no: o.no, paid: false });
+  assert.equal(E.call("printJob", { no: o.no }).job.paid, false);
+  assert.equal(E.call("adminPaid", { no: "H0", paid: true }).status, 404);
+});
 console.log(`\n${passed} tester OK`);

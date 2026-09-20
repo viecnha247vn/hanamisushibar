@@ -27,6 +27,9 @@ header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
 .tabs .badge{display:inline-grid;place-items:center;min-width:22px;height:22px;margin-left:6px;border-radius:999px;background:var(--warn);color:var(--ink);font-size:12px;padding:0 6px}
 .tabs .badge:empty{display:none}
 main{padding:14px}
+.tools .lead{display:inline-flex;align-items:center;gap:.5rem;margin-left:auto}
+.tools .lead span{font-size:13px;color:#4C5B6B}
+.tools .leadmsg{font-size:13px;color:#2F8F5B}
 .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .tools input,.tools select{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:42px}
 .btn{padding:10px 16px;border-radius:999px;border:1.5px solid var(--ink);background:#fff;font-weight:600;min-height:42px}
@@ -48,6 +51,7 @@ main{padding:14px}
 .meta{font-size:14px;color:var(--ink-2)}
 ul{margin:2px 0;padding:0;list-style:none;font-size:18px;line-height:1.45}
 ul li b{display:inline-block;min-width:2.2ch}
+.paid{margin-left:.5rem;padding:2px 8px;border-radius:999px;background:#D6F5DD;color:#1F6B42;font-size:12px;font-weight:600}
 .note{background:#FFF3C4;padding:6px 10px;border-radius:8px}
 .inote{margin:2px 0 6px 2.2ch;padding:3px 8px;background:#FFF3C4;border-radius:6px;font-size:15px;color:#7A5E24}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
@@ -127,6 +131,10 @@ ul li b{display:inline-block;min-width:2.2ch}
         <option value="table">Bara bord</option>
       </select>
       <button class="btn" type="button" id="oReload">Uppdatera</button>
+      <label class="lead"><span>Förberedelsetid</span>
+        <select id="oLead" aria-label="Förberedelsetid för hämtning"></select>
+      </label>
+      <span class="leadmsg" id="oLeadMsg" role="status"></span>
     </div>
     <div class="grid" id="orders"></div>
     <div class="empty" id="oEmpty" hidden>Inga beställningar att visa.</div>
@@ -249,7 +257,7 @@ function orderCard(o, fresh){
   const done = DONE.includes(o.status);
   return `<article class="card ${esc(o.status)} ${done ? "done" : ""} ${fresh ? "fresh" : ""}">
     <div class="top"><span class="no">${esc(o.no)}</span><span class="big">${esc(o.kind === "table" ? o.receivedTime : o.pickupTime)}</span></div>
-    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span></div>
+    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span>${o.paid ? `<span class="paid">Betald</span>` : ""}</div>
     <ul>${o.items.map(i => `<li>${i.qty ? `<b>${i.qty}</b> × ` : ""}${esc(i.name)}${i.note ? `<div class="inote">↳ ${esc(i.note)}</div>` : ""}</li>`).join("")}</ul>
     ${o.message ? `<div class="note">${esc(o.message)}</div>` : ""}
     <div class="meta">${[o.name && esc(o.name), o.phone && `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`, esc(o.payment), `<b>${o.total} kr</b>`,
@@ -257,6 +265,7 @@ function orderCard(o, fresh){
     ${done ? "" : `<div class="acts">
       ${nextSteps(o).map(s => `<button class="btn ${s === "Klar" ? "ok" : "p"}" type="button" data-o="${esc(o.no)}" data-s="${s}">${s === "Tillagas" ? "Börja tillaga" : s === "Klar" ? "Klar" : s}</button>`).join("")}
       <button class="btn" type="button" data-o="${esc(o.no)}" data-s="Avbokad" data-confirm="Avboka ${esc(o.no)}?">Avboka</button>
+      <button class="btn ${o.paid ? "ok" : ""}" type="button" data-paid="${esc(o.no)}" data-val="${o.paid ? "0" : "1"}">${o.paid ? "Betald ✓" : "Markera betald"}</button>
       <button class="btn" type="button" data-reprint="${esc(o.no)}" title="Skriv ut igen" aria-label="Skriv ut ${esc(o.no)} igen" style="flex:0 0 auto">🖨</button></div>`}
   </article>`;
 }
@@ -305,6 +314,15 @@ document.addEventListener("click", async e => {
   } catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
 });
 
+/* Betald: köket bockar av när pengarna kommit in (Swish-appen eller kassan).
+   Markeringen syns på kvittot – skriv ut igen med 🖨 om chefen vill ha det på papper. */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-paid]"); if (!b) return;
+  b.disabled = true;
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "paid", no: b.dataset.paid, paid: b.dataset.val === "1" }) }); loadOrders(); }
+  catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
+});
+
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-reprint]"); if (!b) return;
   b.disabled = true;
@@ -339,6 +357,23 @@ document.addEventListener("click", async e => {
   catch (err) { item.soldOut = !soldOut; renderMenu(); if (err.message !== "401") alert(err.message); }
 });
 
+/* ---------- förberedelsetid ---------- */
+/* Gäller tidigaste hämtningstid på webbplatsen. Gästernas sida hämtar värdet var annan minut. */
+function fillLead() {
+  const sel = $("#oLead"); sel.innerHTML = "";
+  for (let m = 15; m <= 120; m += 5) sel.insertAdjacentHTML("beforeend", `<option value="${m}">${m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ""}`.trim()}</option>`);
+}
+async function loadLead() {
+  try { const d = await api("?view=settings"); if (d.leadMinutes) $("#oLead").value = d.leadMinutes; } catch {}
+}
+async function saveLead() {
+  const m = Number($("#oLead").value), msg = $("#oLeadMsg");
+  msg.textContent = "Sparar …";
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "lead", minutes: m }) }); msg.textContent = `Sparat · tidigast om ${m} min`; }
+  catch (e) { msg.textContent = e.message; }
+  setTimeout(() => { msg.textContent = ""; }, 6000);
+}
+
 /* ---------- QR ---------- */
 function makeQr(){
   const n = Math.min(60, Math.max(1, +$("#qCount").value || CFG.tableCount));
@@ -353,11 +388,12 @@ function makeQr(){
 $("#qMake").onclick = makeQr;
 
 /* ---------- start ---------- */
+fillLead(); $("#oLead").onchange = saveLead;
 $("#oDate").value = $("#bFrom").value = today();
 $("#qCount").value = CFG.tableCount;
 $("#oDate").onchange = $("#oFilter").onchange = $("#oReload").onclick = loadOrders;
 $("#bFrom").onchange = $("#bReload").onclick = loadBookings;
-if (key) showApp(); else logout();
+if (key) { showApp(); loadLead(); } else logout();
 setInterval(() => { if (key && !document.hidden) { loadOrders(); if (tab === "bookings") loadBookings(); } }, 20000);
 setInterval(() => { if (key && !document.hidden) loadBookings(); }, 120000);
 </script>

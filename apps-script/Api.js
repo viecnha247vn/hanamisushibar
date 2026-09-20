@@ -29,7 +29,7 @@ function doGet() {
 const ACTIONS = {
   health:        () => ({ sheet: SpreadsheetApp.getActive().getName(), time: now_(), sms: !!prop_('ELKS_USER'), email: !!prop_('NOTIFY_EMAIL') }),
   menu:          () => ({ menu: menuForWeb_() }),
-  availability:  () => ({ items: availability_() }),
+  availability:  () => ({ items: availability_(), leadMinutes: lead_() }),
   order:         p => withLock_(() => createOrder_(p)),
   booking:       p => withLock_(() => createBooking_(p)),
   adminOrders:   p => ({ orders: listOrders_(p.date), sheetUrl: SpreadsheetApp.getActive().getUrl() }),
@@ -37,6 +37,9 @@ const ACTIONS = {
   adminStatus:   p => withLock_(() => setStatus_(p.kind, p.no, p.status)),
   adminMenu:     () => ({ menu: menuForKitchen_() }),
   adminSoldOut:  p => withLock_(() => setSoldOut_(p.id, !!p.soldOut)),
+  adminLead:     p => withLock_(() => setLead_(p.minutes)),
+  adminPaid:     p => withLock_(() => setPaid_(p.no, !!p.paid)),
+  adminSettings: () => ({ leadMinutes: lead_() }),
   // skrivarbryggan (print-bridge/)
   printQueue:    () => ({ jobs: printQueue_() }),
   printJob:      p => ({ job: printJob_(p.no) }),
