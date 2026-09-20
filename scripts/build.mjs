@@ -43,7 +43,7 @@ const IMG_ALT = {
   happy: "Sushifat med nigiri, maki och uramaki på mörkt träbräde",
   tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
-  varmt: "Kycklingspett med ris, sallad och sesam", poke: "Poke bowl med lax, avokado och mango"
+  varmt: "Kycklingspett med ris, sallad och sesam", poke: "Poke bowl med lax, avokado, wakame och edamame"
 };
 const hasImg = id => existsSync(`static/bilder/${id}-l.webp`);
 const banner = c => hasImg(c.id) ? `
