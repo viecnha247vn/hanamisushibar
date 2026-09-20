@@ -38,6 +38,7 @@ const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
   bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Nigiri, maki och uramaki på svart fat",
+  happy: "Sushifat med nigiri, maki och uramaki på mörkt träbräde",
   tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
   varmt: "Yakiniku: biff med ris, sallad, edamame och chilimajonnäs", poke: "Poke bowl med lax, avokado och mango"
@@ -56,7 +57,7 @@ const chips = menu.map(c => `<a href="#cat-${c.id}" data-id="${c.id}">${esc(c.na
 const menuHtml = menu.map((c, n) => `
 <section class="cat${c.id === "happy" ? " hh" : ""}" id="cat-${c.id}" aria-labelledby="h-${c.id}">${c.id === "happy" ? `
   <svg class="branch hh-branch" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>` : ""}
-  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}">${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
+  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}"${c.id === "happy" ? ` class="hh-title" data-text="${esc(c.name)}"` : ""}>${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
   <div class="items">
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
@@ -157,7 +158,7 @@ const vars = {
 const fill = html => html.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in vars ? vars[k] : m));
 
 const fonts = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">`;
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">`;
 const head = (path) => `<meta name="theme-color" content="#FCF9F8">
 <meta name="color-scheme" content="light">
 <link rel="icon" type="image/png" href="/favicon.png">
