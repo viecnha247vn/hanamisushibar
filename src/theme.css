@@ -148,7 +148,16 @@ section.band{background:linear-gradient(180deg,#FBEEF2,#F7E4EA);border-block:1px
 .ftr .base{margin-top:3rem;padding-top:1.4rem;padding-bottom:84px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;text-align:center;gap:.5rem;font-size:.82rem;color:rgba(234,241,248,.6);position:relative;z-index:1}
 .ftr .base a{color:rgba(234,241,248,.85)}
 @media (max-width:900px){.ftr .cols{grid-template-columns:1fr 1fr}}
-@media (max-width:520px){.ftr .cols{grid-template-columns:1fr}}
+/* mobil: logga + rad överst, sedan länkarna i två spalter – kortare sidfot */
+@media (max-width:520px){
+  .ftr{padding-top:clamp(40px,7vw,64px)}
+  .ftr .cols{grid-template-columns:1fr 1fr;gap:1.7rem 1.2rem}
+  .ftr .cols>:first-child{grid-column:1/-1}
+  .ftr .cols>:last-child{grid-column:1/-1}
+  .ftr .cols>:last-child ul{grid-template-columns:1fr 1fr;gap:.45rem 1.2rem}
+  .ftr .tag{margin-top:.6rem;font-size:1.05rem;max-width:34ch}
+  .ftr .base{margin-top:2rem}
+}
 
 /* ---------- flytande knapp + dialog ---------- */
 .fab{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:calc(18px + env(safe-area-inset-bottom));z-index:35;overflow:hidden;display:inline-flex;align-items:center;gap:.6rem;padding:1rem 1.5rem;border:0;border-radius:999px;background:linear-gradient(120deg,#A88437,#E5CF98 45%,#C9A96A 70%,#9A7732);color:#2A1E08;font:600 12.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;box-shadow:0 12px 30px rgba(122,94,36,.3),0 0 0 1px rgba(255,255,255,.35) inset;transition:transform .3s var(--ease),opacity .3s}
