@@ -5,8 +5,8 @@ let passed = 0; const test = (n, f) => { f(); passed++; console.log("  ✓ " + n
 console.log("Sushimix");
 test("utan val blir det vanligt pris", () => assert.deepEqual(mixPrice("sushi-3", null), { extra: 0, swaps: 0, detail: "" }));
 test("byte av maki är gratis", () => {
-  const r = mixPrice("sushi-5", { maki: ["California", ""] });
-  assert.equal(r.extra, 0); assert.equal(r.detail, "Maki: 5 California + 5 kockens val");
+  const r = mixPrice("sushi-9", { maki: ["California"] });
+  assert.equal(r.extra, 0); assert.equal(r.detail, "Maki: 5 California");
 });
 test("4 nigiribyten ingår", () => {
   const r = mixPrice("sushi-4", { maki: [""], nigiri: { tonfisk: 5, avokado: 2, krabbstick: 2, lax: 1 } });
@@ -26,5 +26,16 @@ test("fel antal eller okända val nekas", () => {
   assert.throws(() => mixPrice("sushi-3", { maki: ["", ""] }), /maki/);
   assert.throws(() => mixPrice("sushi-3", { nigiri: { hummer: 7 } }), /nigiri/);
   assert.throws(() => mixPrice("happy-1", { maki: [""] }), /kan inte ändras/);
+});
+test("stora mixar: nigiri kan bytas men inte makin", () => {
+  assert.equal(mixPrice("sushi-8", { maki: [], nigiri: { lax: 13, "jätteräka": 4, krabbstick: 2, tonfisk: 1 } }).extra, 0);
+  assert.equal(mixPrice("sushi-6", { nigiri: { lax: 3, "jätteräka": 2, krabbstick: 2, tonfisk: 3 } }).swaps, 2);
+  assert.throws(() => mixPrice("sushi-5", { maki: ["California", ""] }), /kockens val/);
+});
+test("vegan mix: bara vegetariska bitar", () => {
+  assert.equal(mixPrice("sushi-10", { nigiri: { gurka: 4, avokado: 1, tofu: 1 } }).extra, 0);
+  assert.equal(mixPrice("sushi-10", { nigiri: { gurka: 5, wakame: 1 } }).extra, 20);
+  assert.throws(() => mixPrice("sushi-10", { nigiri: { lax: 6 } }), /nigiri/);
+  assert.throws(() => mixPrice("sushi-3", { nigiri: { gurka: 7 } }), /nigiri/);
 });
 console.log(`${passed} tester OK`);
