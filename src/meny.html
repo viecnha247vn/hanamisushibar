@@ -90,7 +90,7 @@
 .cat.hh.locked .item .add{opacity:.35;cursor:not-allowed;pointer-events:none}
 .cat.hh.locked .item .add:hover{background:transparent;color:var(--koi)}
 @media (max-width:760px){.cat.hh{padding:22px 18px;margin-left:calc(var(--pad) * -.4);margin-right:calc(var(--pad) * -.4)}}
-@media (prefers-reduced-motion:reduce){.cat.hh .hh-branch{width:min(420px,70%);right:-110px;bottom:-60px;--r:-8deg;--ox:100%;--oy:100%;--dur:17s;opacity:.24;z-index:-1}}
+@media (prefers-reduced-motion:reduce){.cat.hh .hh-branch{animation:none}}
 
 
 /* ---------- beställningsrad ---------- */
@@ -124,6 +124,38 @@
 .line .note input{width:100%;min-height:42px;padding:.55rem .75rem;border:1px solid var(--line-2);border-radius:2px;background:#fff;font-size:.95rem}
 .line .note input:focus{outline:none;border-color:var(--koi);box-shadow:0 0 0 3px rgba(24,115,188,.12)}
 .line .note small{display:block;color:var(--ink-3);font-size:.78rem;margin-top:.3rem}
+.line .dt{grid-column:1/-1;font-size:.86rem;line-height:1.45;color:var(--ink-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
+.line .dt b{font-weight:500;color:var(--gold-deep)}
+.item .mx{grid-column:1;margin-top:.15rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--koi)}
+/* val i sushimix */
+.mixwrap{position:fixed;inset:0;z-index:55;display:grid;place-items:center;padding:16px;background:rgba(15,61,110,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s}
+.mixwrap.show{opacity:1}
+.mixbox{width:min(560px,100%);max-height:min(88vh,880px);display:flex;flex-direction:column;background:var(--bg);border:1px solid rgba(184,146,63,.45);border-radius:6px;box-shadow:0 30px 70px rgba(27,42,58,.35);transform:translateY(14px);transition:transform .3s var(--ease)}
+.mixwrap.show .mixbox{transform:none}
+.mixbox header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:1.2rem 1.4rem 1rem;border-bottom:1px solid var(--line)}
+.mixbox header .x{position:static;flex:none}
+.mixbox h2{margin:0;font:500 1.55rem/1.15 var(--serif);color:var(--ink)}
+.mixbox header p{margin:.3rem 0 0;color:var(--ink-3);font-size:.9rem}
+.mixbox .mbody{overflow:auto;overscroll-behavior:contain;padding:1.1rem 1.4rem .4rem}
+.mixbox .mfoot{padding:1rem 1.4rem calc(1rem + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.mx-sec{border:0;margin:0 0 1.5rem;padding:0;min-width:0}
+.mx-sec legend{display:flex;flex-wrap:wrap;gap:.3rem .6rem;align-items:baseline;padding:0;margin-bottom:.75rem;font:500 11px/1.3 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
+.mx-sec legend small{letter-spacing:.02em;text-transform:none;color:var(--ink-3);font-size:.86rem}
+.mx-chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.mx-chips label{position:relative;display:inline-flex;align-items:center;padding:.55rem .9rem;border:1px solid var(--line-2);border-radius:999px;background:#fff;font-size:.92rem;cursor:pointer;transition:border-color .2s,background .2s}
+.mx-chips input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.mx-chips label:has(input:checked){border-color:var(--koi);background:rgba(24,115,188,.08);color:var(--koi-deep);font-weight:500}
+.mx-chips label:has(input:focus-visible){outline:2px solid var(--koi);outline-offset:2px}
+.mx-rule{margin:0 0 .5rem;color:var(--ink-3);font-size:.88rem;line-height:1.5}
+.mx-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.4rem 0;border-bottom:1px solid var(--line)}
+.mx-row>span:first-child{color:var(--ink-3)}
+.mx-row.on>span:first-child{color:var(--ink);font-weight:500}
+.mx-row .qty button:disabled{opacity:.3;cursor:not-allowed}
+.mx-row .qty button:disabled:hover{border-color:var(--line-2);color:var(--ink)}
+.mx-state{margin:.9rem 0 0;padding:.55rem .75rem;border-radius:2px;background:var(--sakura-3);font-weight:500;font-size:.92rem;color:var(--ink-2)}
+.mx-state.paid{color:var(--gold-deep)}
+.mx-state.todo{background:#FFF3C4;color:#7A5E24}
+@media (max-width:600px){.mixwrap{place-items:end stretch;padding:0}.mixbox{max-height:92vh;border-radius:14px 14px 0 0;border-width:1px 0 0}.mixwrap .mixbox{transform:translateY(40px)}.mixwrap.show .mixbox{transform:none}}
 .line .has{grid-column:1/-1;margin-top:.45rem;font-size:.88rem;color:var(--gold-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .total{display:flex;justify-content:space-between;align-items:baseline;padding:1.4rem 0 1.2rem;font:400 1.6rem/1 var(--serif)}
 .total b{font-weight:400;color:var(--koi-deep)}
@@ -187,8 +219,17 @@
   <div class="foot" id="drawerFoot"></div>
 </aside>
 
+<div class="mixwrap" id="mixdlg" hidden>
+  <div class="mixbox" role="dialog" aria-modal="true" aria-labelledby="mixTitle">
+    <header><div><h2 id="mixTitle"></h2><p id="mixSub"></p></div><button class="x" type="button" data-mixclose aria-label="Stäng"><svg width="14" height="14"><use href="#i-x"/></svg></button></header>
+    <div class="mbody" id="mixBody"></div>
+    <div class="mfoot"><button class="btn gold block" type="button" id="mixOk"></button></div>
+  </div>
+</div>
+
 <script>
 <!--COMMON_JS-->
+<!--MIX_JS-->
 
 /* ================= menysidan ================= */
 const ITEMS = {};
@@ -235,13 +276,16 @@ function initSearch() {
 }
 
 /* ---------- varukorg ---------- */
+/* cart: radnyckel -> { id, sig, qty, note, opts, extra, detail }
+   Vanliga rätter har rätt-id som nyckel. En sushimix med egna val får en egen rad per kombination. */
 const cart = new Map();
 const noteOpen = new Set();
-let stage = "cart", lastOrder = null;
-const cartTotal = () => [...cart].reduce((s, [id, c]) => s + ITEMS[id].price * c.qty, 0);
+let stage = "cart", lastOrder = null, lineSeq = 0;
+const unitPrice = c => ITEMS[c.id].price + (c.extra || 0);
+const cartTotal = () => [...cart.values()].reduce((s, c) => s + unitPrice(c) * c.qty, 0);
 const cartQty = () => [...cart.values()].reduce((a, c) => a + c.qty, 0);
-
-/* cart: id -> { qty, note } */
+const cartHas = test => [...cart.values()].some(c => test(c.id));
+function dropId(id) { for (const [k, c] of cart) if (c.id === id) { cart.delete(k); noteOpen.delete(k); } }
 /* Happy hour-rätter kan bara läggas till och beställas medan happy hour pågår (samma regel kontrolleras på servern) */
 const isHappy = id => id.startsWith("happy-");
 function happyNow() { const { h, open } = nowInfo(); return open && h >= SETTINGS.happyHour.from && h < SETTINGS.happyHour.to; }
@@ -252,18 +296,78 @@ function syncHappy() {
   $$("#cat-happy [data-add]").forEach(b => { b.disabled = !on; b.title = on ? "" : `Kan beställas ${t}`; });
   if (st) { st.classList.toggle("on", on); st.textContent = on ? `Pågår nu – beställ före ${pad(hh.to)}:00` : `Kan bara beställas under happy hour, ${t}, de dagar vi har öppet.`; }
   if (!on) {
-    const gone = [...cart.keys()].filter(isHappy);
-    if (gone.length) { gone.forEach(id => { cart.delete(id); noteOpen.delete(id); }); syncCart(); toast("Happy hour är slut – rätterna togs bort ur varukorgen"); if (!$("#drawer").hidden) { if (!cart.size) stage = "cart"; renderDrawer(); } }
+    const gone = [...new Set([...cart.values()].map(c => c.id).filter(isHappy))];
+    if (gone.length) { gone.forEach(dropId); syncCart(); toast("Happy hour är slut – rätterna togs bort ur varukorgen"); if (!$("#drawer").hidden) { if (!cart.size) stage = "cart"; renderDrawer(); } }
   }
   return on;
 }
-function add(id) { if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${pad(SETTINGS.happyHour.from)}:00–${pad(SETTINGS.happyHour.to)}:00`); return; } const c = cart.get(id); cart.set(id, { qty: (c ? c.qty : 0) + 1, note: c ? c.note : "" }); syncCart(); toast(`Tillagd · ${ITEMS[id].name}`); }
-function setQty(id, q) {
-  const c = cart.get(id) || { qty: 0, note: "" };
-  q <= 0 ? cart.delete(id) : cart.set(id, { qty: q, note: c.note });
+function add(id) {
+  if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${pad(SETTINGS.happyHour.from)}:00–${pad(SETTINGS.happyHour.to)}:00`); return; }
+  if (MIX.items[id]) return openMix(id);
+  addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}`);
+}
+function addLine(id, opts, qty = 1, note = "") {
+  const m = mixPrice(id, opts);
+  if (!m.detail) opts = null;                       // inga ändringar = vanlig rad
+  const sig = opts ? JSON.stringify(opts) : "";
+  for (const [k, c] of cart) if (c.id === id && c.sig === sig) { c.qty += qty; if (note && !c.note) c.note = note; syncCart(); return k; }
+  const k = sig ? `${id}~${++lineSeq}` : id;
+  cart.set(k, { id, sig, qty, note, opts, extra: m.extra, detail: m.detail });
+  syncCart(); return k;
+}
+function setQty(k, q) {
+  const c = cart.get(k); if (!c) return;
+  if (q <= 0) { cart.delete(k); noteOpen.delete(k); } else c.qty = q;
   syncCart(); if (!cart.size) stage = "cart"; renderDrawer();
 }
-function setNote(id, note) { const c = cart.get(id); if (c) cart.set(id, { qty: c.qty, note: note.slice(0, 120) }); }
+function setNote(k, note) { const c = cart.get(k); if (c) c.note = note.slice(0, 120); }
+
+/* ---------- val i sushimix: maki gratis, nigiri 4 byten ingår ---------- */
+let mixState = null;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const mixNeed = id => Object.values(MIX.items[id].nigiri).reduce((a, b) => a + b, 0);
+function mixOpts() { const s = mixState, nigiri = {}; MIX.nigiri.forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
+function openMix(id, key = null) {
+  const cfg = MIX.items[id], o = key && cart.get(key)?.opts;
+  mixState = { id, key, maki: o ? [...o.maki] : Array(cfg.maki / MIX.makiPerRoll).fill(""), nigiri: { ...(o ? o.nigiri : cfg.nigiri) } };
+  $("#mixTitle").textContent = ITEMS[id].name;
+  $("#mixSub").textContent = `${kr(ITEMS[id].price)} · ${mixNeed(id)} nigiri och ${cfg.maki} maki`;
+  renderMix();
+  const w = $("#mixdlg"); w.hidden = false; requestAnimationFrame(() => w.classList.add("show"));
+  document.body.classList.add("no-scroll");
+  $("#mixdlg [data-mixclose]").focus();
+}
+function closeMix() {
+  const w = $("#mixdlg"); w.classList.remove("show");
+  setTimeout(() => { w.hidden = true; }, 250);
+  if ($("#drawer").hidden) document.body.classList.remove("no-scroll");
+  mixState = null;
+}
+function renderMix() {
+  const s = mixState, cfg = MIX.items[s.id], need = mixNeed(s.id);
+  const have = MIX.nigiri.reduce((a, k) => a + (s.nigiri[k] || 0), 0);
+  const swaps = MIX.nigiri.reduce((a, k) => a + Math.max(0, (s.nigiri[k] || 0) - (cfg.nigiri[k] || 0)), 0);
+  const extra = Math.max(0, swaps - MIX.freeSwaps) * MIX.extraPerSwap;
+  const rolls = s.maki.map((m, i) => `<fieldset class="mx-sec"><legend>${s.maki.length > 1 ? `Maki, rulle ${i + 1}` : "Maki"}<small>${MIX.makiPerRoll} bitar · byte ingår</small></legend>
+    <div class="mx-chips">${["", ...MIX.maki].map(v => `<label><input type="radio" name="mx${i}" value="${esc(v)}" data-mxroll="${i}"${v === m ? " checked" : ""}>${v ? esc(v) : "Kockens val"}</label>`).join("")}</div></fieldset>`).join("");
+  const rows = MIX.nigiri.map(k => { const n = s.nigiri[k] || 0; return `<div class="mx-row${n ? " on" : ""}"><span>${cap(k)}</span>
+    <span class="qty"><button type="button" data-mxn="${k}" data-d="-1" aria-label="En ${k} mindre"${n ? "" : " disabled"}>−</button><span>${n}</span><button type="button" data-mxn="${k}" data-d="1" aria-label="En ${k} till"${have < need ? "" : " disabled"}>+</button></span></div>`; }).join("");
+  const state = have < need ? `Välj ${need - have} ${need - have === 1 ? "bit" : "bitar"} till`
+    : swaps ? `${swaps} ${swaps === 1 ? "byte" : "byten"} · ${extra ? `tillägg +${extra} kr` : "ingår i priset"}` : "Som på menyn";
+  $("#mixBody").innerHTML = rolls + `<fieldset class="mx-sec"><legend>Nigiri<small>${have} av ${need} bitar</small></legend>
+    <p class="mx-rule">Ta bort en bit med − och välj en annan med +. ${MIX.freeSwaps} byten ingår, därefter +${MIX.extraPerSwap} kr per bytt bit.</p>
+    ${rows}<p class="mx-state${have < need ? " todo" : extra ? " paid" : ""}" role="status">${state}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = have !== need;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + extra} kr`;
+}
+function saveMix() {
+  const s = mixState; if (!s) return;
+  let opts; try { opts = mixOpts(); mixPrice(s.id, opts); } catch (e) { toast(e.message); return; }
+  if (s.key) { const old = cart.get(s.key); cart.delete(s.key); noteOpen.delete(s.key); addLine(s.id, opts, old ? old.qty : 1, old ? old.note : ""); renderDrawer(); }
+  else { addLine(s.id, opts); toast(`Tillagd · ${ITEMS[s.id].name}`); }
+  closeMix();
+}
 
 function syncCart() {
   const n = cartQty();
@@ -272,10 +376,12 @@ function syncCart() {
   $("#obTotal").textContent = `${cartTotal()} kr`;
   $("#obar").classList.toggle("on", n > 0);
   $("#fab")?.classList.toggle("off", n > 0);
+  const per = {};
+  cart.forEach(c => { per[c.id] = (per[c.id] || 0) + c.qty; });
   $$("[data-add]").forEach(b => {
-    const c = cart.get(b.dataset.add);
-    b.classList.toggle("in", !!c);
-    b.innerHTML = c ? `<span class="q">${c.qty}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
+    const q = per[b.dataset.add];
+    b.classList.toggle("in", !!q);
+    b.innerHTML = q ? `<span class="q">${q}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
   });
 }
 
@@ -291,7 +397,7 @@ function pickupOptions() {
     for (let t = new Date(start); t <= end; t.setMinutes(t.getMinutes() + 15)) slots.push(`${pad(t.getHours())}:${pad(t.getMinutes())}`);
     const label = i === 0 ? "Idag" : i === 1 ? "Imorgon" : dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1) + ` ${d.getDate()}/${d.getMonth() + 1}`;
     if (slots.length) opts.push({ label, date: isoDate(d), slots });
-    if ([...cart.keys()].some(isHappy)) break;   // happy hour hämtas samma dag
+    if (cartHas(isHappy)) break;   // happy hour hämtas samma dag
   }
   return opts;
 }
@@ -316,13 +422,15 @@ function renderDrawer() {
     foot.innerHTML = `<button class="btn gold block" type="button" data-close>Till menyn</button>`;
     return;
   }
-  const lines = [...cart].map(([id, c]) => `<div class="line"><span class="nm">${esc(ITEMS[id].name)}</span><span class="pr">${ITEMS[id].price * c.qty} kr</span>
-    <span class="qty"><button type="button" data-q="${id}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${id}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${id}" data-d="-99">Ta bort</button></span>
-    ${noteOpen.has(id) || c.note
-      ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[id].name)}</span>
-           <input type="text" maxlength="120" data-note="${id}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
+  const lines = [...cart].map(([k, c]) => `<div class="line"><span class="nm">${esc(ITEMS[c.id].name)}</span><span class="pr">${unitPrice(c) * c.qty} kr</span>
+    ${c.detail ? `<span class="dt">${esc(c.detail)}${c.extra ? ` <b>+${c.extra} kr</b>` : ""}</span>` : ""}
+    <span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>
+    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${c.detail ? "Ändra maki och nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
+    ${noteOpen.has(k) || c.note
+      ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
+           <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
            <small>Allergi? Skriv det här och i meddelandet till köket.</small></label>`
-      : `<button class="notebtn" type="button" data-noteopen="${id}">+ Önskemål för den här rätten</button>`}
+      : `<button class="notebtn" type="button" data-noteopen="${k}">+ Önskemål för den här rätten</button>`}
   </div>`).join("");
   const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>`;
 
@@ -361,7 +469,7 @@ async function submitOrder(e) {
   const f = e.target, err = $("#orderErr"), btn = $("#orderSubmit");
   const name = f.name.value.trim(), phone = f.phone.value.trim();
   if (!TABLE && (name.length < 2 || phone.replace(/\D/g, "").length < 8)) { err.textContent = "Fyll i namn och mobilnummer så vi kan nå dig."; err.hidden = false; return; }
-  if ([...cart.keys()].some(isHappy) && !syncHappy()) { err.textContent = "Happy hour är slut. Rätterna har tagits bort – kontrollera beställningen."; err.hidden = false; return; }
+  if (cartHas(isHappy) && !syncHappy()) { err.textContent = "Happy hour är slut. Rätterna har tagits bort – kontrollera beställningen."; err.hidden = false; return; }
   err.hidden = true; btn.disabled = true; btn.textContent = "Skickar …";
   const opts = TABLE ? null : pickupOptions();
   const pick = opts && opts[f.day.value];
@@ -369,7 +477,7 @@ async function submitOrder(e) {
     type: TABLE ? "table-order" : "pickup-order", table: TABLE || null, name, phone,
     pickupDate: pick ? pick.date : null, pickupTime: pick ? f.time.value : null,
     payment: f.pay.value, message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
-    items: [...cart].map(([id, c]) => ({ id, qty: c.qty, note: c.note }))
+    items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
   try {
     const r = await send(payload);
@@ -409,7 +517,7 @@ async function syncAvailability() {
       if (!ok && !tag) { tag = document.createElement("span"); tag.className = "out"; tag.textContent = "Slut idag"; row.append(tag); }
       if (ok && tag) tag.remove();
       if (info && info.price !== ITEMS[id].price) { ITEMS[id].price = info.price; b.dataset.price = info.price; row.querySelector(".pr").textContent = kr(info.price); }
-      if (!ok && cart.has(id)) { cart.delete(id); noteOpen.delete(id); toast(`${ITEMS[id].name} är slut idag`); }
+      if (!ok && cartHas(x => x === id)) { dropId(id); toast(`${ITEMS[id].name} är slut idag`); }
     });
     syncCart();
     if (!$("#drawer").hidden) renderDrawer();
@@ -420,6 +528,10 @@ async function syncAvailability() {
 document.addEventListener("click", e => {
   const t = e.target.closest("button,a"); if (!t) return;
   if (t.dataset.add) add(t.dataset.add);
+  else if (t.dataset.mxn && mixState) { const k = t.dataset.mxn, d = Number(t.dataset.d); mixState.nigiri[k] = Math.max(0, (mixState.nigiri[k] || 0) + d); renderMix(); const nb = $(`[data-mxn="${k}"][data-d="${d}"]`); (nb && !nb.disabled ? nb : $(`[data-mxn="${k}"]:not(:disabled)`))?.focus(); }
+  else if (t.hasAttribute("data-mixclose")) closeMix();
+  else if (t.id === "mixOk") saveMix();
+  else if (t.dataset.edit) { const c = cart.get(t.dataset.edit); if (c) openMix(c.id, t.dataset.edit); }
   else if (t.hasAttribute("data-cart")) openDrawer();
   else if (t.hasAttribute("data-close")) closeDrawer();
   else if (t.hasAttribute("data-checkout")) { stage = "checkout"; renderDrawer(); setTimeout(() => $("#drawerBody").scrollTo({ top: $("#orderForm").offsetTop - 16, behavior: "smooth" }), 50); }
@@ -428,9 +540,11 @@ document.addEventListener("click", e => {
   else if (t.dataset.noteopen) { noteOpen.add(t.dataset.noteopen); renderDrawer(); $(`[data-note="${t.dataset.noteopen}"]`)?.focus(); }
 });
 document.addEventListener("input", e => { if (e.target.dataset.note) setNote(e.target.dataset.note, e.target.value); });
+document.addEventListener("change", e => { if (e.target.dataset.mxroll && mixState) mixState.maki[Number(e.target.dataset.mxroll)] = e.target.value; });
+$("#mixdlg").addEventListener("click", e => { if (e.target.id === "mixdlg") closeMix(); });
 document.addEventListener("submit", e => { if (e.target.id === "orderForm") submitOrder(e); });
 $("#scrim").addEventListener("click", closeDrawer);
-addEventListener("keydown", e => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });
+addEventListener("keydown", e => { if (e.key !== "Escape") return; if (mixState) closeMix(); else if (!$("#drawer").hidden) closeDrawer(); });
 
 initCommon();
 initChips();

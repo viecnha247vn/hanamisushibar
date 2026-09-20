@@ -108,4 +108,11 @@ test("publicera anropar Vercel deploy hook", () => {
   E.api.publishSite(); assert.equal(E.log.hooks.at(-1).url, "https://api.vercel.com/hook");
 });
 test("inga fel i loggen", () => assert.deepEqual(E.sheets["Logg"].data.slice(1).filter(r => r[1] === "ERROR"), []));
+test("byte i sushimix: tillägg läggs på arkets pris och valen följer med till köket", () => {
+  const o = E.call("order", { kind: "table", table: "2", items: [{ id: "sushi-4", qty: 2, extra: 10, detail: "Maki: 5 California", note: "extra ingefära" }] });
+  assert.equal(o.total, 2 * (205 + 10));
+  const row = E.sheets["Beställningar"].data.find(r => r[1] === o.no);
+  assert.match(row[10], /Maki: 5 California · extra ingefära/);
+  assert.equal(E.call("order", { kind: "table", table: "2", items: [{ id: "sushi-4", qty: 1, extra: -10 }] }).status, 400);
+});
 console.log(`\n${passed} tester OK`);

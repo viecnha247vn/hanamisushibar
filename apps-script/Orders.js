@@ -16,7 +16,12 @@ function createOrder_(p) {
     if (!(it.price > 0)) throw new ApiError(400, it.name + ' kan inte beställas separat.');
     if (!(qty >= 1 && qty <= 50)) throw new ApiError(400, 'Ogiltigt antal.');
     const note = String(r.note == null ? '' : r.note).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
-    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price, note: note };
+    // Tillägg för byten i sushimix räknas av Vercel (lib/mix.js) och läggs på arkets pris
+    const extra = r.extra == null ? 0 : Number(r.extra);
+    if (!(Number.isInteger(extra) && extra >= 0 && extra <= 500 && extra % 10 === 0)) throw new ApiError(400, 'Ogiltigt tillägg.');
+    const detail = String(r.detail == null ? '' : r.detail).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 240);
+    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price + extra,
+             note: [detail, note].filter(String).join(' · ') };
   });
   const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
   const isTable = p.kind === 'table';

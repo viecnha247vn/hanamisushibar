@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, cpSync, rmSync } from "node:fs";
 import seedMenu from "../data/menu.seed.js";
 import settings from "../data/settings.js";
+import { MIX } from "../lib/mix.js";
 import { gas } from "../lib/gas.js";
 
 // Menyn hämtas från fliken "Meny" i Google Sheet. Reservmenyn används bara om arket inte går att nå.
@@ -61,7 +62,8 @@ const menuHtml = menu.map((c, n) => `
   <div class="items">
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
-    ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}
+    ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}${MIX.items[i.id] ? `
+    <span class="mx">Välj maki · byt nigiri</span>` : ""}
     <span class="pr">${kr(i.price)}</span>
     ${i.price > 0
       ? `<button class="add" type="button" data-add="${i.id}" data-cat="${c.id}" data-name="${esc(i.name)}" data-price="${i.price}" aria-label="Lägg till ${esc(i.name)}">${plusIcon}</button>`
@@ -182,6 +184,7 @@ function page(src, { path, headerExtra = "", current = "" }) {
     .replace("<!--FOOTER-->", read("src/partials/footer.html"))
     .replace("<!--FAB-->", read("src/partials/fab.html"))
     .replace("<!--COMMON_JS-->", () => common)
+    .replace("<!--MIX_JS-->", () => read("lib/mix.js").replace(/^export /gm, ""))
     .replace("<!--HIGHLIGHTS-->", () => highlights)
     .replace("<!--CHIPS-->", () => chips)
     .replace("<!--MENU-->", () => menuHtml);
