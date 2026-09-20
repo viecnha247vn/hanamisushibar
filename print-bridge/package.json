@@ -1,0 +1,16 @@
+{
+  "name": "hanami-sushibar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node tests/apps-script.test.cjs && node tests/mix.test.mjs",
+    "dev": "vercel dev",
+    "gas:push": "cd apps-script && npx @google/clasp@2.4.2 push -f",
+    "gas:deploy": "cd apps-script && npx @google/clasp@2.4.2 push -f && npx @google/clasp@2.4.2 deploy -i \"$GAS_DEPLOYMENT_ID\" -d \"$(git rev-parse --short HEAD)\"",
+    "gas:logs": "cd apps-script && npx @google/clasp@2.4.2 open"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

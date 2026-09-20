@@ -1,0 +1,19 @@
+# Autostart på Raspberry Pi / Linux:
+#   sudo cp hanami-print.service /etc/systemd/system/
+#   sudo systemctl enable --now hanami-print
+#   journalctl -u hanami-print -f        (logg)
+[Unit]
+Description=Hanami skrivarbrygga
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/hanami-sushibar/print-bridge
+ExecStart=/usr/bin/node index.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

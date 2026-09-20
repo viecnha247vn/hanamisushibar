@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Kök – Hanami</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/logo-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{--ink:#161B26;--ink-2:#4B5261;--line:#D8DAD3;--paper:#F6F6F3;--koi:#1873BC;--ok:#3C8C52;--warn:#E0B000;--bad:#B6493E}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);font-size:16px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--koi);outline-offset:2px}
+header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
+.bar{display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
+.bar img{width:32px;height:32px}
+.bar b{font-size:18px}
+.bar .upd{font-size:13px;opacity:.7;margin-left:auto}
+.tabs{display:flex;gap:4px;padding:0 12px;overflow-x:auto}
+.tabs button{background:none;border:0;color:#fff;opacity:.65;padding:10px 14px;border-bottom:3px solid transparent;font-weight:600;white-space:nowrap}
+.tabs button.on{opacity:1;border-bottom-color:#fff}
+.tabs .badge{display:inline-grid;place-items:center;min-width:22px;height:22px;margin-left:6px;border-radius:999px;background:var(--warn);color:var(--ink);font-size:12px;padding:0 6px}
+.tabs .badge:empty{display:none}
+main{padding:14px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.tools input,.tools select{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:42px}
+.btn{padding:10px 16px;border-radius:999px;border:1.5px solid var(--ink);background:#fff;font-weight:600;min-height:42px}
+.btn.p{background:var(--koi);border-color:var(--koi);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent;text-decoration:underline}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-left:6px solid var(--warn);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.card.Tillagas{border-left-color:var(--koi)} .card.Klar{border-left-color:var(--ok)}
+.card.Bekräftad{border-left-color:var(--ok)} .card.Avböjd,.card.Avbokad{border-left-color:var(--bad)}
+.card.done{opacity:.55;border-left-color:#aaa}
+.card.fresh{animation:flash 1.2s ease 3}
+@keyframes flash{50%{box-shadow:0 0 0 4px rgba(224,176,0,.6)}}
+@media (prefers-reduced-motion:reduce){.card.fresh{animation:none}}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.no{font-size:20px;font-weight:700}
+.big{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.kind{font-weight:600}
+.meta{font-size:14px;color:var(--ink-2)}
+ul{margin:2px 0;padding:0;list-style:none;font-size:18px;line-height:1.45}
+ul li b{display:inline-block;min-width:2.2ch}
+.note{background:#FFF3C4;padding:6px 10px;border-radius:8px}
+.inote{margin:2px 0 6px 2.2ch;padding:3px 8px;background:#FFF3C4;border-radius:6px;font-size:15px;color:#7A5E24}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.acts .btn{flex:1}
+.status{font-size:13px;font-weight:600;padding:2px 8px;border-radius:999px;background:#eee}
+.empty{padding:60px 16px;text-align:center;color:var(--ink-2)}
+.day{margin:18px 0 8px;font-size:15px;font-weight:700;color:var(--ink-2)}
+.day:first-child{margin-top:0}
+.mcat{margin:16px 0 6px;font-weight:700;color:var(--ink-2)}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px}
+.mrow.out{background:#FBEAE8;border-color:#F0C4BF}
+.mrow.out .mname{text-decoration:line-through;color:#7A2E27}
+.switch{position:relative;width:52px;height:30px;flex:0 0 auto;border-radius:999px;border:0;background:var(--ok);transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:25px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .15s}
+.switch[aria-checked="false"]{background:var(--bad)}
+.switch[aria-checked="false"]::after{left:3px}
+.login{max-width:360px;margin:12vh auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;display:grid;gap:12px;text-align:center}
+.login img{width:72px;margin:0 auto}
+.login input{padding:12px;border:1.5px solid var(--line);border-radius:10px;width:100%}
+.err{background:#FBEAE8;color:#7A2E27;border-radius:8px;padding:10px 12px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;max-width:640px}
+.panel h2{margin:0 0 6px;font-size:20px}
+.panel p{margin:0 0 14px;color:var(--ink-2)}
+.qrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:14px}
+.qr{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;break-inside:avoid}
+.qr .code{display:grid;place-items:center;margin:10px 0}
+.qr b{font-size:20px}
+.qr small{display:block;color:var(--ink-2)}
+@media print{
+  header,.tools,.noprint{display:none!important}
+  body{background:#fff}
+  main{padding:0}
+  .qrs{grid-template-columns:repeat(3,1fr)}
+  .qr{border:1px dashed #999}
+}
+</style>
+</head>
+<body>
+
+<section class="login" id="login" hidden>
+  <img src="/logo.png" alt="">
+  <h1 style="margin:0;font-size:22px">Hanami kök</h1>
+  <form id="loginForm" style="display:grid;gap:10px">
+    <label for="key" style="text-align:left;font-weight:600">Lösenord</label>
+    <input id="key" type="password" autocomplete="current-password" required>
+    <div id="loginErr" class="err" hidden></div>
+    <button class="btn p" type="submit">Logga in</button>
+  </form>
+</section>
+
+<div id="app" hidden>
+<header>
+  <div class="bar">
+    <img src="/logo.png" alt="">
+    <b>Hanami kök</b>
+    <span class="upd" id="upd"></span>
+    <a class="btn ghost noprint" style="color:#fff" id="sheetLink" href="#" target="_blank" rel="noopener" hidden>Google Sheet</a>
+    <button class="btn ghost noprint" style="color:#fff" id="sound" type="button">Ljud av</button>
+    <button class="btn ghost noprint" style="color:#fff" id="logout" type="button">Logga ut</button>
+  </div>
+  <nav class="tabs">
+    <button type="button" data-tab="orders" class="on">Beställningar<span class="badge" id="bOrders"></span></button>
+    <button type="button" data-tab="bookings">Bokningar<span class="badge" id="bBookings"></span></button>
+    <button type="button" data-tab="menu">Meny idag<span class="badge" id="bMenu"></span></button>
+    <button type="button" data-tab="qr">QR‑koder</button>
+  </nav>
+</header>
+
+<main>
+  <section data-panel="orders">
+    <div class="tools">
+      <input type="date" id="oDate" aria-label="Datum">
+      <select id="oFilter" aria-label="Visa">
+        <option value="open">Pågående</option>
+        <option value="all">Alla</option>
+        <option value="pickup">Bara hämtning</option>
+        <option value="table">Bara bord</option>
+      </select>
+      <button class="btn" type="button" id="oReload">Uppdatera</button>
+    </div>
+    <div class="grid" id="orders"></div>
+    <div class="empty" id="oEmpty" hidden>Inga beställningar att visa.</div>
+  </section>
+
+  <section data-panel="bookings" hidden>
+    <div class="tools">
+      <label>Från <input type="date" id="bFrom"></label>
+      <button class="btn" type="button" id="bReload">Uppdatera</button>
+    </div>
+    <div id="bookings"></div>
+    <div class="empty" id="bEmpty" hidden>Inga kommande bokningar.</div>
+  </section>
+
+  <section data-panel="menu" hidden>
+    <div class="tools">
+      <input type="search" id="mSearch" placeholder="Sök rätt…" aria-label="Sök rätt" style="min-width:220px">
+      <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="mOnlyOut"> Bara slut</label>
+      <span class="meta">Slut‑markering syns på webben inom en minut och nollställs automatiskt kl 04.</span>
+    </div>
+    <div id="menuList"></div>
+  </section>
+
+  <section data-panel="qr" hidden>
+    <div class="panel noprint">
+      <h2>QR‑koder till borden</h2>
+      <p>Skriv ut och ställ på borden. Gästen skannar och beställer direkt till rätt bord.</p>
+      <div class="tools">
+        <label>Antal bord <input type="number" id="qCount" min="1" max="60" style="width:90px"></label>
+        <button class="btn" type="button" id="qMake">Skapa</button>
+        <button class="btn p" type="button" onclick="print()">Skriv ut</button>
+      </div>
+    </div>
+    <div class="qrs" id="qrs"></div>
+  </section>
+</main>
+</div>
+
+<script src="/qr.js"></script>
+<script>
+const CFG = /*SETTINGS*/;
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nowSE = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Stockholm" }));
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const today = () => iso(nowSE());
+const KEY_STORE = "hanami-kok-key";
+let key = localStorage.getItem(KEY_STORE) || "";
+let tab = "orders", seen = new Set(), firstLoad = true, soundOn = localStorage.getItem("hanami-sound") !== "off";
+
+async function api(path, opts = {}) {
+  const r = await fetch("/api/admin" + path, { ...opts, headers: { "x-admin-key": key, "Content-Type": "application/json", ...(opts.headers || {}) } });
+  if (r.status === 401) { logout("Fel lösenord."); throw new Error("401"); }
+  if (opts.raw) { if (!r.ok) throw new Error("Export misslyckades (" + r.status + ")"); return r; }
+  const d = await r.json().catch(() => ({ ok: false, error: "Ogiltigt svar" }));
+  if (!r.ok || d.ok === false) throw new Error(d.error || "Fel " + r.status);
+  return d;
+}
+
+/* ---------- login ---------- */
+function showApp(){ $("#login").hidden = true; $("#app").hidden = false; loadOrders(); loadBookings(); loadMenu(); }
+function logout(msg){ localStorage.removeItem(KEY_STORE); key = ""; $("#app").hidden = true; $("#login").hidden = false; $("#loginErr").hidden = !msg; $("#loginErr").textContent = msg || ""; }
+$("#loginForm").addEventListener("submit", async e => {
+  e.preventDefault(); key = $("#key").value;
+  try { await api("?view=orders"); localStorage.setItem(KEY_STORE, key); showApp(); }
+  catch (err) { if (err.message !== "401") { $("#loginErr").hidden = false; $("#loginErr").textContent = err.message; } }
+});
+$("#logout").onclick = () => logout();
+
+/* ---------- tabs ---------- */
+$$(".tabs button").forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  $$(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  $$("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab);
+  if (tab === "qr" && !$("#qrs").children.length) makeQr();
+  if (tab === "menu") loadMenu();
+});
+
+/* ---------- ljud ---------- */
+function beep(){
+  if (!soundOn) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, .25, .5].forEach(t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(.3, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + t + .2); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .22); });
+  } catch {}
+}
+function syncSound(){ $("#sound").textContent = soundOn ? "Ljud på" : "Ljud av"; }
+$("#sound").onclick = () => { soundOn = !soundOn; localStorage.setItem("hanami-sound", soundOn ? "on" : "off"); syncSound(); if (soundOn) beep(); };
+syncSound();
+
+/* ---------- beställningar ---------- */
+const DONE = ["Hämtad", "Serverad", "Avbokad"];
+function nextSteps(o){
+  if (o.status === "Ny") return ["Tillagas"];
+  if (o.status === "Tillagas") return ["Klar"];
+  if (o.status === "Klar") return [o.kind === "table" ? "Serverad" : "Hämtad"];
+  return [];
+}
+async function loadOrders(){
+  try {
+    const d = await api(`?view=orders&date=${$("#oDate").value || today()}`);
+    if (d.sheetUrl) { $("#sheetLink").href = d.sheetUrl; $("#sheetLink").hidden = false; }
+    const f = $("#oFilter").value;
+    let list = d.orders;
+    const open = list.filter(o => !DONE.includes(o.status));
+    $("#bOrders").textContent = list.filter(o => o.status === "Ny").length || "";
+    if (f === "open") list = open; else if (f === "pickup" || f === "table") list = list.filter(o => o.kind === f);
+    // pågående: hämtning sorteras på tid, bord på mottagen tid
+    list.sort((a, b) => (DONE.includes(a.status) - DONE.includes(b.status)) || String(a.pickupTime || a.receivedTime).localeCompare(String(b.pickupTime || b.receivedTime)));
+    const fresh = d.orders.filter(o => !seen.has(o.no));
+    if (!firstLoad && fresh.length) beep();
+    $("#orders").innerHTML = list.map(o => orderCard(o, !firstLoad && fresh.some(x => x.no === o.no))).join("");
+    d.orders.forEach(o => seen.add(o.no)); firstLoad = false;
+    $("#oEmpty").hidden = list.length > 0;
+    $("#upd").textContent = "Uppdaterad " + new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" });
+  } catch (e) { if (e.message !== "401") $("#upd").textContent = "Fel: " + e.message; }
+}
+function orderCard(o, fresh){
+  const done = DONE.includes(o.status);
+  return `<article class="card ${esc(o.status)} ${done ? "done" : ""} ${fresh ? "fresh" : ""}">
+    <div class="top"><span class="no">${esc(o.no)}</span><span class="big">${esc(o.kind === "table" ? o.receivedTime : o.pickupTime)}</span></div>
+    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span></div>
+    <ul>${o.items.map(i => `<li>${i.qty ? `<b>${i.qty}</b> × ` : ""}${esc(i.name)}${i.note ? `<div class="inote">↳ ${esc(i.note)}</div>` : ""}</li>`).join("")}</ul>
+    ${o.message ? `<div class="note">${esc(o.message)}</div>` : ""}
+    <div class="meta">${[o.name && esc(o.name), o.phone && `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`, esc(o.payment), `<b>${o.total} kr</b>`,
+      o.smsReady && "sms " + esc(o.smsReady), o.printed ? "🖨 " + esc(o.printed) : "🖨 väntar", o.kind === "pickup" ? "mottagen " + esc(o.receivedTime) : ""].filter(Boolean).join(" · ")}</div>
+    ${done ? "" : `<div class="acts">
+      ${nextSteps(o).map(s => `<button class="btn ${s === "Klar" ? "ok" : "p"}" type="button" data-o="${esc(o.no)}" data-s="${s}">${s === "Tillagas" ? "Börja tillaga" : s === "Klar" ? "Klar" : s}</button>`).join("")}
+      <button class="btn" type="button" data-o="${esc(o.no)}" data-s="Avbokad" data-confirm="Avboka ${esc(o.no)}?">Avboka</button>
+      <button class="btn" type="button" data-reprint="${esc(o.no)}" title="Skriv ut igen" aria-label="Skriv ut ${esc(o.no)} igen" style="flex:0 0 auto">🖨</button></div>`}
+  </article>`;
+}
+
+/* ---------- bokningar ---------- */
+async function loadBookings(){
+  try {
+    const d = await api(`?view=bookings&from=${$("#bFrom").value || today()}`);
+    $("#bBookings").textContent = d.bookings.filter(b => b.status === "Väntar").length || "";
+    let html = "", last = "";
+    for (const b of d.bookings) {
+      if (b.date !== last) {
+        if (last) html += "</div>";
+        const dt = new Date(b.date + "T12:00:00");
+        const guests = d.bookings.filter(x => x.date === b.date && ["Väntar", "Bekräftad"].includes(x.status)).reduce((s, x) => s + x.guests, 0);
+        html += `<div class="day">${dt.toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" })} · ${guests} gäster</div><div class="grid">`;
+        last = b.date;
+      }
+      const done = ["Avböjd", "Avbokad"].includes(b.status);
+      html += `<article class="card ${esc(b.status)} ${done ? "done" : ""}">
+        <div class="top"><span class="big">${esc(b.time)}</span><span class="no">${b.guests} pers</span></div>
+        <div class="kind">${esc(b.name)} <span class="status">${esc(b.status)}</span></div>
+        ${b.message ? `<div class="note">${esc(b.message)}</div>` : ""}
+        <div class="meta">${esc(b.no)} · <a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>${b.smsConfirmed ? " · bekräftelse‑sms " + esc(b.smsConfirmed) : ""}</div>
+        <div class="acts">
+          ${b.status === "Väntar" ? `<button class="btn ok" type="button" data-b="${esc(b.no)}" data-s="Bekräftad">Bekräfta</button>
+             <button class="btn" type="button" data-b="${esc(b.no)}" data-s="Avböjd" data-confirm="Avböj ${esc(b.no)}? Gästen får ett sms.">Avböj</button>` : ""}
+          ${b.status === "Bekräftad" ? `<button class="btn" type="button" data-b="${esc(b.no)}" data-s="Avbokad" data-confirm="Markera ${esc(b.no)} som avbokad?">Avbokad</button>` : ""}
+        </div>
+      </article>`;
+    }
+    if (last) html += "</div>";
+    $("#bookings").innerHTML = html;
+    $("#bEmpty").hidden = d.bookings.length > 0;
+  } catch (e) { if (e.message !== "401") $("#bookings").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+/* ---------- statusknappar ---------- */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-s]"); if (!b) return;
+  if (b.dataset.confirm && !confirm(b.dataset.confirm)) return;
+  b.disabled = true;
+  try {
+    await api("", { method: "POST", body: JSON.stringify({ kind: b.dataset.o ? "order" : "booking", no: b.dataset.o || b.dataset.b, status: b.dataset.s }) });
+    b.dataset.o ? loadOrders() : loadBookings();
+  } catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
+});
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-reprint]"); if (!b) return;
+  b.disabled = true;
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "reprint", no: b.dataset.reprint }) }); loadOrders(); }
+  catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
+});
+
+/* ---------- meny idag ---------- */
+let menuData = [];
+async function loadMenu(){
+  try { menuData = (await api("?view=menu")).menu; renderMenu(); }
+  catch (e) { if (e.message !== "401") $("#menuList").innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function renderMenu(){
+  const q = $("#mSearch").value.trim().toLowerCase(), only = $("#mOnlyOut").checked;
+  $("#bMenu").textContent = menuData.filter(m => m.soldOut).length || "";
+  let html = "", cat = "";
+  menuData.filter(m => (!q || m.name.toLowerCase().includes(q)) && (!only || m.soldOut)).forEach(m => {
+    if (m.category !== cat) { cat = m.category; html += `<div class="mcat">${esc(cat)}</div>`; }
+    html += `<div class="mrow ${m.soldOut ? "out" : ""}"><span class="mname">${esc(m.name)}</span>
+      <button class="switch" type="button" role="switch" aria-checked="${!m.soldOut}" aria-label="${esc(m.name)} tillgänglig" data-menu="${esc(m.id)}"></button></div>`;
+  });
+  $("#menuList").innerHTML = html || `<div class="empty">Inga rätter.</div>`;
+}
+$("#mSearch").oninput = $("#mOnlyOut").onchange = renderMenu;
+document.addEventListener("click", async e => {
+  const sw = e.target.closest("[data-menu]"); if (!sw) return;
+  const item = menuData.find(m => m.id === sw.dataset.menu);
+  const soldOut = !item.soldOut;
+  item.soldOut = soldOut; renderMenu();
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "soldout", id: item.id, soldOut }) }); }
+  catch (err) { item.soldOut = !soldOut; renderMenu(); if (err.message !== "401") alert(err.message); }
+});
+
+/* ---------- QR ---------- */
+function makeQr(){
+  const n = Math.min(60, Math.max(1, +$("#qCount").value || CFG.tableCount));
+  const box = $("#qrs"); box.innerHTML = "";
+  for (let i = 1; i <= n; i++) {
+    const url = `${location.origin}/meny?bord=${i}`;
+    const el = document.createElement("div"); el.className = "qr";
+    el.innerHTML = `<img src="/logo.png" alt="" width="40" height="40"><div class="code">${qrSvg(url, 160)}</div><b>Bord ${i}</b><small>Skanna och beställ</small><small>${esc(url.replace(/^https?:\/\//, ""))}</small>`;
+    box.appendChild(el);
+  }
+}
+$("#qMake").onclick = makeQr;
+
+/* ---------- start ---------- */
+$("#oDate").value = $("#bFrom").value = today();
+$("#qCount").value = CFG.tableCount;
+$("#oDate").onchange = $("#oFilter").onchange = $("#oReload").onclick = loadOrders;
+$("#bFrom").onchange = $("#bReload").onclick = loadBookings;
+if (key) showApp(); else logout();
+setInterval(() => { if (key && !document.hidden) { loadOrders(); if (tab === "bookings") loadBookings(); } }, 20000);
+setInterval(() => { if (key && !document.hidden) loadBookings(); }, 120000);
+</script>
+</body>
+</html>
