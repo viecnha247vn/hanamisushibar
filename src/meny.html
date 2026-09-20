@@ -127,6 +127,9 @@
 .allergi{display:block;text-align:left;margin-top:.45rem;padding:.5rem .7rem;border-left:3px solid #C8463A;border-radius:2px;background:#FBE9E7;color:#8A2E27;font-size:.8rem;line-height:1.5}
 .allergi b{font-weight:600}
 .field .allergi{font-size:.85rem;margin-top:.5rem}
+.done .swish .sm{display:block;font-size:.88rem;color:var(--ink-2);margin-top:.35rem}
+.done .swish .btn{margin:.9rem 0 .2rem}
+.done .swish .qr{margin:.9rem auto 0;width:168px;line-height:0}
 .done .swish{margin:1rem auto 0;padding:.8rem 1rem;max-width:26rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3);color:var(--ink);line-height:1.6}
 .line .dt{grid-column:1/-1;font-size:.86rem;line-height:1.45;color:var(--ink-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .line .dt b{font-weight:500;color:var(--gold-deep)}
@@ -292,6 +295,21 @@ const cartHas = test => [...cart.values()].some(c => test(c.id));
 function dropId(id) { for (const [k, c] of cart) if (c.id === id) { cart.delete(k); noteOpen.delete(k); } }
 /* Happy hour-rätter kan bara läggas till och beställas medan happy hour pågår (samma regel kontrolleras på servern) */
 const isHappy = id => id.startsWith("happy-");
+/* Swish-knapp: länken öppnar appen med belopp, mottagare och ordernummer ifyllt.
+   På Android når en vanlig https-länk inte appen, därför intent-länk med fallback.
+   På datorn visas i stället en QR-kod med samma länk. */
+const swishLink = (amt, msg) => `https://app.swish.nu/1/p/sw/?sw=${SETTINGS.swish}&amt=${amt}&cur=SEK&msg=${encodeURIComponent(msg)}&src=qr`;
+const isAndroid = /Android/i.test(navigator.userAgent);
+const isPhone = isAndroid || /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+const swishHref = (amt, msg) => isAndroid
+  ? `intent://${swishLink(amt, msg).slice(8)}#Intent;scheme=https;package=se.bankgirot.swish;S.browser_fallback_url=${encodeURIComponent(swishLink(amt, msg))};end`
+  : swishLink(amt, msg);
+function drawSwishQr(amt, msg) {
+  const el = $("#swishQr"); if (!el) return;
+  const draw = () => { if (window.qrSvg && $("#swishQr")) $("#swishQr").innerHTML = qrSvg(swishLink(amt, msg), 168); };
+  if (window.qrSvg) return draw();
+  const sc = document.createElement("script"); sc.src = "/qr.js"; sc.onload = draw; document.head.appendChild(sc);
+}
 const swishNo = SETTINGS.swish.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, "$1 $2 $3 $4");
 function happyNow() { const { h, open } = nowInfo(); return open && h >= SETTINGS.happyHour.from && h < SETTINGS.happyHour.to; }
 function syncHappy() {
@@ -419,10 +437,15 @@ function renderDrawer() {
       <div class="big foil">${esc(o.no)}</div>
       <p><b style="color:var(--ink)">Summa ${o.total} kr</b></p>
       <p>${TABLE ? "Köket har fått beställningen och börjar direkt. Betala med Swish eller kort när ni går." : `Hämtas ${esc(o.when)}. Vi sms:ar ${esc(o.phone)} när maten är klar.`}</p>
-      ${o.payment === "swish" ? `<p class="swish"><b>Swisha ${o.total} kr till ${swishNo}</b><br>${esc(SETTINGS.name)} · skriv ${esc(o.no)} som meddelande</p>` : ""}
+      ${o.payment === "swish" ? `<div class="swish"><b>Swisha ${o.total} kr till ${swishNo}</b>
+        <span class="sm">${esc(SETTINGS.name)} · meddelande ${esc(o.no)}</span>
+        ${isPhone
+          ? `<a class="btn gold block" href="${swishHref(o.total, o.no)}">Öppna Swish</a><span class="sm">Belopp och ordernummer är redan ifyllda.</span>`
+          : `<div class="qr" id="swishQr" aria-hidden="true"></div><span class="sm">Skanna med Swish-appen i mobilen – belopp och ordernummer följer med.</span>`}</div>` : ""}
       ${o.email ? `<p style="font-size:.9rem">En bekräftelse är skickad till ${esc(o.email)}.</p>` : ""}
       ${o.demo ? `<p style="font-size:.85rem">Demoläge – inget skickades.</p>` : ""}</div>`;
     foot.innerHTML = `<button class="btn block" type="button" data-close>Stäng</button>`;
+    if (o.payment === "swish" && !isPhone) drawSwishQr(o.total, o.no);
     return;
   }
   title.textContent = TABLE ? `Bord ${TABLE}` : "Din beställning";
@@ -461,7 +484,7 @@ function renderDrawer() {
       <div class="field"><span class="lbl">Betalning</span><div class="choice">
         <label><input type="radio" name="pay" value="swish" checked>Swish</label>
         <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div>
-        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Du betalar ${TABLE ? "när ni går" : "när du hämtar"} – ange ditt ordernummer som meddelande.</small></div>
+        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Swisha gärna direkt när beställningen är skickad – ange ditt ordernummer som meddelande.</small></div>
       <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
         <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">

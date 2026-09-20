@@ -21,8 +21,17 @@ import cloudprnt from "../lib/routes/cloudprnt.js";
 const ROUTES = { submit, admin, availability, health, print };
 const KEYED = { sdp, cloudprnt };                 // slutpunkter där nyckeln ligger i adressen
 
+/** Vägen kommer normalt i req.query.route. Saknas den läser vi den ur adressen i stället. */
+function pathSegments(req) {
+  const q = [].concat(req.query?.route || []).filter(Boolean);
+  if (q.length) return q;
+  try {
+    return new URL(req.url, "http://x").pathname.replace(/^\/+api\/?/, "").split("/").filter(Boolean);
+  } catch { return []; }
+}
+
 export default async function handler(req, res) {
-  const segments = [].concat(req.query?.route || []).filter(Boolean);
+  const segments = pathSegments(req);
   const [first, second] = segments;
 
   if (KEYED[first]) {
@@ -34,7 +43,7 @@ export default async function handler(req, res) {
   if (!route || segments.length > 1) {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("Cache-Control", "no-store");
-    return res.status(404).end(JSON.stringify({ ok: false, error: "Okänd adress." }));
+    return res.status(404).end(JSON.stringify({ ok: false, error: `Okänd adress: /${segments.join("/")}` }));
   }
   return route(req, res);
 }
