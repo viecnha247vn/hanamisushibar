@@ -124,6 +124,10 @@
 .line .note input{width:100%;min-height:42px;padding:.55rem .75rem;border:1px solid var(--line-2);border-radius:2px;background:#fff;font-size:.95rem}
 .line .note input:focus{outline:none;border-color:var(--koi);box-shadow:0 0 0 3px rgba(24,115,188,.12)}
 .line .note small{display:block;color:var(--ink-3);font-size:.78rem;margin-top:.3rem}
+.allergi{display:block;text-align:left;margin-top:.45rem;padding:.5rem .7rem;border-left:3px solid #C8463A;border-radius:2px;background:#FBE9E7;color:#8A2E27;font-size:.8rem;line-height:1.5}
+.allergi b{font-weight:600}
+.field .allergi{font-size:.85rem;margin-top:.5rem}
+.done .swish{margin:1rem auto 0;padding:.8rem 1rem;max-width:26rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3);color:var(--ink);line-height:1.6}
 .line .dt{grid-column:1/-1;font-size:.86rem;line-height:1.45;color:var(--ink-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .line .dt b{font-weight:500;color:var(--gold-deep)}
 .item .mx{grid-column:1;margin-top:.15rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--koi)}
@@ -288,6 +292,7 @@ const cartHas = test => [...cart.values()].some(c => test(c.id));
 function dropId(id) { for (const [k, c] of cart) if (c.id === id) { cart.delete(k); noteOpen.delete(k); } }
 /* Happy hour-rätter kan bara läggas till och beställas medan happy hour pågår (samma regel kontrolleras på servern) */
 const isHappy = id => id.startsWith("happy-");
+const swishNo = SETTINGS.swish.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, "$1 $2 $3 $4");
 function happyNow() { const { h, open } = nowInfo(); return open && h >= SETTINGS.happyHour.from && h < SETTINGS.happyHour.to; }
 function syncHappy() {
   const on = happyNow(), sec = $("#cat-happy"), st = $("[data-hh]");
@@ -414,6 +419,7 @@ function renderDrawer() {
       <div class="big foil">${esc(o.no)}</div>
       <p><b style="color:var(--ink)">Summa ${o.total} kr</b></p>
       <p>${TABLE ? "Köket har fått beställningen och börjar direkt. Betala med Swish eller kort när ni går." : `Hämtas ${esc(o.when)}. Vi sms:ar ${esc(o.phone)} när maten är klar.`}</p>
+      ${o.payment === "swish" ? `<p class="swish"><b>Swisha ${o.total} kr till ${swishNo}</b><br>${esc(SETTINGS.name)} · skriv ${esc(o.no)} som meddelande</p>` : ""}
       ${o.email ? `<p style="font-size:.9rem">En bekräftelse är skickad till ${esc(o.email)}.</p>` : ""}
       ${o.demo ? `<p style="font-size:.85rem">Demoläge – inget skickades.</p>` : ""}</div>`;
     foot.innerHTML = `<button class="btn block" type="button" data-close>Stäng</button>`;
@@ -432,7 +438,8 @@ function renderDrawer() {
     ${noteOpen.has(k) || c.note
       ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
            <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
-           <small>Allergi? Skriv det här och i meddelandet till köket.</small></label>`
+           <small class="allergi"><b>Allergi?</b> Skriv det här och i meddelandet till köket.
+             Våra rätter kan innehålla ${SETTINGS.allergens.join(", ")}. Allt tillagas i samma kök, så vi kan inte garantera att en rätt är helt fri från ett ämne.</small></label>`
       : `<button class="notebtn" type="button" data-noteopen="${k}">+ Önskemål för den här rätten</button>`}
   </div>`).join("");
   const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>`;
@@ -453,8 +460,10 @@ function renderDrawer() {
       <div class="field"><label for="oMail">E-post (valfritt)</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se"><small>Vi skickar en bekräftelse med hela beställningen.</small></div>
       <div class="field"><span class="lbl">Betalning</span><div class="choice">
         <label><input type="radio" name="pay" value="swish" checked>Swish</label>
-        <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div></div>
-      <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea></div>
+        <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div>
+        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Du betalar ${TABLE ? "när ni går" : "när du hämtar"} – ange ditt ordernummer som meddelande.</small></div>
+      <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
+        <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div id="orderErr" class="err" hidden></div>
     </form>`;
@@ -484,7 +493,7 @@ async function submitOrder(e) {
   };
   try {
     const r = await send(payload);
-    lastOrder = { no: r.no, total: r.total ?? cartTotal(), phone, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
+    lastOrder = { no: r.no, total: r.total ?? cartTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
     cart.clear(); syncCart(); stage = "done"; renderDrawer();
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;

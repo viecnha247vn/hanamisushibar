@@ -123,11 +123,11 @@ const jsonld = {
       }))
     }))
   },
-  sameAs: ["https://www.facebook.com/p/Hanami-sushi-bar-61557294257313/"]
+  sameAs: ["https://www.facebook.com/p/Hanami-sushi-bar-61557294257313/", `https://www.instagram.com/${settings.instagram}/`]
 };
 
 const clientSettings = {
-  phone: settings.phone, hours: settings.hours, closedDates: settings.closedDates, lunch: settings.lunch, happyHour: settings.happyHour,
+  phone: settings.phone, swish: settings.swish, name: settings.name, allergens: settings.allergens, hours: settings.hours, closedDates: settings.closedDates, lunch: settings.lunch, happyHour: settings.happyHour,
   pickupLeadMinutes: settings.pickupLeadMinutes, pickupDaysAhead: settings.pickupDaysAhead, bookingDaysAhead: settings.bookingDaysAhead,
   maxBookingGuests: settings.maxBookingGuests
 };
