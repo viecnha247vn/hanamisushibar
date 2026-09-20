@@ -325,14 +325,13 @@ function setNote(k, note) { const c = cart.get(k); if (c) c.note = note.slice(0,
 /* ---------- val i sushimix: maki gratis, nigiri 4 byten ingår ---------- */
 let mixState = null;
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-const mixNeed = id => Object.values(MIX.items[id].nigiri).reduce((a, b) => a + b, 0);
 function mixOpts() { const s = mixState, nigiri = {}; mixChoices(s.id).forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
 function openMix(id, key = null) {
   const cfg = MIX.items[id], o = key && cart.get(key)?.opts;
   const rolls = cfg.chooseMaki === false ? 0 : cfg.maki / MIX.makiPerRoll;
-  mixState = { id, key, maki: o ? [...o.maki] : Array(rolls).fill(""), nigiri: { ...(o ? o.nigiri : cfg.nigiri) } };
+  mixState = { id, key, maki: o ? [...o.maki] : Array(rolls).fill(""), nigiri: { ...(o ? o.nigiri : cfg.nigiri) } };  // freeChoice: tom start, gästen väljer allt
   $("#mixTitle").textContent = ITEMS[id].name;
-  $("#mixSub").textContent = `${kr(ITEMS[id].price)} · ${mixNeed(id)} nigiri och ${cfg.maki} maki`;
+  $("#mixSub").textContent = `${kr(ITEMS[id].price)} · ${mixNeed(id)} nigiri${cfg.maki ? ` och ${cfg.maki} maki` : ""}`;
   renderMix();
   const w = $("#mixdlg"); w.hidden = false; requestAnimationFrame(() => w.classList.add("show"));
   document.body.classList.add("no-scroll");
@@ -348,16 +347,18 @@ function renderMix() {
   const s = mixState, cfg = MIX.items[s.id], need = mixNeed(s.id);
   const choices = mixChoices(s.id);
   const have = choices.reduce((a, k) => a + (s.nigiri[k] || 0), 0);
-  const swaps = choices.reduce((a, k) => a + Math.max(0, (s.nigiri[k] || 0) - (cfg.nigiri[k] || 0)), 0);
+  const swaps = cfg.freeChoice ? 0 : choices.reduce((a, k) => a + Math.max(0, (s.nigiri[k] || 0) - (cfg.nigiri[k] || 0)), 0);
   const extra = Math.max(0, swaps - MIX.freeSwaps) * MIX.extraPerSwap;
   const rolls = s.maki.map((m, i) => `<fieldset class="mx-sec"><legend>${s.maki.length > 1 ? `Maki, rulle ${i + 1}` : "Maki"}<small>${MIX.makiPerRoll} bitar · byte ingår</small></legend>
     <div class="mx-chips">${["", ...MIX.maki].map(v => `<label><input type="radio" name="mx${i}" value="${esc(v)}" data-mxroll="${i}"${v === m ? " checked" : ""}>${v ? esc(v) : "Kockens val"}</label>`).join("")}</div></fieldset>`).join("");
   const rows = choices.map(k => { const n = s.nigiri[k] || 0; return `<div class="mx-row${n ? " on" : ""}"><span>${cap(k)}</span>
     <span class="qty"><button type="button" data-mxn="${k}" data-d="-1" aria-label="En ${k} mindre"${n ? "" : " disabled"}>−</button><span>${n}</span><button type="button" data-mxn="${k}" data-d="1" aria-label="En ${k} till"${have < need ? "" : " disabled"}>+</button></span></div>`; }).join("");
   const state = have < need ? `Välj ${need - have} ${need - have === 1 ? "bit" : "bitar"} till`
+    : cfg.freeChoice ? `${need} av ${need} valda`
     : swaps ? `${swaps} ${swaps === 1 ? "byte" : "byten"} · ${extra ? `tillägg +${extra} kr` : "ingår i priset"}` : "Som på menyn";
   $("#mixBody").innerHTML = rolls + `<fieldset class="mx-sec"><legend>Nigiri<small>${have} av ${need} bitar</small></legend>
-    <p class="mx-rule">${s.maki.length ? "" : `Makin (${cfg.maki} bitar) är alltid kockens val i den här mixen. `}Ta bort en bit med − och välj en annan med +. ${MIX.freeSwaps} byten ingår, därefter +${MIX.extraPerSwap} kr per bytt bit.</p>
+    <p class="mx-rule">${cfg.freeChoice ? `Välj dina ${need} bitar – fritt ur listan, utan tillägg.`
+      : `${s.maki.length || !cfg.maki ? "" : `Makin (${cfg.maki} bitar) är alltid kockens val i den här mixen. `}Ta bort en bit med − och välj en annan med +. ${MIX.freeSwaps} byten ingår, därefter +${MIX.extraPerSwap} kr per bytt bit.`}</p>
     ${rows}<p class="mx-state${have < need ? " todo" : extra ? " paid" : ""}" role="status">${state}</p></fieldset>`;
   const ok = $("#mixOk");
   ok.disabled = have !== need;
@@ -427,7 +428,7 @@ function renderDrawer() {
   const lines = [...cart].map(([k, c]) => `<div class="line"><span class="nm">${esc(ITEMS[c.id].name)}</span><span class="pr">${unitPrice(c) * c.qty} kr</span>
     ${c.detail ? `<span class="dt">${esc(c.detail)}${c.extra ? ` <b>+${c.extra} kr</b>` : ""}</span>` : ""}
     <span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>
-    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${c.detail ? "Ändra valen" : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
+    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${c.detail ? "Ändra valen" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
     ${noteOpen.has(k) || c.note
       ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
            <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">

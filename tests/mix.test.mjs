@@ -38,4 +38,10 @@ test("vegan mix: bara vegetariska bitar", () => {
   assert.throws(() => mixPrice("sushi-10", { nigiri: { lax: 6 } }), /nigiri/);
   assert.throws(() => mixPrice("sushi-3", { nigiri: { gurka: 7 } }), /nigiri/);
 });
+test("nigirimix: gästen väljer alla bitar utan tillägg", () => {
+  const r = mixPrice("nigiri-3", { nigiri: { lax: 4, tonfisk: 3, "flamberad lax": 3 } });
+  assert.equal(r.extra, 0); assert.equal(r.detail, "Nigiri: 4 lax, 3 tonfisk, 3 flamberad lax");
+  assert.equal(mixPrice("nigiri-4", { nigiri: { lax: 12 } }).extra, 0);
+  assert.throws(() => mixPrice("nigiri-3", { nigiri: { lax: 9 } }), /exakt 10/);
+});
 console.log(`${passed} tester OK`);

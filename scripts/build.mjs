@@ -64,7 +64,7 @@ const menuHtml = menu.map((c, n) => `
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
     ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}${MIX.items[i.id] ? `
-    <span class="mx">${MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
+    <span class="mx">${MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
     <span class="pr">${kr(i.price)}</span>
     ${i.price > 0
       ? `<button class="add" type="button" data-add="${i.id}" data-cat="${c.id}" data-name="${esc(i.name)}" data-price="${i.price}" aria-label="Lägg till ${esc(i.name)}">${plusIcon}</button>`
