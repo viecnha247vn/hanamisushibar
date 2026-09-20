@@ -39,6 +39,7 @@ const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
   bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Nigiri, maki och uramaki på svart fat",
+  bubble: "Bubble tea i fyra smaker med tapiokapärlor", dryck: "Läsk och mineralvatten i burk",
   happy: "Sushifat med nigiri, maki och uramaki på mörkt träbräde",
   tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
