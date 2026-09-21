@@ -369,6 +369,17 @@ Mỗi thẻ đơn trong köksvy có nút **Markera betald**. Bấm là ghi giờ
 - Phiếu in có dòng `Dricks` ngay trên dòng `Summa`. Mail cho khách và mail cho quán cũng hiện tip.
 - Cột `Dricks` là cột mới, nên sau khi đẩy code phải **chạy `setup()` một lần** trong Apps Script.
 
+### 7.5 Sửa menu trong Sheet bằng code (không cần sửa tay)
+
+File `data/menu-andringar.js` chứa danh sách thay đổi menu: đổi tên, giá, mô tả (`set`), thêm món mới ngay sau một món có sẵn (`add`), ẩn món (`hide`), và sửa Kategoritext (`notes`).
+
+- Mỗi lần push, Vercel build bản production sẽ gọi Apps Script (`applyMenuPatches`) để đưa các thay đổi **chưa chạy** vào fliken Meny, rồi mới đọc menu để build trang. Nghĩa là **push xong là Sheet và web cùng cập nhật**.
+- Mỗi thay đổi có một `id` và chỉ chạy **một lần**. Danh sách id đã chạy lưu trong Skriptegenskaper `MENU_PATCHES_DONE`. Muốn đổi tiếp thì thêm mục mới với id mới ở cuối file, đừng sửa mục cũ.
+- Chỉ những ô được ghi trong thay đổi mới bị đụng tới. Giá hoặc chữ quán tự sửa trong Sheet ở chỗ khác được giữ nguyên.
+- Không bao giờ xoá hàng. Món bỏ đi thì chỉ bỏ tick "Visas på webben".
+- Kết quả ghi trong fliken Logg (dòng "Menyändringar") và trong build log trên Vercel.
+- Cần Apps Script bản mới (có `applyMenuPatches`). Nếu Apps Script cũ, build vẫn chạy bình thường, chỉ báo cảnh báo và bỏ qua bước này.
+
 ## 8. Khi có sự cố
 
 | Dấu hiệu | Kiểm tra |

@@ -38,6 +38,7 @@ const ACTIONS = {
   adminMenu:     () => ({ menu: menuForKitchen_() }),
   adminSoldOut:  p => withLock_(() => setSoldOut_(p.id, !!p.soldOut)),
   adminLead:     p => withLock_(() => setLead_(p.minutes)),
+  applyMenuPatches: p => withLock_(() => applyMenuPatches_(p.patches)),
   adminPaid:     p => withLock_(() => setPaid_(p.no, !!p.paid)),
   adminSettings: () => ({ leadMinutes: lead_() }),
   // skrivarbryggan (print-bridge/)

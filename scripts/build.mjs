@@ -1,9 +1,22 @@
 // Bygger dist/: renderar menyn till statisk HTML (bra för Google) och kopierar filer.
 import { existsSync, readFileSync, writeFileSync, mkdirSync, cpSync, rmSync } from "node:fs";
 import seedMenu from "../data/menu.seed.js";
+import menuPatches from "../data/menu-andringar.js";
 import settings from "../data/settings.js";
 import { MIX } from "../lib/mix.js";
 import { gas } from "../lib/gas.js";
+
+// Först: nya menyändringar från koden förs in i arket (bara i produktion, varje ändring en gång).
+if (process.env.GAS_URL && process.env.GAS_SECRET && (process.env.VERCEL_ENV === "production" || process.env.APPLY_MENU_PATCHES === "1")) {
+  try {
+    const r = await gas("applyMenuPatches", { patches: menuPatches }, { timeout: 60000 });
+    console.log(r.applied && r.applied.length
+      ? `Menyändringar i arket: ${r.applied.join(", ")}\n  ${(r.report || []).join("\n  ")}`
+      : "Inga nya menyändringar för arket.");
+  } catch (e) {
+    console.warn("⚠️  Kunde inte föra över menyändringar till arket (är Apps Script uppdaterat?) – " + e.message);
+  }
+}
 
 // Menyn hämtas från fliken "Meny" i Google Sheet. Reservmenyn används bara om arket inte går att nå.
 let menu = seedMenu, source = "reservmeny (data/menu.seed.js)";
@@ -52,7 +65,7 @@ const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
   bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Nigiri, maki och uramaki på svart fat",
-  bubble: "Classic, taro och matcha milk tea med tapioka, och skålar med popping boba i mango, jordgubb, blåbär och lychee", dryck: "Läsk och mineralvatten i burk",
+  bubble: "Classic, taro och matcha milk tea med tapioka, och skålar med popping boba i mango, jordgubb, blåbär och lychee", dryck: "Läsk och kolsyrat vatten i burk på en bänk under blommande körsbärsträd",
   happy: "Sushifat med nigiri, maki och uramaki på mörkt träbräde",
   tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
@@ -72,12 +85,12 @@ const chips = menu.map(c => `<a href="#cat-${c.id}" data-id="${c.id}">${esc(c.na
 const menuHtml = menu.map((c, n) => `
 <section class="cat${c.id === "happy" ? " hh" : ""}" id="cat-${c.id}" aria-labelledby="h-${c.id}">${c.id === "happy" ? `
   <svg class="branch hh-branch" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>` : ""}
-  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}"${c.id === "happy" ? ` class="hh-title" data-text="${esc(c.name)}"` : ""}>${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note).replace(/\r?\n/g, "<br>")}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
+  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}"${c.id === "happy" ? ` class="hh-title" data-text="${esc(c.name)}"` : ""}>${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note).split(/(?:\r?\n){2,}/).map(p => `<span class="para">${p.replace(/\r?\n/g, "<br>")}</span>`).join("")}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
   <div class="items">
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
     ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}${MIX.items[i.id] ? `
-    <span class="mx">${MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
+    <span class="mx">${MIX.items[i.id].addon ? `Extra ${MIX.items[i.id].addon.label} +${MIX.items[i.id].addon.price} kr/st` : MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
     <span class="pr">${kr(i.price)}</span>
     ${i.price > 0
       ? `<button class="add" type="button" data-add="${i.id}" data-cat="${c.id}" data-name="${esc(i.name)}" data-price="${i.price}" aria-label="Lägg till ${esc(i.name)}">${plusIcon}</button>`

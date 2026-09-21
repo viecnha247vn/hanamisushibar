@@ -115,6 +115,64 @@ function resetSoldOut() {
 }
 
 /** Meny i arket: Hanami → Publicera webbplatsen */
+/**
+ * Menyändringar från koden (data/menu-andringar.js), så att arket inte behöver ändras för hand.
+ * Körs automatiskt när webbplatsen byggs i produktion. Varje ändring har ett id och körs bara
+ * en gång (listan sparas i MENU_PATCHES_DONE). Bara det som står i ändringen rörs – priser eller
+ * texter som köket själv ändrat i arket lämnas i fred.
+ *   set:   { "barn-1": { name, price, desc, visible } }
+ *   add:   [{ after: "tillbehor-10", id, name, price, desc }]   ny rad direkt efter en befintlig
+ *   hide:  ["bubble-4"]                                         bocka ur "Visas på webben"
+ *   notes: { bubble: "Kategoritext" }
+ */
+function applyMenuPatches_(patches) {
+  if (!Array.isArray(patches)) throw new ApiError(400, 'Menyändringar saknas.');
+  const done = safeJson_(prop_('MENU_PATCHES_DONE', '[]')) || [];
+  const pending = patches.filter(p => p && p.id && done.indexOf(String(p.id)) < 0);
+  const report = [];
+  if (!pending.length) return { applied: [], report: report };
+  const sh = sheet_(SHEET.MENU), c = colMap_(sh);
+  const put = (row, col, v) => { if (c[col]) sh.getRange(row, c[col]).setValue(v); };
+  pending.forEach(p => {
+    Object.keys(p.set || {}).forEach(id => {
+      const row = findRow_(sh, 'Id', id), f = p.set[id] || {};
+      if (!row) { report.push('Saknas: ' + id); return; }
+      if (f.name != null) put(row, 'Namn', String(f.name));
+      if (f.price != null) put(row, 'Pris', Number(f.price));
+      if (f.desc != null) put(row, 'Beskrivning', String(f.desc));
+      if (f.visible != null) put(row, 'Visas på webben', !!f.visible);
+      report.push('Ändrad: ' + id);
+    });
+    (p.add || []).forEach(a => {
+      if (findRow_(sh, 'Id', a.id)) { report.push('Finns redan: ' + a.id); return; }
+      const after = findRow_(sh, 'Id', a.after);
+      if (!after) { report.push('Hittar inte platsen efter ' + a.after + ' för ' + a.id); return; }
+      sh.insertRowAfter(after);
+      const row = after + 1, n = sh.getLastColumn(), from = sh.getRange(after, 1, 1, n), to = sh.getRange(row, 1, 1, n);
+      from.copyTo(to, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);              // samma utseende och kryssrutor
+      from.copyTo(to, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
+      ['Kategori-id', 'Kategori', 'Kategoritext'].forEach(k => put(row, k, ''));   // raden hör till samma kategori
+      put(row, 'Id', String(a.id)); put(row, 'Namn', String(a.name || ''));
+      put(row, 'Pris', Number(a.price) || 0); put(row, 'Beskrivning', String(a.desc || ''));
+      put(row, 'Visas på webben', a.visible !== false); put(row, 'Slut idag', false);
+      report.push('Ny: ' + a.id);
+    });
+    (p.hide || []).forEach(id => {
+      const row = findRow_(sh, 'Id', id);
+      if (row) { put(row, 'Visas på webben', false); report.push('Dold: ' + id); } else report.push('Saknas: ' + id);
+    });
+    Object.keys(p.notes || {}).forEach(cid => {
+      const row = findRow_(sh, 'Kategori-id', cid);
+      if (row) { put(row, 'Kategoritext', String(p.notes[cid])); report.push('Kategoritext: ' + cid); } else report.push('Saknas kategori: ' + cid);
+    });
+    done.push(String(p.id));
+  });
+  PropertiesService.getScriptProperties().setProperty('MENU_PATCHES_DONE', JSON.stringify(done.slice(-200)));
+  clearMenuCache_();
+  log_('INFO', 'Menyändringar', pending.map(p => p.id).join(', ') + ' – ' + report.join('; ').slice(0, 900));
+  return { applied: pending.map(p => String(p.id)), report: report };
+}
+
 function publishSite() {
   const hook = prop_('VERCEL_DEPLOY_HOOK');
   if (!hook) { say_('VERCEL_DEPLOY_HOOK saknas i Skriptegenskaper.'); return; }

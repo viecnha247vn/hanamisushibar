@@ -31,7 +31,7 @@
 .search input:focus{outline:none;border-color:var(--koi)}
 .chips{display:flex;gap:.3rem;overflow-x:auto;scrollbar-width:none;flex:1;mask-image:linear-gradient(90deg,#000 92%,transparent)}
 .chips::-webkit-scrollbar{display:none}
-.chips a{flex:0 0 auto;padding:.6rem .9rem;font:400 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--ink-2);border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
+.chips a{flex:0 0 auto;padding:.6rem .9rem;font:600 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--ink);border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
 .chips a:hover{color:var(--ink)}
 .chips a.active{color:var(--koi);border-color:var(--koi)}
 @media (max-width:760px){.tools .wrap{flex-direction:column;align-items:stretch;gap:.4rem;padding-top:.6rem;padding-bottom:.2rem}.search{flex:none}}
@@ -108,7 +108,10 @@
 .cat.hh .cat-head .tag{background:#fff}
 .cat.hh .item{border-bottom-color:rgba(184,146,63,.18)}
 .cat.hh .item .add{background:transparent}
+.cat:not(#cat-tillbehor) .item .nm{text-transform:uppercase;font-weight:600;letter-spacing:.05em}
 .cat.hh .item .nm{text-transform:uppercase;font-weight:700;letter-spacing:.06em;font-size:1.1rem}
+.cat-head p .para{display:block}
+.cat-head p .para+.para{margin-top:.55rem}
 .hh-state{display:flex;align-items:center;gap:.55rem;margin:.6rem 0 0;font-size:.95rem;color:var(--ink-2)}
 .hh-state::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
 .hh-state.on{color:var(--ok);font-weight:500}
@@ -392,11 +395,15 @@ function setNote(k, note) { const c = cart.get(k); if (c) c.note = note.slice(0,
 let mixState = null;
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 function mixOpts() { const s = mixState, nigiri = {};
+  if (s.addon !== undefined) return { extra: s.addon };
   if (s.pieces) { const p = {}; MIX.items[s.id].perPiece.forEach(k => { if (s.pieces[k]) p[k] = s.pieces[k]; }); return { pieces: p }; }
   if (s.drink) return { boba: s.drink.boba, extra: MIX.drink.boba.filter(b => s.drink.extra.includes(b)), tapioca: s.drink.tapioca }; mixChoices(s.id).forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
 function openMix(id, key = null) {
   const cfg = MIX.items[id], o = key && cart.get(key)?.opts;
-  if (cfg.perPiece) {
+  if (cfg.addon) {
+    mixState = { id, key, addon: o ? o.extra : 0 };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · extra ${cfg.addon.label} ${cfg.addon.price} kr/st`;
+  } else if (cfg.perPiece) {
     mixState = { id, key, pieces: { ...(o ? o.pieces : {}) } };
     $("#mixSub").textContent = `${kr(ITEMS[id].price)} per bit · välj sort och antal`;
   } else if (cfg.drink) {
@@ -444,7 +451,18 @@ function renderPieces() {
   ok.disabled = !n;
   ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${n * price} kr`;
 }
+function renderAddon() {
+  const s = mixState, a = MIX.items[s.id].addon, n = s.addon;
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>Extra<small>${a.price} kr per styck</small></legend>
+    <div class="mx-row${n ? " on" : ""}"><span>Extra ${esc(a.label)}</span>
+    <span class="qty"><button type="button" data-mxa="-1" aria-label="En mindre"${n ? "" : " disabled"}>−</button><span>${n}</span><button type="button" data-mxa="1" aria-label="En till"${n < 10 ? "" : " disabled"}>+</button></span></div>
+    <p class="mx-state${n ? " paid" : ""}" role="status">${n ? `Tillägg +${n * a.price} kr` : "Ingen extra – rätten som den är"}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = false;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + n * a.price} kr`;
+}
 function renderMix() {
+  if (mixState.addon !== undefined) return renderAddon();
   if (mixState.pieces) return renderPieces();
   if (mixState.drink) return renderDrink();
   const s = mixState, cfg = MIX.items[s.id], need = mixNeed(s.id);
@@ -541,7 +559,7 @@ function renderDrawer() {
     ${MIX.items[c.id]?.perPiece
       ? `<span class="qty"><span>${c.qty} st</span><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`
       : `<span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`}
-    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${MIX.items[c.id].perPiece ? "Ändra sort och antal" : c.detail ? "Ändra valen" : MIX.items[c.id].drink ? "Välj popping boba" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
+    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${MIX.items[c.id].addon ? (c.detail ? "Ändra extra" : "Lägg till extra") : MIX.items[c.id].perPiece ? "Ändra sort och antal" : c.detail ? "Ändra valen" : MIX.items[c.id].drink ? "Välj popping boba" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
     ${noteOpen.has(k) || c.note
       ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
            <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
@@ -656,6 +674,7 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button,a"); if (!t) return;
   if (t.dataset.add) add(t.dataset.add);
   else if (t.dataset.mxn && mixState) { const k = t.dataset.mxn, d = Number(t.dataset.d); const tgt = mixState.pieces || mixState.nigiri; tgt[k] = Math.max(0, (tgt[k] || 0) + d); renderMix(); const nb = $(`[data-mxn="${k}"][data-d="${d}"]`); (nb && !nb.disabled ? nb : $(`[data-mxn="${k}"]:not(:disabled)`))?.focus(); }
+  else if (t.dataset.mxa && mixState && mixState.addon !== undefined) { mixState.addon = Math.max(0, Math.min(10, mixState.addon + Number(t.dataset.mxa))); renderAddon(); ($(`[data-mxa="${t.dataset.mxa}"]:not(:disabled)`) || $("[data-mxa]:not(:disabled)"))?.focus(); }
   else if (t.hasAttribute("data-mixclose")) closeMix();
   else if (t.id === "mixOk") saveMix();
   else if (t.dataset.edit) { const c = cart.get(t.dataset.edit); if (c) openMix(c.id, t.dataset.edit); }

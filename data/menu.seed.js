@@ -578,6 +578,21 @@ export default [
         "price": 40
       },
       {
+        "id": "tillbehor-22",
+        "name": "Kycklinggyoza, 2 st",
+        "price": 32
+      },
+      {
+        "id": "tillbehor-23",
+        "name": "Chicken katsu, 1 st",
+        "price": 60
+      },
+      {
+        "id": "tillbehor-24",
+        "name": "Tempura ebi, 2 st",
+        "price": 35
+      },
+      {
         "id": "tillbehor-11",
         "name": "Wakamesallad",
         "price": 39,
@@ -656,7 +671,7 @@ export default [
   {
     "id": "bubble",
     "name": "Bubble tea",
-    "note": "Njut av vår Bubble Tea med tapiokapärlor och 1 valfri popping boba – ingår!\nVälj mellan Classic, Matcha eller Taro.\nPopping boba: Mango, jordgubb, blåbär eller lychee.\nVill du ha extra topping? +10 kr/st.",
+    "note": "Njut av vår Bubble Tea med tapiokapärlor och 1 valfri popping boba – ingår!\nVälj mellan Classic, Matcha eller Taro.\n\nPopping boba: Mango, jordgubb, blåbär eller lychee.\n\nVill du ha extra topping? +10 kr/st.",
     "items": [
       {
         "id": "bubble-1",

@@ -114,6 +114,7 @@ test("byte i sushimix: tillägg läggs på arkets pris och valen följer med til
   const row = E.sheets["Beställningar"].data.find(r => r[1] === o.no);
   assert.match(row[10], /Maki: 5 California · extra ingefära/);
   assert.equal(E.call("order", { kind: "table", table: "2", items: [{ id: "sushi-4", qty: 1, extra: -10 }] }).status, 400);
+  assert.equal(E.call("order", { kind: "table", table: "2", items: [{ id: "varmt-1", qty: 1, extra: 15, detail: "Extra gyoza × 1" }] }).total, 129 + 15);
 });
 test("köket kan höja förberedelsetiden och för tidiga hämtningar nekas", () => {
   assert.equal(E.call("adminSettings").leadMinutes, 0);
@@ -129,6 +130,20 @@ test("köket kan höja förberedelsetiden och för tidiga hämtningar nekas", ()
   assert.match(r.error, /90 minuter/);
   assert.equal(E.call("adminLead", { minutes: 2 }).status, 400);
   E.call("adminLead", { minutes: 15 });
+});
+test("menyändringar från koden förs in i arket en gång", () => {
+  const r = E.call("applyMenuPatches", { patches: [{ id: "test-1",
+    set: { "barn-1": { name: "Testsushi" } }, hide: ["bubble-3"], notes: { bubble: "Ny text" },
+    add: [{ after: "tillbehor-10", id: "tillbehor-99", name: "Testrätt", price: 33 }] }] });
+  assert.deepEqual(r.applied, ["test-1"]);
+  const menu = E.call("menu").menu, items = menu.flatMap(c => c.items);
+  assert.equal(items.find(i => i.id === "barn-1").name, "Testsushi");
+  assert.equal(items.find(i => i.id === "tillbehor-99").price, 33);
+  assert.equal(menu.find(c => c.id === "tillbehor").items.findIndex(i => i.id === "tillbehor-99"),
+               menu.find(c => c.id === "tillbehor").items.findIndex(i => i.id === "tillbehor-10") + 1);
+  assert.ok(!items.find(i => i.id === "bubble-3"));
+  assert.equal(menu.find(c => c.id === "bubble").note, "Ny text");
+  assert.deepEqual(E.call("applyMenuPatches", { patches: [{ id: "test-1", set: { "barn-1": { name: "Igen" } } }] }).applied, []);
 });
 function pad2(n) { return String(n).padStart(2, "0"); }
 test("betald-markering sparas och följer med till kvittot", () => {

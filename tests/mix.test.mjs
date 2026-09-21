@@ -58,4 +58,11 @@ test("nigiri styckvis: sort och antal, bara tillåtna sorter", () => {
   assert.throws(() => mixPrice("nigiri-2", { pieces: { lax: 1 } }), /nigiri/);
   assert.throws(() => mixPrice("nigiri-1", null), /sort och antal/);
 });
+test("varmrätter: valfritt antal extra per styck", () => {
+  assert.deepEqual(mixPrice("varmt-1", null), { extra: 0, swaps: 0, detail: "" });
+  assert.equal(mixPrice("varmt-1", { extra: 0 }).detail, "");
+  assert.deepEqual(mixPrice("varmt-2", { extra: 3 }), { extra: 51, swaps: 0, detail: "Extra tempuraräka × 3" });
+  assert.equal(mixPrice("varmt-6", { extra: 2 }).extra, 80);
+  assert.throws(() => mixPrice("varmt-3", { extra: 11 }), /antal/);
+});
 console.log(`${passed} tester OK`);

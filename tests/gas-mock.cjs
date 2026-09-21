@@ -10,6 +10,7 @@ function makeEnv() {
     getLastColumn() { return Math.max(0, ...this.data.map(r => { let n = r.length; while (n && (r[n-1] === "" || r[n-1] == null)) n--; return n; })); }
     getMaxRows() { return this.maxRows; }
     cell(r, c) { while (this.data.length < r) this.data.push([]); const row = this.data[r - 1]; while (row.length < c) row.push(""); return row; }
+    insertRowAfter(r) { this.data.splice(r, 0, []); return this; }
     appendRow(vals) { this.data.splice(this.getLastRow(), 0, vals.slice()); }
     deleteRows(start, n) { this.data.splice(start - 1, n); }
     getRange(r, c, nr = 1, nc = 1) { return new Range(this, r, c, nr, nc); }
@@ -32,7 +33,7 @@ function makeEnv() {
     createTextFinder(text) { const self = this; return { matchEntireCell() { return this; }, findNext() {
       const v = self.getDisplayValues(); for (let i = 0; i < v.length; i++) for (let j = 0; j < v[i].length; j++) if (v[i][j] === text) return new Range(self.sh, self.r + i, self.c + j); return null; } }; }
   }
-  ["setFontWeight","setBackground","setFontColor","setVerticalAlignment","setNumberFormat","setWrap","setDataValidation"].forEach(m => Range.prototype[m] = function () { return this; });
+  ["copyTo","setFontWeight","setBackground","setFontColor","setVerticalAlignment","setNumberFormat","setWrap","setDataValidation"].forEach(m => Range.prototype[m] = function () { return this; });
   const sheets = {};
   const ss = {
     getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = new Sheet(n)), getSheets: () => Object.values(sheets),
@@ -49,7 +50,7 @@ function makeEnv() {
   };
   const ctx = {
     console, JSON, Math, Date, Number, String, Object, Array, Error, RegExp,
-    SpreadsheetApp: { getActive: () => ss, getUi: () => ui, newDataValidation: chain, newConditionalFormatRule: chain },
+    SpreadsheetApp: { CopyPasteType: { PASTE_FORMAT: 1, PASTE_DATA_VALIDATION: 2 }, getActive: () => ss, getUi: () => ui, newDataValidation: chain, newConditionalFormatRule: chain },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
