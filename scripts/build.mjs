@@ -48,16 +48,6 @@ const steam = id => STEAM[id] ? `
     <span class="steam" aria-hidden="true">${STEAM[id].map(([x, w, d, dl, b]) =>
       `<i style="--x:${x - w / 2}%;--w:${w}%;--d:${d}s;--dl:${dl}s;--b:${b}%"></i>`).join("")}</span>` : "";
 
-/* Virvel i ett av bubble tea-glasen (Taro, det lila i mitten). Området under etiketten ritas om i en canvas
-   som om vätskan vore en cylinder som snurrar: innehållet glider runt, trycks ihop mot kanterna
-   och bromsas in som när någon rört om. Siffrorna är glasets läge i procent av bilden. */
-// x/y/w/h = rutan i procent av bilden (vätskan under etiketten, ovanför glasbotten).
-// taper = var vätskan börjar och slutar i rutan [vänster uppe, höger uppe, vänster nere, höger nere] – glaset smalnar av.
-const SWIRL = { bubble: { x: 40, y: 60.5, w: 10.4, h: 21, taper: [.05, .95, .14, .88] } };
-const swirl = id => { const g = SWIRL[id]; return g ? `
-    <span class="swirl" aria-hidden="true"><span class="swirl-box"><canvas class="cup" data-src="/bilder/${id}-l.webp" data-crop="${g.x},${g.y},${g.w},${g.h}" data-taper="${g.taper.join(",")}"
-      style="left:${g.x}%;top:${g.y}%;width:${g.w}%;height:${g.h}%"></canvas></span></span>` : ""; };
-
 const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
@@ -74,7 +64,7 @@ const banner = c => hasImg(c.id) ? `
     <picture>
       <source type="image/webp" srcset="/bilder/${c.id}-s.webp 480w, /bilder/${c.id}-m.webp 800w, /bilder/${c.id}-l.webp 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)">
       <img src="/bilder/${c.id}-m.jpg" srcset="/bilder/${c.id}-s.jpg 480w, /bilder/${c.id}-m.jpg 800w, /bilder/${c.id}-l.jpg 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)" width="1400" height="613" alt="${esc(IMG_ALT[c.id] || c.name)}" loading="lazy" decoding="async">
-    </picture>${steam(c.id)}${swirl(c.id)}
+    </picture>${steam(c.id)}
   </figure>` : "";
 const square = id => hasImg(id) ? `<picture class="dish-img"><source type="image/webp" srcset="/bilder/${id}-sq.webp"><img src="/bilder/${id}-sq.jpg" width="640" height="640" alt="" loading="lazy" decoding="async"></picture>` : "";
 
@@ -82,7 +72,7 @@ const chips = menu.map(c => `<a href="#cat-${c.id}" data-id="${c.id}">${esc(c.na
 const menuHtml = menu.map((c, n) => `
 <section class="cat${c.id === "happy" ? " hh" : ""}" id="cat-${c.id}" aria-labelledby="h-${c.id}">${c.id === "happy" ? `
   <svg class="branch hh-branch" viewBox="0 0 600 300" aria-hidden="true"><use href="#branch"/></svg>` : ""}
-  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}"${c.id === "happy" ? ` class="hh-title" data-text="${esc(c.name)}"` : ""}>${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note)}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
+  <div class="cat-head"><span class="n" aria-hidden="true">${two(n + 1)}</span><h2 id="h-${c.id}"${c.id === "happy" ? ` class="hh-title" data-text="${esc(c.name)}"` : ""}>${esc(c.name)}</h2>${tag(c.id) || "<span></span>"}${c.note ? `<p>${esc(c.note).replace(/\r?\n/g, "<br>")}</p>` : ""}${c.id === "happy" ? `<p class="hh-state" data-hh role="status"></p>` : ""}</div>${banner(c)}
   <div class="items">
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>

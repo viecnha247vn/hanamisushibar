@@ -656,7 +656,7 @@ export default [
   {
     "id": "bubble",
     "name": "Bubble tea",
-    "note": "Alla med tapiokapärlor och en popping boba som ingår: mango, jordgubb, blåbär eller lychee. Extra boba eller extra tapioka +10 kr.",
+    "note": "Njut av vår Bubble Tea med tapiokapärlor och 1 valfri popping boba – ingår!\nVälj mellan Classic, Matcha eller Taro.\nPopping boba: Mango, jordgubb, blåbär eller lychee.\nVill du ha extra topping? +10 kr/st.",
     "items": [
       {
         "id": "bubble-1",

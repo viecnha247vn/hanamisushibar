@@ -62,13 +62,6 @@
   100%{opacity:0;transform:translate3d(-10%,-145%,0) scale(1.5,1.8) rotate(-6deg)}}
 .cat-img:not(.inview) .steam i{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){.cat-img .steam{display:none}}
-/* virvel i ett bubble tea-glas */
-.cat-img .swirl{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
-.cat-img .swirl-box{position:absolute;top:0;left:50%;height:100%;aspect-ratio:1400/612;transform:translateX(-50%) scale(1.02);transition:transform 1.2s var(--ease)}
-.cat:hover .cat-img .swirl-box{transform:translateX(-50%) scale(1)}
-.cat-img .swirl .cup{position:absolute;display:block}
-.cat-img:not(.inview) .swirl{display:none}
-@media (prefers-reduced-motion:reduce){.cat-img .swirl{display:none}}
 .cat-img::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -60px 60px -40px rgba(11,21,32,.25);pointer-events:none}
 @media (max-width:760px){.cat-img{aspect-ratio:16/9;margin:1rem -0 1.3rem;border-radius:3px}}
 .cat-head .n{font:italic 400 3rem/.8 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
@@ -703,118 +696,11 @@ initCommon();
 initChips();
 initSearch();
 syncHappy(); setInterval(syncHappy, 30000);
-/* ---------- virvel i bubble tea-glaset ----------
-   Vätskan behandlas som en cylinder sedd från sidan. Varje pixel i glaset motsvarar en vinkel
-   φ = asin(u) runt cylindern. När cylindern roterat vinkeln a hämtas färgen från φ + a och
-   projiceras tillbaka – innehållet glider då snabbt i mitten och trycks ihop mot kanterna,
-   precis som pärlor som snurrar i ett glas. Pärlorna som försvinner vid ena kanten kommer tillbaka vid den andra.
-   Rörelsen: en omrörning som bromsas in (exponentiellt), vila, ny omrörning. Den övre delen
-   snurrar lite fortare än botten medan det går fort (skjuvning), och snabba rörelser får lätt
-   rörelseoskärpa. I vila är bilden exakt originalet, så inga skarvar syns. */
-function initSwirl(cv) {
-  const [px, py, pw, ph] = cv.dataset.crop.split(",").map(Number);
-  const img = new Image(); img.decoding = "async"; img.src = cv.dataset.src;
-  img.onload = () => {
-    const sx0 = Math.round(img.naturalWidth * px / 100), sy0 = Math.round(img.naturalHeight * py / 100);
-    const W = Math.max(8, Math.round(img.naturalWidth * pw / 100)), H = Math.max(8, Math.round(img.naturalHeight * ph / 100));
-    cv.width = W; cv.height = H;
-    const ctx = cv.getContext("2d", { willReadFrequently: true });
-    ctx.drawImage(img, sx0, sy0, W, H, 0, 0, W, H);
-    const src = ctx.getImageData(0, 0, W, H).data;
-    const out = ctx.createImageData(W, H), o = out.data;
-    const ss = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
-    const HALF = Math.PI / 2;
-
-    // 1. Var vätskan finns på varje rad (glaset smalnar av), u ∈ [−1, 1] tvärs över och φ = asin(u).
-    const [tl, tr, bl, br] = (cv.dataset.taper || "0,1,0,1").split(",").map(Number);
-    const L = new Float32Array(H), R = new Float32Array(H), U = new Float32Array(W * H), alpha = new Uint8ClampedArray(W * H);
-    for (let y = 0; y < H; y++) {
-      const yn = (y + .5) / H, l = (tl + (bl - tl) * yn) * W, r = (tr + (br - tr) * yn) * W;
-      L[y] = l; R[y] = r;
-      const fade = ss(0, .3, yn) * ss(0, .1, 1 - yn);
-      for (let x = 0; x < W; x++) {
-        const cx = x + .5, k = y * W + x;
-        U[k] = Math.min(.999, Math.max(-.999, ((cx - l) / (r - l)) * 2 - 1));
-        alpha[k] = 255 * fade * Math.min(1, Math.max(0, Math.min(cx - l, r - cx) / 3));
-      }
-    }
-
-    // 2. Ljuset på glaset (mörkare mot kanterna) ska stå still medan innehållet snurrar.
-    //    Ljusprofilen mäts i den jämnrosa övre delen som funktion av u, och delas bort ur bilden.
-    const NB = 48, acc = new Float32Array(NB * 3), cnt = new Float32Array(NB);
-    for (let y = 0; y < Math.floor(H * .35); y++) for (let x = 0; x < W; x++) {
-      const k = y * W + x; if (!alpha[k] && y > H * .3) continue;
-      const u = ((x + .5) - L[y]) / (R[y] - L[y]) * 2 - 1; if (u < -1 || u > 1) continue;
-      const bi = Math.min(NB - 1, Math.floor((u + 1) / 2 * NB));
-      acc[bi * 3] += src[k * 4]; acc[bi * 3 + 1] += src[k * 4 + 1]; acc[bi * 3 + 2] += src[k * 4 + 2]; cnt[bi]++;
-    }
-    const prof = new Float32Array(NB * 3), mean = [0, 0, 0];
-    for (let i = 0; i < NB; i++) for (let c = 0; c < 3; c++) {
-      let s2 = 0, n2 = 0;                                         // lätt utjämning över grannar
-      for (let j = Math.max(0, i - 2); j <= Math.min(NB - 1, i + 2); j++) if (cnt[j]) { s2 += acc[j * 3 + c] / cnt[j]; n2++; }
-      prof[i * 3 + c] = n2 ? s2 / n2 : 0;
-    }
-    for (let c = 0; c < 3; c++) { let s2 = 0; for (let i = 0; i < NB; i++) s2 += prof[i * 3 + c]; mean[c] = s2 / NB || 1; }
-    for (let i = 0; i < NB; i++) for (let c = 0; c < 3; c++) prof[i * 3 + c] = Math.min(1.6, Math.max(.6, prof[i * 3 + c] / mean[c] || 1));
-    const light = (u, c) => { const f = (u + 1) / 2 * (NB - 1), i = Math.floor(f), t = f - i, j = Math.min(NB - 1, i + 1); return prof[i * 3 + c] + (prof[j * 3 + c] - prof[i * 3 + c]) * t; };
-    const alb = new Float32Array(W * H * 3);                      // bilden utan ljusprofil
-    for (let k = 0; k < W * H; k++) for (let c = 0; c < 3; c++) alb[k * 3 + c] = src[k * 4 + c] / light(U[k], c);
-
-    // 3. Hämta albedo vid vinkeln θ ∈ [−π/2, π/2] på rad y (linjär interpolation i x).
-    const sample = (y, th, rgb, wgt) => {
-      const sxf = L[y] + (Math.sin(th) + 1) * .5 * (R[y] - L[y]) - .5;
-      const x0 = Math.max(0, Math.min(W - 1, Math.floor(sxf))), x1 = Math.min(W - 1, x0 + 1), f = Math.min(1, Math.max(0, sxf - x0));
-      const i0 = (y * W + x0) * 3, i1 = (y * W + x1) * 3;
-      rgb[0] += (alb[i0] + (alb[i1] - alb[i0]) * f) * wgt; rgb[1] += (alb[i0 + 1] + (alb[i1 + 1] - alb[i0 + 1]) * f) * wgt; rgb[2] += (alb[i0 + 2] + (alb[i1 + 2] - alb[i0 + 2]) * f) * wgt;
-    };
-    // Innehållet går runt med perioden π (det som försvinner vid ena kanten kommer in vid den andra).
-    // Nära skarven blandas båda kanterna, så det aldrig syns någon linje.
-    const SEAM = .45;
-    const texel = (y, p, rgb, wgt) => {
-      const th = ((p + HALF) % Math.PI + Math.PI) % Math.PI - HALF, m = Math.abs(th);
-      const b = .5 * ss(HALF - SEAM, HALF, m);
-      sample(y, th, rgb, wgt * (1 - b));
-      if (b > 0) sample(y, th - Math.sign(th) * Math.PI, rgb, wgt * b);
-    };
-
-    // 4. Omrörning som bromsas in: vinkel A·(1 − e^(−t/τ)) under STIR sekunder, sedan vila.
-    const TAU = Math.PI * 2, TURNS = 1.35, TAUs = 2.6, STIR = 8, REST = 2.5, CYCLE = STIR + REST, A = TURNS * TAU;
-    const FULL = A * (1 - Math.exp(-STIR / TAUs));
-    const motion = t => { const k = Math.floor(t / CYCLE), r = t - k * CYCLE, e = Math.min(r, STIR);
-      return { a: k * FULL + A * (1 - Math.exp(-e / TAUs)), w: r < STIR ? (A / TAUs) * Math.exp(-e / TAUs) : 0 }; };
-
-    const t0 = performance.now(), rgb = [0, 0, 0];
-    let last = 0;
-    const frame = now => {
-      requestAnimationFrame(frame);
-      if (document.hidden || !cv.closest(".cat-img").classList.contains("inview") || now - last < 30) return;
-      last = now;
-      const { a, w } = motion((now - t0) / 1000);
-      const blur = Math.min(.05, w * .012);                        // rörelseoskärpa ~ vinkelhastighet
-      const taps = blur > .004 ? [-blur, -blur / 2, 0, blur / 2, blur] : [0], tw = 1 / taps.length;
-      for (let y = 0; y < H; y++) {
-        const ay = a + w * .07 * (.5 - y / H);                    // toppen snurrar lite fortare än botten
-        for (let x = 0; x < W; x++) {
-          const k = y * W + x, j = k * 4;
-          if (!alpha[k]) { o[j + 3] = 0; continue; }
-          rgb[0] = rgb[1] = rgb[2] = 0;
-          const p = Math.asin(U[k]) + ay;
-          for (const d of taps) texel(y, p + d, rgb, tw);
-          o[j] = rgb[0] * light(U[k], 0); o[j + 1] = rgb[1] * light(U[k], 1); o[j + 2] = rgb[2] * light(U[k], 2); o[j + 3] = alpha[k];
-        }
-      }
-      ctx.putImageData(out, 0, 0);
-    };
-    requestAnimationFrame(frame);
-  };
-}
-if (!matchMedia("(prefers-reduced-motion: reduce)").matches) $$(".cat-img .swirl canvas.cup").forEach(initSwirl);
-
 /* ångan rör sig bara när bilden syns på skärmen */
 if ("IntersectionObserver" in window) {
   const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "80px" });
-  $$(".cat-img .steam, .cat-img .swirl").forEach(sv => io.observe(sv.parentElement));
-} else $$(".cat-img .steam, .cat-img .swirl").forEach(sv => sv.parentElement.classList.add("inview"));
+  $$(".cat-img .steam").forEach(sv => io.observe(sv.parentElement));
+} else $$(".cat-img .steam").forEach(sv => sv.parentElement.classList.add("inview"));
 initPick({ onOrder: () => { $(".tools").scrollIntoView({ behavior: "smooth" }); setTimeout(() => $("#q").focus({ preventScroll: true }), 500); } });
 syncCart();
 syncAvailability();
