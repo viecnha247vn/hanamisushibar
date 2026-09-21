@@ -48,18 +48,21 @@ const steam = id => STEAM[id] ? `
     <span class="steam" aria-hidden="true">${STEAM[id].map(([x, w, d, dl, b]) =>
       `<i style="--x:${x - w / 2}%;--w:${w}%;--d:${d}s;--dl:${dl}s;--b:${b}%"></i>`).join("")}</span>` : "";
 
-/* Virvel i ett av bubble tea-glasen: en kopia av bilden, beskuren till glaset under etiketten,
-   förvrängs av ett SVG-filter (#swirlFx i meny.html) så pärlorna och teet ser ut att snurra. */
-const SWIRL = { bubble: { box: "left:53.4%;top:55.0%;width:12.4%;height:28.0%", img: "width:806.45%;height:357.14%;left:-430.65%;top:-196.43%" } };
-const swirl = id => SWIRL[id] ? `
-    <span class="swirl" aria-hidden="true"><span class="swirl-box"><span class="cup" style="${SWIRL[id].box}">
-      <img src="/bilder/${id}-m.webp" alt="" loading="lazy" decoding="async" style="${SWIRL[id].img}"><span class="vortex"></span></span></span></span>` : "";
+/* Virvel i ett av bubble tea-glasen (Taro, det lila i mitten). Området under etiketten ritas om i en canvas
+   som om vätskan vore en cylinder som snurrar: innehållet glider runt, trycks ihop mot kanterna
+   och bromsas in som när någon rört om. Siffrorna är glasets läge i procent av bilden. */
+// x/y/w/h = rutan i procent av bilden (vätskan under etiketten, ovanför glasbotten).
+// taper = var vätskan börjar och slutar i rutan [vänster uppe, höger uppe, vänster nere, höger nere] – glaset smalnar av.
+const SWIRL = { bubble: { x: 40, y: 60.5, w: 10.4, h: 21, taper: [.05, .95, .14, .88] } };
+const swirl = id => { const g = SWIRL[id]; return g ? `
+    <span class="swirl" aria-hidden="true"><span class="swirl-box"><canvas class="cup" data-src="/bilder/${id}-l.webp" data-crop="${g.x},${g.y},${g.w},${g.h}" data-taper="${g.taper.join(",")}"
+      style="left:${g.x}%;top:${g.y}%;width:${g.w}%;height:${g.h}%"></canvas></span></span>` : ""; };
 
 const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
   bento: "Bento box med teriyaki, gyoza och nigiri", nigiri: "Nigiri i många sorter", lunch: "Nigiri, maki och uramaki på svart fat",
-  bubble: "Bubble tea i fyra smaker med tapiokapärlor", dryck: "Läsk och mineralvatten i burk",
+  bubble: "Classic, taro och matcha milk tea med tapioka, och skålar med popping boba i mango, jordgubb, blåbär och lychee", dryck: "Läsk och mineralvatten i burk",
   happy: "Sushifat med nigiri, maki och uramaki på mörkt träbräde",
   tillbehor: "Förrätter: yakitori, vårrullar, gyoza, edamame och räkchips",
   barn: "Bento med kycklingspett, vårrullar, ris och maki",
@@ -84,7 +87,7 @@ const menuHtml = menu.map((c, n) => `
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
     ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}${MIX.items[i.id] ? `
-    <span class="mx">${MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
+    <span class="mx">${MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
     <span class="pr">${kr(i.price)}</span>
     ${i.price > 0
       ? `<button class="add" type="button" data-add="${i.id}" data-cat="${c.id}" data-name="${esc(i.name)}" data-price="${i.price}" aria-label="Lägg till ${esc(i.name)}">${plusIcon}</button>`

@@ -44,4 +44,18 @@ test("nigirimix: gästen väljer alla bitar utan tillägg", () => {
   assert.equal(mixPrice("nigiri-4", { nigiri: { lax: 12 } }).extra, 0);
   assert.throws(() => mixPrice("nigiri-3", { nigiri: { lax: 9 } }), /exakt 10/);
 });
+test("bubble tea: en boba ingår, extra boba och tapioka +10 kr", () => {
+  assert.equal(mixPrice("bubble-1", { boba: "mango" }).extra, 0);
+  const r = mixPrice("bubble-3", { boba: "lychee", extra: ["mango", "blåbär"], tapioca: true });
+  assert.equal(r.extra, 30); assert.equal(r.detail, "Boba: lychee · extra boba: mango, blåbär · extra tapioka");
+  assert.throws(() => mixPrice("bubble-2", null), /popping boba/);
+  assert.throws(() => mixPrice("bubble-2", { boba: "kiwi" }), /popping boba/);
+});
+test("nigiri styckvis: sort och antal, bara tillåtna sorter", () => {
+  const r = mixPrice("nigiri-1", { pieces: { lax: 3, tonfisk: 1 } });
+  assert.equal(r.pieces, 4); assert.equal(r.extra, 0); assert.equal(r.detail, "3 lax, 1 tonfisk");
+  assert.equal(mixPrice("nigiri-2", { pieces: { "flamberad jätteräka": 2 } }).detail, "2 flamberade jätteräkor");
+  assert.throws(() => mixPrice("nigiri-2", { pieces: { lax: 1 } }), /nigiri/);
+  assert.throws(() => mixPrice("nigiri-1", null), /sort och antal/);
+});
 console.log(`${passed} tester OK`);

@@ -334,6 +334,10 @@ Sushi mix 8, 10, 12, 15, 20 và Mamma mix mở hộp chọn khi khách bấm +:
 - Nigiri đổi tự do. 4 miếng đổi đầu tiên miễn phí, từ miếng thứ 5 cộng 10 kr/miếng.
 - Lựa chọn in lên phiếu bếp, hiện trong köksvy và e-mail, ví dụ `Maki: 5 Philadelphia maki · Nigiri: 5 tonfisk, 2 avokado`.
 
+Nigiri (nigiri-1) và Special nigiri (nigiri-2): khách bấm + từng sort muốn lấy, giá theo cột Pris trong Sheet × số miếng (19 kr và 23 kr). Nigiri: lax, tonfisk, avokado, krabbstick, jätteräka, tofu, wakame, krabbröra. Special: flamberad lax, flamberad jätteräka.
+
+Bubble tea (bubble-1, bubble-2, bubble-3): khách chọn 1 popping boba (mango, jordgubb, blåbär, lychee) – ingår. Extra boba từng vị và extra tapioka +10 kr mỗi thứ. Khách chưa chọn boba thì không thêm được vào giỏ.
+
 Thành phần từng mix, danh sách nigiri/maki được đổi và mức phí nằm trong `lib/mix.js`. **Nếu quán sửa mô tả một mix trong Google Sheet, phải sửa `lib/mix.js` theo.** Happy hour không cho đổi.
 
 Phí đổi được Vercel tính (`lib/mix.js`) rồi Apps Script cộng vào giá trong fliken Meny, nên sau khi cập nhật code phải đẩy cả Apps Script (`npm run gas:deploy` hoặc GitHub Actions).

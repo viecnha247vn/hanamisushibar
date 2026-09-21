@@ -91,13 +91,13 @@ export default [
         "id": "nigiri-1",
         "name": "Nigiri",
         "price": 19,
-        "desc": "Riskudde med valbar topping: lax, tonfisk, avokado, krabbstick, jätteräka, tofu, wakame eller krabbröra"
+        "desc": "Riskudde med valbar topping: lax, tonfisk, avokado, krabbstick, jätteräka, tofu, wakame eller krabbröra. Välj sort och antal."
       },
       {
         "id": "nigiri-2",
         "name": "Special nigiri",
         "price": 23,
-        "desc": "Flamberad lax eller flamberad räka"
+        "desc": "Flamberad lax eller flamberad jätteräka. Välj sort och antal."
       },
       {
         "id": "nigiri-3",
@@ -487,13 +487,13 @@ export default [
     "items": [
       {
         "id": "barn-1",
-        "name": "Barnsushi",
+        "name": "Doraemon sushi",
         "price": 80,
         "desc": "1 lax, 1 räka, 1 avokado, 4 små maki (gurka)"
       },
       {
         "id": "barn-2",
-        "name": "Barn karaage",
+        "name": "Conan karaage",
         "price": 80,
         "desc": "5 bitar kycklinglårfilé med ris, sallad, sesamfrön och teriyakisås"
       },
@@ -656,26 +656,21 @@ export default [
   {
     "id": "bubble",
     "name": "Bubble tea",
-    "note": "Dryck med tapiokapärlor, juice balls och fruktjelly. Välj te: classic, matcha eller taro. Välj sedan smak på popping boba.",
+    "note": "Alla med tapiokapärlor och en popping boba som ingår: mango, jordgubb, blåbär eller lychee. Extra boba eller extra tapioka +10 kr.",
     "items": [
       {
         "id": "bubble-1",
-        "name": "Bubble tea mango",
+        "name": "Classic milk tea",
         "price": 69
       },
       {
         "id": "bubble-2",
-        "name": "Bubble tea jordgubb",
+        "name": "Taro milk tea",
         "price": 69
       },
       {
         "id": "bubble-3",
-        "name": "Bubble tea blåbär",
-        "price": 69
-      },
-      {
-        "id": "bubble-4",
-        "name": "Bubble tea litchi",
+        "name": "Matcha milk tea",
         "price": 69
       }
     ]

@@ -66,20 +66,19 @@
 .cat-img .swirl{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
 .cat-img .swirl-box{position:absolute;top:0;left:50%;height:100%;aspect-ratio:1400/612;transform:translateX(-50%) scale(1.02);transition:transform 1.2s var(--ease)}
 .cat:hover .cat-img .swirl-box{transform:translateX(-50%) scale(1)}
-.cat-img .swirl .cup{position:absolute;overflow:hidden;clip-path:polygon(0 0,100% 0,95% 100%,5% 100%);border-radius:0 0 12% 12% / 0 0 8% 8%;
-  -webkit-mask-image:radial-gradient(ellipse 62% 75% at 50% 58%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 62% 75% at 50% 58%,#000 60%,transparent 100%)}
-.cat-img .swirl .cup img{position:absolute;max-width:none;object-fit:fill;transform:none;transition:none;filter:url(#swirlFx);animation:slosh 2.6s ease-in-out infinite}
-@keyframes slosh{0%,100%{transform:translateX(-1.4%) skewX(-2deg)}50%{transform:translateX(1.4%) skewX(2deg)}}
-.cat-img .swirl .vortex{position:absolute;left:-40%;top:-30%;width:180%;height:160%;border-radius:50%;
-  background:conic-gradient(from 0deg,rgba(255,255,255,0) 0 10%,rgba(255,255,255,.55) 17%,rgba(255,255,255,0) 25% 44%,rgba(255,255,255,.45) 52%,rgba(255,255,255,0) 60% 78%,rgba(255,255,255,.4) 86%,rgba(255,255,255,0) 94%);
-  transform:scaleY(.42);mix-blend-mode:soft-light;filter:blur(3px);animation:vortex 2.8s linear infinite}
-@keyframes vortex{from{transform:scaleY(.42) rotate(0)}to{transform:scaleY(.42) rotate(360deg)}}
+.cat-img .swirl .cup{position:absolute;display:block}
 .cat-img:not(.inview) .swirl{display:none}
 @media (prefers-reduced-motion:reduce){.cat-img .swirl{display:none}}
 .cat-img::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -60px 60px -40px rgba(11,21,32,.25);pointer-events:none}
 @media (max-width:760px){.cat-img{aspect-ratio:16/9;margin:1rem -0 1.3rem;border-radius:3px}}
 .cat-head .n{font:italic 400 3rem/.8 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
-.cat-head h2{font-size:clamp(1.8rem,3.6vw,2.5rem)}
+/* kategorirubriker: versaler i Cinzel med en lugn guldglans – samma familj som HAPPY HOUR men dämpad */
+.cat-head h2{font:700 clamp(1.45rem,3.2vw,2.2rem)/1.15 'Cinzel','Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:.07em;
+  background:linear-gradient(100deg,#7A5E24 0%,#B8923F 30%,#E9D7A6 42%,#B8923F 54%,#8A6A2A 100%);background-size:250% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:catShine 11s linear infinite;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.8)) drop-shadow(0 3px 6px rgba(154,119,50,.18))}
+@keyframes catShine{from{background-position:130% 0}to{background-position:-130% 0}}
+@media (prefers-reduced-motion:reduce){.cat-head h2{animation:none;background-position:40% 0}}
 .cat-head .tag{font:500 10.5px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;padding:.45rem .7rem;border:1px solid rgba(228,143,168,.5);background:var(--sakura-3);border-radius:2px;color:var(--gold-2);white-space:nowrap}
 .cat-head .tag.on{color:var(--ok);border-color:rgba(47,143,91,.4);background:#EAF6EF}
 .cat-head p{grid-column:1/-1;color:var(--ink-2);font-size:.95rem;max-width:70ch}
@@ -108,14 +107,15 @@
 .cat.hh .hh-branch{width:min(420px,70%);right:-110px;bottom:-60px;--r:-8deg;--ox:100%;--oy:100%;--dur:17s;opacity:.24;z-index:-1}
 .cat.hh .cat-head{border-bottom-color:rgba(184,146,63,.35)}
 .cat.hh .cat-head{align-items:center}
-.hh-title{--hhg:linear-gradient(100deg,#6E5420 0%,#B8923F 16%,#E5CF98 26%,#FFFBEA 31%,#E5CF98 36%,#B8923F 48%,#7A5E24 62%,#C9A96A 78%,#8A6A2A 100%);position:relative;margin:0 0 .5em;font:700 clamp(2.1rem,5.2vw,3.7rem)/1 'Cinzel','Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;background:var(--hhg);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:hhShine 4.5s linear infinite;filter:drop-shadow(0 1px 0 rgba(255,255,255,.9)) drop-shadow(0 3px 2px rgba(122,94,36,.35)) drop-shadow(0 10px 18px rgba(154,119,50,.28))}
-.hh-title::after{content:attr(data-text);position:absolute;left:0;right:0;top:100%;margin-top:.06em;height:1em;overflow:hidden;background:var(--hhg);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:inherit;transform:scaleY(-1);opacity:.24;-webkit-mask-image:linear-gradient(to bottom,transparent 35%,#000 100%);mask-image:linear-gradient(to bottom,transparent 35%,#000 100%);pointer-events:none}
-@media (max-width:760px){.hh-title{font-size:clamp(1.55rem,7.2vw,2.2rem)}.cat.hh .cat-head .tag{grid-column:1/-1;grid-row:2;justify-self:start;margin-top:.2rem}}
+.cat-head h2.hh-title{--hhg:linear-gradient(100deg,#6E5420 0%,#B8923F 16%,#E5CF98 26%,#FFFBEA 31%,#E5CF98 36%,#B8923F 48%,#7A5E24 62%,#C9A96A 78%,#8A6A2A 100%);position:relative;margin:0 0 .5em;font:700 clamp(2.1rem,5.2vw,3.7rem)/1 'Cinzel','Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;background:var(--hhg);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:hhShine 4.5s linear infinite;filter:drop-shadow(0 1px 0 rgba(255,255,255,.9)) drop-shadow(0 3px 2px rgba(122,94,36,.35)) drop-shadow(0 10px 18px rgba(154,119,50,.28))}
+.cat-head h2.hh-title::after{content:attr(data-text);position:absolute;left:0;right:0;top:100%;margin-top:.06em;height:1em;overflow:hidden;background:var(--hhg);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:inherit;transform:scaleY(-1);opacity:.24;-webkit-mask-image:linear-gradient(to bottom,transparent 35%,#000 100%);mask-image:linear-gradient(to bottom,transparent 35%,#000 100%);pointer-events:none}
+@media (max-width:760px){.cat-head h2.hh-title{font-size:clamp(1.55rem,7.2vw,2.2rem)}.cat.hh .cat-head .tag{grid-column:1/-1;grid-row:2;justify-self:start;margin-top:.2rem}}
 @keyframes hhShine{from{background-position:130% 0}to{background-position:-130% 0}}
-@media (prefers-reduced-motion:reduce){.hh-title,.hh-title::after{animation:none;background-position:40% 0}}
+@media (prefers-reduced-motion:reduce){.cat-head h2.hh-title,.cat-head h2.hh-title::after{animation:none;background-position:40% 0}}
 .cat.hh .cat-head .tag{background:#fff}
 .cat.hh .item{border-bottom-color:rgba(184,146,63,.18)}
 .cat.hh .item .add{background:transparent}
+.cat.hh .item .nm{text-transform:uppercase;font-weight:700;letter-spacing:.06em;font-size:1.1rem}
 .hh-state{display:flex;align-items:center;gap:.55rem;margin:.6rem 0 0;font-size:.95rem;color:var(--ink-2)}
 .hh-state::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
 .hh-state.on{color:var(--ok);font-weight:500}
@@ -264,14 +264,6 @@
   <div class="foot" id="drawerFoot"></div>
 </aside>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <filter id="swirlFx" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
-    <feTurbulence type="fractalNoise" baseFrequency="0.018 0.045" numOctaves="2" seed="7" result="n">
-      <animate attributeName="baseFrequency" dur="5s" values="0.018 0.045;0.026 0.03;0.014 0.05;0.018 0.045" repeatCount="indefinite"/>
-    </feTurbulence>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="B"/>
-  </filter>
-</svg>
 <div class="mixwrap" id="mixdlg" hidden>
   <div class="mixbox" role="dialog" aria-modal="true" aria-labelledby="mixTitle">
     <header><div><h2 id="mixTitle"></h2><p id="mixSub"></p></div><button class="x" type="button" data-mixclose aria-label="Stäng"><svg width="14" height="14"><use href="#i-x"/></svg></button></header>
@@ -390,7 +382,8 @@ function addLine(id, opts, qty = 1, note = "") {
   const m = mixPrice(id, opts);
   if (!m.detail) opts = null;                       // inga ändringar = vanlig rad
   const sig = opts ? JSON.stringify(opts) : "";
-  for (const [k, c] of cart) if (c.id === id && c.sig === sig) { c.qty += qty; if (note && !c.note) c.note = note; syncCart(); return k; }
+  const perPiece = !!(MIX.items[id] && MIX.items[id].perPiece);   // antalet = bitarna i valen, slås inte ihop
+  if (!perPiece) for (const [k, c] of cart) if (c.id === id && c.sig === sig) { c.qty += qty; if (note && !c.note) c.note = note; syncCart(); return k; }
   const k = sig ? `${id}~${++lineSeq}` : id;
   cart.set(k, { id, sig, qty, note, opts, extra: m.extra, detail: m.detail });
   syncCart(); return k;
@@ -405,13 +398,23 @@ function setNote(k, note) { const c = cart.get(k); if (c) c.note = note.slice(0,
 /* ---------- val i sushimix: maki gratis, nigiri 4 byten ingår ---------- */
 let mixState = null;
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
-function mixOpts() { const s = mixState, nigiri = {}; mixChoices(s.id).forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
+function mixOpts() { const s = mixState, nigiri = {};
+  if (s.pieces) { const p = {}; MIX.items[s.id].perPiece.forEach(k => { if (s.pieces[k]) p[k] = s.pieces[k]; }); return { pieces: p }; }
+  if (s.drink) return { boba: s.drink.boba, extra: MIX.drink.boba.filter(b => s.drink.extra.includes(b)), tapioca: s.drink.tapioca }; mixChoices(s.id).forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
 function openMix(id, key = null) {
   const cfg = MIX.items[id], o = key && cart.get(key)?.opts;
-  const rolls = cfg.chooseMaki === false ? 0 : cfg.maki / MIX.makiPerRoll;
-  mixState = { id, key, maki: o ? [...o.maki] : Array(rolls).fill(""), nigiri: { ...(o ? o.nigiri : cfg.nigiri) } };  // freeChoice: tom start, gästen väljer allt
+  if (cfg.perPiece) {
+    mixState = { id, key, pieces: { ...(o ? o.pieces : {}) } };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} per bit · välj sort och antal`;
+  } else if (cfg.drink) {
+    mixState = { id, key, drink: { boba: o ? o.boba : "", extra: o ? [...(o.extra || [])] : [], tapioca: !!(o && o.tapioca) } };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · tapioka och en popping boba ingår`;
+  } else {
+    const rolls = cfg.chooseMaki === false ? 0 : cfg.maki / MIX.makiPerRoll;
+    mixState = { id, key, maki: o ? [...o.maki] : Array(rolls).fill(""), nigiri: { ...(o ? o.nigiri : cfg.nigiri) } };  // freeChoice: tom start, gästen väljer allt
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · ${mixNeed(id)} nigiri${cfg.maki ? ` och ${cfg.maki} maki` : ""}`;
+  }
   $("#mixTitle").textContent = ITEMS[id].name;
-  $("#mixSub").textContent = `${kr(ITEMS[id].price)} · ${mixNeed(id)} nigiri${cfg.maki ? ` och ${cfg.maki} maki` : ""}`;
   renderMix();
   const w = $("#mixdlg"); w.hidden = false; requestAnimationFrame(() => w.classList.add("show"));
   document.body.classList.add("no-scroll");
@@ -423,7 +426,34 @@ function closeMix() {
   if ($("#drawer").hidden) document.body.classList.remove("no-scroll");
   mixState = null;
 }
+function renderDrink() {
+  const s = mixState, d = s.drink, D = MIX.drink;
+  const n = d.extra.length + (d.tapioca ? 1 : 0), extra = n * D.extra;
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>Popping boba<small>1 ingår</small></legend>
+    <div class="mx-chips">${D.boba.map(b => `<label><input type="radio" name="mxboba" value="${esc(b)}" data-mxboba${d.boba === b ? " checked" : ""}>${cap(b)}</label>`).join("")}</div></fieldset>
+    <fieldset class="mx-sec"><legend>Extra<small>+${D.extra} kr styck</small></legend>
+    <div class="mx-chips">${D.boba.map(b => `<label><input type="checkbox" value="${esc(b)}" data-mxextra${d.extra.includes(b) ? " checked" : ""}>${cap(b)}</label>`).join("")}
+      <label><input type="checkbox" data-mxtap${d.tapioca ? " checked" : ""}>Tapioka</label></div>
+    <p class="mx-state${!d.boba ? " todo" : extra ? " paid" : ""}" role="status">${!d.boba ? "Välj en popping boba" : extra ? `Tillägg +${extra} kr` : "Tapioka och boba ingår i priset"}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = !d.boba;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + extra} kr`;
+}
+function renderPieces() {
+  const s = mixState, list = MIX.items[s.id].perPiece, price = ITEMS[s.id].price;
+  const n = list.reduce((a, k) => a + (s.pieces[k] || 0), 0);
+  const rows = list.map(k => { const v = s.pieces[k] || 0; return `<div class="mx-row${v ? " on" : ""}"><span>${cap(k)}</span>
+    <span class="qty"><button type="button" data-mxn="${k}" data-d="-1" aria-label="En ${k} mindre"${v ? "" : " disabled"}>−</button><span>${v}</span><button type="button" data-mxn="${k}" data-d="1" aria-label="En ${k} till"${n < 50 ? "" : " disabled"}>+</button></span></div>`; }).join("");
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>Nigiri<small>${kr(price)} per bit</small></legend>
+    <p class="mx-rule">Tryck + för varje bit du vill ha.</p>${rows}
+    <p class="mx-state${n ? "" : " todo"}" role="status">${n ? `${n} ${n === 1 ? "bit" : "bitar"} · ${n * price} kr` : "Välj minst en bit"}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = !n;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${n * price} kr`;
+}
 function renderMix() {
+  if (mixState.pieces) return renderPieces();
+  if (mixState.drink) return renderDrink();
   const s = mixState, cfg = MIX.items[s.id], need = mixNeed(s.id);
   const choices = mixChoices(s.id);
   const have = choices.reduce((a, k) => a + (s.nigiri[k] || 0), 0);
@@ -447,8 +477,9 @@ function renderMix() {
 function saveMix() {
   const s = mixState; if (!s) return;
   let opts; try { opts = mixOpts(); mixPrice(s.id, opts); } catch (e) { toast(e.message); return; }
-  if (s.key) { const old = cart.get(s.key); cart.delete(s.key); noteOpen.delete(s.key); addLine(s.id, opts, old ? old.qty : 1, old ? old.note : ""); renderDrawer(); }
-  else { addLine(s.id, opts); toast(`Tillagd · ${ITEMS[s.id].name}`); }
+  const pieces = s.pieces ? Object.values(opts.pieces).reduce((a, b) => a + b, 0) : 0;
+  if (s.key) { const old = cart.get(s.key); cart.delete(s.key); noteOpen.delete(s.key); addLine(s.id, opts, pieces || (old ? old.qty : 1), old ? old.note : ""); renderDrawer(); }
+  else { addLine(s.id, opts, pieces || 1); toast(`Tillagd · ${ITEMS[s.id].name}`); }
   closeMix();
 }
 
@@ -514,8 +545,10 @@ function renderDrawer() {
   }
   const lines = [...cart].map(([k, c]) => `<div class="line"><span class="nm">${esc(ITEMS[c.id].name)}</span><span class="pr">${unitPrice(c) * c.qty} kr</span>
     ${c.detail ? `<span class="dt">${esc(c.detail)}${c.extra ? ` <b>+${c.extra} kr</b>` : ""}</span>` : ""}
-    <span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>
-    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${c.detail ? "Ändra valen" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
+    ${MIX.items[c.id]?.perPiece
+      ? `<span class="qty"><span>${c.qty} st</span><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`
+      : `<span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`}
+    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${MIX.items[c.id].perPiece ? "Ändra sort och antal" : c.detail ? "Ändra valen" : MIX.items[c.id].drink ? "Välj popping boba" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
     ${noteOpen.has(k) || c.note
       ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
            <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
@@ -629,7 +662,7 @@ async function syncAvailability() {
 document.addEventListener("click", e => {
   const t = e.target.closest("button,a"); if (!t) return;
   if (t.dataset.add) add(t.dataset.add);
-  else if (t.dataset.mxn && mixState) { const k = t.dataset.mxn, d = Number(t.dataset.d); mixState.nigiri[k] = Math.max(0, (mixState.nigiri[k] || 0) + d); renderMix(); const nb = $(`[data-mxn="${k}"][data-d="${d}"]`); (nb && !nb.disabled ? nb : $(`[data-mxn="${k}"]:not(:disabled)`))?.focus(); }
+  else if (t.dataset.mxn && mixState) { const k = t.dataset.mxn, d = Number(t.dataset.d); const tgt = mixState.pieces || mixState.nigiri; tgt[k] = Math.max(0, (tgt[k] || 0) + d); renderMix(); const nb = $(`[data-mxn="${k}"][data-d="${d}"]`); (nb && !nb.disabled ? nb : $(`[data-mxn="${k}"]:not(:disabled)`))?.focus(); }
   else if (t.hasAttribute("data-mixclose")) closeMix();
   else if (t.id === "mixOk") saveMix();
   else if (t.dataset.edit) { const c = cart.get(t.dataset.edit); if (c) openMix(c.id, t.dataset.edit); }
@@ -650,6 +683,15 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   if (e.target.dataset.mxroll && mixState) mixState.maki[Number(e.target.dataset.mxroll)] = e.target.value;
+  if (mixState && mixState.drink) {
+    const d = mixState.drink, t = e.target;
+    if (t.hasAttribute("data-mxboba")) d.boba = t.value;
+    else if (t.hasAttribute("data-mxextra")) d.extra = t.checked ? [...new Set([...d.extra, t.value])] : d.extra.filter(b => b !== t.value);
+    else if (t.hasAttribute("data-mxtap")) d.tapioca = t.checked;
+    else return;
+    const sel = t.hasAttribute("data-mxboba") ? `[data-mxboba][value="${t.value}"]` : t.hasAttribute("data-mxtap") ? "[data-mxtap]" : `[data-mxextra][value="${t.value}"]`;
+    renderDrink(); $(sel)?.focus();
+  }
   if (e.target.name === "tip") { tipPct = e.target.value === "egen" ? "egen" : Number(e.target.value); renderDrawer(); $("#tipKr")?.focus(); }
 });
 $("#mixdlg").addEventListener("click", e => { if (e.target.id === "mixdlg") closeMix(); });
@@ -661,6 +703,113 @@ initCommon();
 initChips();
 initSearch();
 syncHappy(); setInterval(syncHappy, 30000);
+/* ---------- virvel i bubble tea-glaset ----------
+   Vätskan behandlas som en cylinder sedd från sidan. Varje pixel i glaset motsvarar en vinkel
+   φ = asin(u) runt cylindern. När cylindern roterat vinkeln a hämtas färgen från φ + a och
+   projiceras tillbaka – innehållet glider då snabbt i mitten och trycks ihop mot kanterna,
+   precis som pärlor som snurrar i ett glas. Pärlorna som försvinner vid ena kanten kommer tillbaka vid den andra.
+   Rörelsen: en omrörning som bromsas in (exponentiellt), vila, ny omrörning. Den övre delen
+   snurrar lite fortare än botten medan det går fort (skjuvning), och snabba rörelser får lätt
+   rörelseoskärpa. I vila är bilden exakt originalet, så inga skarvar syns. */
+function initSwirl(cv) {
+  const [px, py, pw, ph] = cv.dataset.crop.split(",").map(Number);
+  const img = new Image(); img.decoding = "async"; img.src = cv.dataset.src;
+  img.onload = () => {
+    const sx0 = Math.round(img.naturalWidth * px / 100), sy0 = Math.round(img.naturalHeight * py / 100);
+    const W = Math.max(8, Math.round(img.naturalWidth * pw / 100)), H = Math.max(8, Math.round(img.naturalHeight * ph / 100));
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, sx0, sy0, W, H, 0, 0, W, H);
+    const src = ctx.getImageData(0, 0, W, H).data;
+    const out = ctx.createImageData(W, H), o = out.data;
+    const ss = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const HALF = Math.PI / 2;
+
+    // 1. Var vätskan finns på varje rad (glaset smalnar av), u ∈ [−1, 1] tvärs över och φ = asin(u).
+    const [tl, tr, bl, br] = (cv.dataset.taper || "0,1,0,1").split(",").map(Number);
+    const L = new Float32Array(H), R = new Float32Array(H), U = new Float32Array(W * H), alpha = new Uint8ClampedArray(W * H);
+    for (let y = 0; y < H; y++) {
+      const yn = (y + .5) / H, l = (tl + (bl - tl) * yn) * W, r = (tr + (br - tr) * yn) * W;
+      L[y] = l; R[y] = r;
+      const fade = ss(0, .3, yn) * ss(0, .1, 1 - yn);
+      for (let x = 0; x < W; x++) {
+        const cx = x + .5, k = y * W + x;
+        U[k] = Math.min(.999, Math.max(-.999, ((cx - l) / (r - l)) * 2 - 1));
+        alpha[k] = 255 * fade * Math.min(1, Math.max(0, Math.min(cx - l, r - cx) / 3));
+      }
+    }
+
+    // 2. Ljuset på glaset (mörkare mot kanterna) ska stå still medan innehållet snurrar.
+    //    Ljusprofilen mäts i den jämnrosa övre delen som funktion av u, och delas bort ur bilden.
+    const NB = 48, acc = new Float32Array(NB * 3), cnt = new Float32Array(NB);
+    for (let y = 0; y < Math.floor(H * .35); y++) for (let x = 0; x < W; x++) {
+      const k = y * W + x; if (!alpha[k] && y > H * .3) continue;
+      const u = ((x + .5) - L[y]) / (R[y] - L[y]) * 2 - 1; if (u < -1 || u > 1) continue;
+      const bi = Math.min(NB - 1, Math.floor((u + 1) / 2 * NB));
+      acc[bi * 3] += src[k * 4]; acc[bi * 3 + 1] += src[k * 4 + 1]; acc[bi * 3 + 2] += src[k * 4 + 2]; cnt[bi]++;
+    }
+    const prof = new Float32Array(NB * 3), mean = [0, 0, 0];
+    for (let i = 0; i < NB; i++) for (let c = 0; c < 3; c++) {
+      let s2 = 0, n2 = 0;                                         // lätt utjämning över grannar
+      for (let j = Math.max(0, i - 2); j <= Math.min(NB - 1, i + 2); j++) if (cnt[j]) { s2 += acc[j * 3 + c] / cnt[j]; n2++; }
+      prof[i * 3 + c] = n2 ? s2 / n2 : 0;
+    }
+    for (let c = 0; c < 3; c++) { let s2 = 0; for (let i = 0; i < NB; i++) s2 += prof[i * 3 + c]; mean[c] = s2 / NB || 1; }
+    for (let i = 0; i < NB; i++) for (let c = 0; c < 3; c++) prof[i * 3 + c] = Math.min(1.6, Math.max(.6, prof[i * 3 + c] / mean[c] || 1));
+    const light = (u, c) => { const f = (u + 1) / 2 * (NB - 1), i = Math.floor(f), t = f - i, j = Math.min(NB - 1, i + 1); return prof[i * 3 + c] + (prof[j * 3 + c] - prof[i * 3 + c]) * t; };
+    const alb = new Float32Array(W * H * 3);                      // bilden utan ljusprofil
+    for (let k = 0; k < W * H; k++) for (let c = 0; c < 3; c++) alb[k * 3 + c] = src[k * 4 + c] / light(U[k], c);
+
+    // 3. Hämta albedo vid vinkeln θ ∈ [−π/2, π/2] på rad y (linjär interpolation i x).
+    const sample = (y, th, rgb, wgt) => {
+      const sxf = L[y] + (Math.sin(th) + 1) * .5 * (R[y] - L[y]) - .5;
+      const x0 = Math.max(0, Math.min(W - 1, Math.floor(sxf))), x1 = Math.min(W - 1, x0 + 1), f = Math.min(1, Math.max(0, sxf - x0));
+      const i0 = (y * W + x0) * 3, i1 = (y * W + x1) * 3;
+      rgb[0] += (alb[i0] + (alb[i1] - alb[i0]) * f) * wgt; rgb[1] += (alb[i0 + 1] + (alb[i1 + 1] - alb[i0 + 1]) * f) * wgt; rgb[2] += (alb[i0 + 2] + (alb[i1 + 2] - alb[i0 + 2]) * f) * wgt;
+    };
+    // Innehållet går runt med perioden π (det som försvinner vid ena kanten kommer in vid den andra).
+    // Nära skarven blandas båda kanterna, så det aldrig syns någon linje.
+    const SEAM = .45;
+    const texel = (y, p, rgb, wgt) => {
+      const th = ((p + HALF) % Math.PI + Math.PI) % Math.PI - HALF, m = Math.abs(th);
+      const b = .5 * ss(HALF - SEAM, HALF, m);
+      sample(y, th, rgb, wgt * (1 - b));
+      if (b > 0) sample(y, th - Math.sign(th) * Math.PI, rgb, wgt * b);
+    };
+
+    // 4. Omrörning som bromsas in: vinkel A·(1 − e^(−t/τ)) under STIR sekunder, sedan vila.
+    const TAU = Math.PI * 2, TURNS = 1.35, TAUs = 2.6, STIR = 8, REST = 2.5, CYCLE = STIR + REST, A = TURNS * TAU;
+    const FULL = A * (1 - Math.exp(-STIR / TAUs));
+    const motion = t => { const k = Math.floor(t / CYCLE), r = t - k * CYCLE, e = Math.min(r, STIR);
+      return { a: k * FULL + A * (1 - Math.exp(-e / TAUs)), w: r < STIR ? (A / TAUs) * Math.exp(-e / TAUs) : 0 }; };
+
+    const t0 = performance.now(), rgb = [0, 0, 0];
+    let last = 0;
+    const frame = now => {
+      requestAnimationFrame(frame);
+      if (document.hidden || !cv.closest(".cat-img").classList.contains("inview") || now - last < 30) return;
+      last = now;
+      const { a, w } = motion((now - t0) / 1000);
+      const blur = Math.min(.05, w * .012);                        // rörelseoskärpa ~ vinkelhastighet
+      const taps = blur > .004 ? [-blur, -blur / 2, 0, blur / 2, blur] : [0], tw = 1 / taps.length;
+      for (let y = 0; y < H; y++) {
+        const ay = a + w * .07 * (.5 - y / H);                    // toppen snurrar lite fortare än botten
+        for (let x = 0; x < W; x++) {
+          const k = y * W + x, j = k * 4;
+          if (!alpha[k]) { o[j + 3] = 0; continue; }
+          rgb[0] = rgb[1] = rgb[2] = 0;
+          const p = Math.asin(U[k]) + ay;
+          for (const d of taps) texel(y, p + d, rgb, tw);
+          o[j] = rgb[0] * light(U[k], 0); o[j + 1] = rgb[1] * light(U[k], 1); o[j + 2] = rgb[2] * light(U[k], 2); o[j + 3] = alpha[k];
+        }
+      }
+      ctx.putImageData(out, 0, 0);
+    };
+    requestAnimationFrame(frame);
+  };
+}
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) $$(".cat-img .swirl canvas.cup").forEach(initSwirl);
+
 /* ångan rör sig bara när bilden syns på skärmen */
 if ("IntersectionObserver" in window) {
   const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "80px" });
