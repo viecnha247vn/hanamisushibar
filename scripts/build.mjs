@@ -48,6 +48,13 @@ const steam = id => STEAM[id] ? `
     <span class="steam" aria-hidden="true">${STEAM[id].map(([x, w, d, dl, b]) =>
       `<i style="--x:${x - w / 2}%;--w:${w}%;--d:${d}s;--dl:${dl}s;--b:${b}%"></i>`).join("")}</span>` : "";
 
+/* Virvel i ett av bubble tea-glasen: en kopia av bilden, beskuren till glaset under etiketten,
+   förvrängs av ett SVG-filter (#swirlFx i meny.html) så pärlorna och teet ser ut att snurra. */
+const SWIRL = { bubble: { box: "left:53.4%;top:55.0%;width:12.4%;height:28.0%", img: "width:806.45%;height:357.14%;left:-430.65%;top:-196.43%" } };
+const swirl = id => SWIRL[id] ? `
+    <span class="swirl" aria-hidden="true"><span class="swirl-box"><span class="cup" style="${SWIRL[id].box}">
+      <img src="/bilder/${id}-m.webp" alt="" loading="lazy" decoding="async" style="${SWIRL[id].img}"><span class="vortex"></span></span></span></span>` : "";
+
 const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
@@ -64,7 +71,7 @@ const banner = c => hasImg(c.id) ? `
     <picture>
       <source type="image/webp" srcset="/bilder/${c.id}-s.webp 480w, /bilder/${c.id}-m.webp 800w, /bilder/${c.id}-l.webp 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)">
       <img src="/bilder/${c.id}-m.jpg" srcset="/bilder/${c.id}-s.jpg 480w, /bilder/${c.id}-m.jpg 800w, /bilder/${c.id}-l.jpg 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)" width="1400" height="613" alt="${esc(IMG_ALT[c.id] || c.name)}" loading="lazy" decoding="async">
-    </picture>${steam(c.id)}
+    </picture>${steam(c.id)}${swirl(c.id)}
   </figure>` : "";
 const square = id => hasImg(id) ? `<picture class="dish-img"><source type="image/webp" srcset="/bilder/${id}-sq.webp"><img src="/bilder/${id}-sq.jpg" width="640" height="640" alt="" loading="lazy" decoding="async"></picture>` : "";
 

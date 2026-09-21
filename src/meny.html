@@ -62,6 +62,20 @@
   100%{opacity:0;transform:translate3d(-10%,-145%,0) scale(1.5,1.8) rotate(-6deg)}}
 .cat-img:not(.inview) .steam i{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){.cat-img .steam{display:none}}
+/* virvel i ett bubble tea-glas */
+.cat-img .swirl{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
+.cat-img .swirl-box{position:absolute;top:0;left:50%;height:100%;aspect-ratio:1400/612;transform:translateX(-50%) scale(1.02);transition:transform 1.2s var(--ease)}
+.cat:hover .cat-img .swirl-box{transform:translateX(-50%) scale(1)}
+.cat-img .swirl .cup{position:absolute;overflow:hidden;clip-path:polygon(0 0,100% 0,95% 100%,5% 100%);border-radius:0 0 12% 12% / 0 0 8% 8%;
+  -webkit-mask-image:radial-gradient(ellipse 62% 75% at 50% 58%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 62% 75% at 50% 58%,#000 60%,transparent 100%)}
+.cat-img .swirl .cup img{position:absolute;max-width:none;object-fit:fill;transform:none;transition:none;filter:url(#swirlFx);animation:slosh 2.6s ease-in-out infinite}
+@keyframes slosh{0%,100%{transform:translateX(-1.4%) skewX(-2deg)}50%{transform:translateX(1.4%) skewX(2deg)}}
+.cat-img .swirl .vortex{position:absolute;left:-40%;top:-30%;width:180%;height:160%;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(255,255,255,0) 0 10%,rgba(255,255,255,.55) 17%,rgba(255,255,255,0) 25% 44%,rgba(255,255,255,.45) 52%,rgba(255,255,255,0) 60% 78%,rgba(255,255,255,.4) 86%,rgba(255,255,255,0) 94%);
+  transform:scaleY(.42);mix-blend-mode:soft-light;filter:blur(3px);animation:vortex 2.8s linear infinite}
+@keyframes vortex{from{transform:scaleY(.42) rotate(0)}to{transform:scaleY(.42) rotate(360deg)}}
+.cat-img:not(.inview) .swirl{display:none}
+@media (prefers-reduced-motion:reduce){.cat-img .swirl{display:none}}
 .cat-img::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -60px 60px -40px rgba(11,21,32,.25);pointer-events:none}
 @media (max-width:760px){.cat-img{aspect-ratio:16/9;margin:1rem -0 1.3rem;border-radius:3px}}
 .cat-head .n{font:italic 400 3rem/.8 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
@@ -250,6 +264,14 @@
   <div class="foot" id="drawerFoot"></div>
 </aside>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="swirlFx" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018 0.045" numOctaves="2" seed="7" result="n">
+      <animate attributeName="baseFrequency" dur="5s" values="0.018 0.045;0.026 0.03;0.014 0.05;0.018 0.045" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="B"/>
+  </filter>
+</svg>
 <div class="mixwrap" id="mixdlg" hidden>
   <div class="mixbox" role="dialog" aria-modal="true" aria-labelledby="mixTitle">
     <header><div><h2 id="mixTitle"></h2><p id="mixSub"></p></div><button class="x" type="button" data-mixclose aria-label="Stäng"><svg width="14" height="14"><use href="#i-x"/></svg></button></header>
@@ -642,8 +664,8 @@ syncHappy(); setInterval(syncHappy, 30000);
 /* ångan rör sig bara när bilden syns på skärmen */
 if ("IntersectionObserver" in window) {
   const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "80px" });
-  $$(".cat-img .steam").forEach(sv => io.observe(sv.parentElement));
-} else $$(".cat-img .steam").forEach(sv => sv.parentElement.classList.add("inview"));
+  $$(".cat-img .steam, .cat-img .swirl").forEach(sv => io.observe(sv.parentElement));
+} else $$(".cat-img .steam, .cat-img .swirl").forEach(sv => sv.parentElement.classList.add("inview"));
 initPick({ onOrder: () => { $(".tools").scrollIntoView({ behavior: "smooth" }); setTimeout(() => $("#q").focus({ preventScroll: true }), 500); } });
 syncCart();
 syncAvailability();
