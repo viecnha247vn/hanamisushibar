@@ -43,10 +43,24 @@
 .cat-img{margin:1.2rem 0 1.6rem;border-radius:4px;overflow:hidden;position:relative;aspect-ratio:16/7;background:var(--sakura-3);box-shadow:0 18px 40px rgba(27,42,58,.10)}
 .cat-img img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.02);transition:transform 1.2s var(--ease)}
 .cat:hover .cat-img img{transform:scale(1)}
-/* ånga över de varma rätterna */
-.cat-img .steam{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit}
-.cat-img .steam i{position:absolute;left:var(--x);bottom:10%;width:var(--w,18%);height:0;padding-bottom:calc(var(--w,18%) * 0.95);border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.92),rgba(255,255,255,.35) 45%,rgba(255,255,255,0) 75%);filter:blur(10px);opacity:0;animation:steam var(--d,8s) ease-in-out infinite;animation-delay:var(--dl,0s)}
-@keyframes steam{0%{opacity:0;transform:translate3d(0,24px,0) scale(.6)}20%{opacity:.85}55%{opacity:.6;transform:translate3d(12px,-70px,0) scale(1.2)}100%{opacity:0;transform:translate3d(-12px,-140px,0) scale(1.7)}}
+/* ånga över de varma rätterna – mjuka, höga slöjor som stiger, sväljer och bleknar */
+.cat-img .steam{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;mix-blend-mode:screen}
+.cat-img .steam i{position:absolute;left:var(--x);bottom:var(--b,12%);width:var(--w,18%);height:0;padding-bottom:calc(var(--w,18%) * 1.35);border-radius:50% 50% 45% 45%;
+  background:radial-gradient(50% 55% at 50% 60%,rgba(255,255,255,.95),rgba(255,255,255,.4) 45%,rgba(255,255,255,0) 72%);
+  filter:blur(10px);opacity:0;transform-origin:50% 100%;will-change:transform,opacity;
+  animation:steam var(--d,8s) cubic-bezier(.45,.05,.55,.95) infinite;animation-delay:var(--dl,0s)}
+.cat-img .steam i:nth-child(even){animation-name:steam2}
+@keyframes steam{0%{opacity:0;transform:translate3d(0,20%,0) scale(.55,.5)}
+  18%{opacity:.88}
+  45%{opacity:.6;transform:translate3d(12%,-45%,0) scale(.9,1.1) rotate(4deg)}
+  75%{opacity:.28;transform:translate3d(-8%,-95%,0) scale(1.2,1.45) rotate(-5deg)}
+  100%{opacity:0;transform:translate3d(10%,-140%,0) scale(1.45,1.75) rotate(6deg)}}
+@keyframes steam2{0%{opacity:0;transform:translate3d(0,20%,0) scale(.5,.55)}
+  20%{opacity:.82}
+  50%{opacity:.5;transform:translate3d(-14%,-50%,0) scale(.95,1.15) rotate(-5deg)}
+  80%{opacity:.22;transform:translate3d(9%,-100%,0) scale(1.25,1.5) rotate(4deg)}
+  100%{opacity:0;transform:translate3d(-10%,-145%,0) scale(1.5,1.8) rotate(-6deg)}}
+.cat-img:not(.inview) .steam i{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){.cat-img .steam{display:none}}
 .cat-img::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -60px 60px -40px rgba(11,21,32,.25);pointer-events:none}
 @media (max-width:760px){.cat-img{aspect-ratio:16/9;margin:1rem -0 1.3rem;border-radius:3px}}
@@ -625,6 +639,11 @@ initCommon();
 initChips();
 initSearch();
 syncHappy(); setInterval(syncHappy, 30000);
+/* ångan rör sig bara när bilden syns på skärmen */
+if ("IntersectionObserver" in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "80px" });
+  $$(".cat-img .steam").forEach(sv => io.observe(sv.parentElement));
+} else $$(".cat-img .steam").forEach(sv => sv.parentElement.classList.add("inview"));
 initPick({ onOrder: () => { $(".tools").scrollIntoView({ behavior: "smooth" }); setTimeout(() => $("#q").focus({ preventScroll: true }), 500); } });
 syncCart();
 syncAvailability();

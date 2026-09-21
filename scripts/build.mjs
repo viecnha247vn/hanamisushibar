@@ -35,6 +35,19 @@ const tag = id =>
   id === "happy" ? `<span class="tag" data-for="happy">${settings.happyHour.from}–${settings.happyHour.to} varje dag</span>` : "";
 
 /* Kategoribilder i static/bilder/<id>-{s,m,l}.{webp,jpg}. Saknas bilden får kategorin ingen banderoll. */
+/* Ånga över varma rätter. Per bild: [mitt i % från vänster, bredd %, varaktighet s, fördröjning s, start % från botten]
+   Placera mitten över den varma maten i bilden. */
+const STEAM = {
+  varmt:     [[32, 20, 7.5, 0, 12], [46, 16, 9, 2.4, 14], [69, 22, 8.2, 4.2, 12]],
+  burrito:   [[40, 16, 8, 0, 45], [54, 20, 9.5, 2.8, 50], [68, 15, 7.4, 5, 55], [47, 12, 10, 6.4, 40]],
+  bento:     [[22, 18, 8.4, 0, 45], [36, 16, 9.6, 3, 50], [50, 18, 8, 5.2, 18], [29, 12, 10.5, 6.8, 40]],
+  barn:      [[26, 16, 8.2, 0, 30], [44, 20, 9.4, 2.6, 18], [53, 14, 7.8, 5.4, 22], [34, 12, 10.2, 7, 26]],
+  tillbehor: [[26, 18, 8.6, 0, 22], [42, 16, 9.8, 2.2, 30], [60, 18, 8, 4.6, 30], [75, 14, 10.4, 6.2, 34]]
+};
+const steam = id => STEAM[id] ? `
+    <span class="steam" aria-hidden="true">${STEAM[id].map(([x, w, d, dl, b]) =>
+      `<i style="--x:${x - w / 2}%;--w:${w}%;--d:${d}s;--dl:${dl}s;--b:${b}%"></i>`).join("")}</span>` : "";
+
 const IMG_ALT = {
   sushi: "Sushi mix med lax, räka och maki", lyx: "Lyx maki med tobiko och guldflingor", deluxe: "Deluxe maki med pilgrimsmussla och körsbärsblom",
   maki: "Maki och uramaki på svart fat", sashimi: "Sashimi av tonfisk, lax och pilgrimsmussla", burrito: "Friterad sushi burrito, delad",
@@ -51,8 +64,7 @@ const banner = c => hasImg(c.id) ? `
     <picture>
       <source type="image/webp" srcset="/bilder/${c.id}-s.webp 480w, /bilder/${c.id}-m.webp 800w, /bilder/${c.id}-l.webp 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)">
       <img src="/bilder/${c.id}-m.jpg" srcset="/bilder/${c.id}-s.jpg 480w, /bilder/${c.id}-m.jpg 800w, /bilder/${c.id}-l.jpg 1400w" sizes="(max-width:760px) 100vw, min(100vw - 48px, 1180px)" width="1400" height="613" alt="${esc(IMG_ALT[c.id] || c.name)}" loading="lazy" decoding="async">
-    </picture>${c.id === "varmt" ? `
-    <span class="steam" aria-hidden="true"><i style="--x:22%;--w:20%;--d:7.5s"></i><i style="--x:38%;--w:16%;--d:9s;--dl:2.4s"></i><i style="--x:58%;--w:22%;--d:8.2s;--dl:4.2s"></i></span>` : ""}
+    </picture>${steam(c.id)}
   </figure>` : "";
 const square = id => hasImg(id) ? `<picture class="dish-img"><source type="image/webp" srcset="/bilder/${id}-sq.webp"><img src="/bilder/${id}-sq.jpg" width="640" height="640" alt="" loading="lazy" decoding="async"></picture>` : "";
 
