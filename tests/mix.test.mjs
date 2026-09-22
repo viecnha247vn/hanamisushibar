@@ -65,4 +65,10 @@ test("varmrätter: valfritt antal extra per styck", () => {
   assert.equal(mixPrice("varmt-6", { extra: 2 }).extra, 80);
   assert.throws(() => mixPrice("varmt-3", { extra: 11 }), /antal/);
 });
+test("Doraemon sushi: nigiri byts fritt utan kostnad", () => {
+  const r = mixPrice("barn-1", { nigiri: { tonfisk: 3 } });
+  assert.equal(r.swaps, 3); assert.equal(r.extra, 0); assert.equal(r.detail, "Nigiri: 3 tonfisk");
+  assert.throws(() => mixPrice("barn-1", { nigiri: { lax: 4 } }), /exakt 3/);
+  assert.throws(() => mixPrice("barn-1", { maki: ["California"] }), /kockens val/);
+});
 console.log(`${passed} tester OK`);

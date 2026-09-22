@@ -469,7 +469,7 @@ function renderMix() {
   const choices = mixChoices(s.id);
   const have = choices.reduce((a, k) => a + (s.nigiri[k] || 0), 0);
   const swaps = cfg.freeChoice ? 0 : choices.reduce((a, k) => a + Math.max(0, (s.nigiri[k] || 0) - (cfg.nigiri[k] || 0)), 0);
-  const extra = Math.max(0, swaps - MIX.freeSwaps) * MIX.extraPerSwap;
+  const free = cfg.freeSwaps != null ? cfg.freeSwaps : MIX.freeSwaps, extra = Math.max(0, swaps - free) * MIX.extraPerSwap;
   const rolls = s.maki.map((m, i) => `<fieldset class="mx-sec"><legend>${s.maki.length > 1 ? `Maki, rulle ${i + 1}` : "Maki"}<small>${MIX.makiPerRoll} bitar · byte ingår</small></legend>
     <div class="mx-chips">${["", ...MIX.maki].map(v => `<label><input type="radio" name="mx${i}" value="${esc(v)}" data-mxroll="${i}"${v === m ? " checked" : ""}>${v ? esc(v) : "Kockens val"}</label>`).join("")}</div></fieldset>`).join("");
   const rows = choices.map(k => { const n = s.nigiri[k] || 0; return `<div class="mx-row${n ? " on" : ""}"><span>${cap(k)}</span>
@@ -479,7 +479,7 @@ function renderMix() {
     : swaps ? `${swaps} ${swaps === 1 ? "byte" : "byten"} · ${extra ? `tillägg +${extra} kr` : "ingår i priset"}` : "Som på menyn";
   $("#mixBody").innerHTML = rolls + `<fieldset class="mx-sec"><legend>Nigiri<small>${have} av ${need} bitar</small></legend>
     <p class="mx-rule">${cfg.freeChoice ? `Välj dina ${need} bitar – fritt ur listan, utan tillägg.`
-      : `${s.maki.length || !cfg.maki ? "" : `Makin (${cfg.maki} bitar) är alltid kockens val i den här mixen. `}Ta bort en bit med − och välj en annan med +. ${MIX.freeSwaps} byten ingår, därefter +${MIX.extraPerSwap} kr per bytt bit.`}</p>
+      : `${s.maki.length || !cfg.maki ? "" : cfg.makiText ? `Makin är ${cfg.makiText}. ` : `Makin (${cfg.maki} bitar) är alltid kockens val i den här mixen. `}Ta bort en bit med − och välj en annan med +. ${free >= 99 ? "Byt hur du vill – utan extra kostnad." : `${free} byten ingår, därefter +${MIX.extraPerSwap} kr per bytt bit.`}`}</p>
     ${rows}<p class="mx-state${have < need ? " todo" : extra ? " paid" : ""}" role="status">${state}</p></fieldset>`;
   const ok = $("#mixOk");
   ok.disabled = have !== need;
