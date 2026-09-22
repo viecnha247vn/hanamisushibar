@@ -71,4 +71,9 @@ test("Doraemon sushi: nigiri byts fritt utan kostnad", () => {
   assert.throws(() => mixPrice("barn-1", { nigiri: { lax: 4 } }), /exakt 3/);
   assert.throws(() => mixPrice("barn-1", { maki: ["California"] }), /kockens val/);
 });
+test("lunchens sushimix: 4 byten ingår, sedan +10 kr, makin fast", () => {
+  assert.equal(mixPrice("lunch-2", { nigiri: { tonfisk: 4, lax: 3 } }).extra, 0);
+  assert.equal(mixPrice("lunch-2", { nigiri: { tonfisk: 5, lax: 2 } }).extra, 10);
+  assert.throws(() => mixPrice("lunch-1", { maki: ["California"] }), /kockens val/);
+});
 console.log(`${passed} tester OK`);
