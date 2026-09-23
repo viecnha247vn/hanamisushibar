@@ -115,7 +115,7 @@ export default [
   },
   {
     "id": "sushi",
-    "name": "Sushi",
+    "name": "Sushi mix",
     "items": [
       {
         "id": "sushi-1",

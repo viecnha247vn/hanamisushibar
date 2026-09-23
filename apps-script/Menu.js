@@ -124,6 +124,7 @@ function resetSoldOut() {
  *   add:   [{ after: "tillbehor-10", id, name, price, desc }]   ny rad direkt efter en befintlig
  *   hide:  ["bubble-4"]                                         bocka ur "Visas på webben"
  *   notes: { bubble: "Kategoritext" }
+ *   cats:  { sushi: { name: "Sushi mix" } }                      byt kategorinamn
  */
 function applyMenuPatches_(patches) {
   if (!Array.isArray(patches)) throw new ApiError(400, 'Menyändringar saknas.');
@@ -160,6 +161,12 @@ function applyMenuPatches_(patches) {
     (p.hide || []).forEach(id => {
       const row = findRow_(sh, 'Id', id);
       if (row) { put(row, 'Visas på webben', false); report.push('Dold: ' + id); } else report.push('Saknas: ' + id);
+    });
+    Object.keys(p.cats || {}).forEach(cid => {
+      const row = findRow_(sh, 'Kategori-id', cid), f = p.cats[cid] || {};
+      if (!row) { report.push('Saknas kategori: ' + cid); return; }
+      if (f.name != null) put(row, 'Kategori', String(f.name));
+      report.push('Kategori: ' + cid);
     });
     Object.keys(p.notes || {}).forEach(cid => {
       const row = findRow_(sh, 'Kategori-id', cid);

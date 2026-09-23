@@ -90,7 +90,7 @@ const menuHtml = menu.map((c, n) => `
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
     ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}${MIX.items[i.id] ? `
-    <span class="mx">${MIX.items[i.id].addon ? `Extra ${MIX.items[i.id].addon.label} +${MIX.items[i.id].addon.price} kr/st` : MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].freeSwaps >= 99 ? "Byt nigiri fritt" : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
+    <span class="mx">${MIX.items[i.id].choice ? `Välj ${MIX.items[i.id].choice.label.toLowerCase()}` : MIX.items[i.id].addon ? `Extra ${MIX.items[i.id].addon.label} +${MIX.items[i.id].addon.price} kr/st` : MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].freeSwaps >= 99 ? "Byt nigiri fritt" : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
     <span class="pr">${kr(i.price)}</span>
     ${i.price > 0
       ? `<button class="add" type="button" data-add="${i.id}" data-cat="${c.id}" data-name="${esc(i.name)}" data-price="${i.price}" aria-label="Lägg till ${esc(i.name)}">${plusIcon}</button>`
@@ -103,11 +103,15 @@ const menuHtml = menu.map((c, n) => `
 const FEATURED = [
   ["nigiri", "Handformade riskuddar med lax, tonfisk, räka eller avokado."],
   ["sushi", "Kockens blandning – från 8 till 50 bitar."],
+  ["maki", "Klassiska rullar – California, Philadelphia, Alaskan och egen hosomaki."],
   ["deluxe", "Friterade och flamberade rullar med rostad lök och teriyaki."],
   ["poke", "Sushiris, mango, edamame och sjögrässallad i skål."],
+  ["varmt", "Gyoza, tempura, yakiniku och chicken katsu – varmt och mättande."],
   ["bento", "Varmt och kallt i samma låda – en hel måltid."],
   ["burrito", "Friterad sushi i burritoform, toppad med såser."]
 ];
+// Snabblänkar till varje kategori i menyn (visas ovanför korten)
+const quicklinks = menu.map(c => `<a href="/meny#cat-${c.id}">${esc(c.name.replace(/, friterad$/i, ""))}</a>`).join("");
 const highlights = FEATURED.map(([id, text], n) => {
   const c = menu.find(x => x.id === id);
   if (!c) return "";
@@ -188,7 +192,7 @@ const vars = {
 const fill = html => html.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in vars ? vars[k] : m));
 
 const fonts = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">`;
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Jost:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&display=swap" rel="stylesheet">`;
 const head = (path) => `<meta name="theme-color" content="#FCF9F8">
 <meta name="color-scheme" content="light">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -214,6 +218,7 @@ function page(src, { path, headerExtra = "", current = "" }) {
     .replace("<!--COMMON_JS-->", () => common)
     .replace("<!--MIX_JS-->", () => read("lib/mix.js").replace(/^export /gm, ""))
     .replace("<!--HIGHLIGHTS-->", () => highlights)
+    .replace("<!--QUICKLINKS-->", () => quicklinks)
     .replace("<!--CHIPS-->", () => chips)
     .replace("<!--MENU-->", () => menuHtml);
   html = fill(html);

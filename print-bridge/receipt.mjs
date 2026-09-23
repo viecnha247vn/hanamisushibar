@@ -35,8 +35,11 @@ export function orderReceipt(o, cfg) {
   if (o.message) { r.line("-"); r.bold(true).text("KOMMENTAR:").bold(false); r.size(1, 2).paragraph(o.message).size(1, 1); }
 
   r.line("-");
+  if (o.tip) r.row("Dricks", `${o.tip} kr`);
   r.bold(true).row("Summa", `${o.total} kr`).bold(false);
-  r.text(`Betalning: ${o.payment}${isTable ? " (betalas vid utgång)" : ""}`);
+  // Betald: stort och fetstil. Obetald: vanlig tunn text.
+  if (o.paid) r.bold(true).size(2, 2).text(`BETALD · ${String(o.payment || "").toUpperCase()}`).size(1, 1).bold(false);
+  else r.text(`Ej betald · ${o.payment}${isTable ? " (betalas vid utgång)" : ""}`);
   if (o.name || o.phone) r.text([o.name, o.phone].filter(Boolean).join("  "));
   r.line("-");
   r.align("center").text(`${cfg.site}  ·  ${cfg.phone}`);

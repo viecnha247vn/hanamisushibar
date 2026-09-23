@@ -76,4 +76,9 @@ test("lunchens sushimix: 4 byten ingår, sedan +10 kr, makin fast", () => {
   assert.equal(mixPrice("lunch-2", { nigiri: { tonfisk: 5, lax: 2 } }).extra, 10);
   assert.throws(() => mixPrice("lunch-1", { maki: ["California"] }), /kockens val/);
 });
+test("egen hosomaki: en fyllning måste väljas", () => {
+  assert.deepEqual(mixPrice("maki-7", { pick: "lax" }), { extra: 0, swaps: 0, detail: "Fyllning: lax" });
+  assert.throws(() => mixPrice("maki-8", null), /fyllning/);
+  assert.throws(() => mixPrice("maki-8", { pick: "tonfisk" }), /fyllning/);
+});
 console.log(`${passed} tester OK`);

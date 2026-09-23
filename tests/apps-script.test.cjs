@@ -144,6 +144,8 @@ test("menyändringar från koden förs in i arket en gång", () => {
   assert.ok(!items.find(i => i.id === "bubble-3"));
   assert.equal(menu.find(c => c.id === "bubble").note, "Ny text");
   assert.deepEqual(E.call("applyMenuPatches", { patches: [{ id: "test-1", set: { "barn-1": { name: "Igen" } } }] }).applied, []);
+  E.call("applyMenuPatches", { patches: [{ id: "test-2", cats: { sushi: { name: "Sushi mix" } } }] });
+  assert.equal(E.call("menu").menu.find(c => c.id === "sushi").name, "Sushi mix");
 });
 function pad2(n) { return String(n).padStart(2, "0"); }
 test("betald-markering sparas och följer med till kvittot", () => {

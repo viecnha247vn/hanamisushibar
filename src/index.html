@@ -13,7 +13,7 @@
 .hero{position:relative;min-height:min(100svh,880px);display:flex;align-items:center;padding:calc(var(--hdr) + 48px) 0 72px;overflow:hidden;
   background:radial-gradient(900px 640px at 78% 42%,#FBEEF2,transparent 62%),radial-gradient(700px 500px at 8% 92%,rgba(24,115,188,.08),transparent 60%),var(--bg)}
 .hero .wrap{position:relative;z-index:1;width:100%;display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,6vw,80px);align-items:center}
-.hero h1{text-transform:uppercase;letter-spacing:.02em;font-size:clamp(2.5rem,6.8vw,4.9rem);line-height:1.02;margin:1.2rem 0 .6rem;color:var(--koi-deep)}
+.hero h1{text-transform:uppercase;letter-spacing:.02em;font-weight:700;font-size:clamp(2.5rem,6.8vw,4.9rem);line-height:1.02;margin:1.2rem 0 .6rem;color:var(--koi-deep)}
 .hero .sub{font:italic 400 clamp(1.3rem,2.7vw,1.95rem)/1.25 var(--serif);max-width:24ch;margin-bottom:1.3rem;color:var(--gold-2)}
 .hero .kicker{font:500 clamp(1.1rem,2vw,1.3rem)/1.3 var(--serif);color:var(--ink);margin:0 0 .6rem}
 .hero .actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2.2rem}
@@ -56,6 +56,9 @@
 @media (max-width:860px){.offers{grid-template-columns:1fr}}
 
 /* ---------- från köket ---------- */
+.catlinks{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.8rem}
+.catlinks a{padding:.55rem .9rem;border:1px solid rgba(184,146,63,.45);border-radius:999px;background:#fff;font:600 11.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none;transition:background .2s,border-color .2s,color .2s}
+.catlinks a:hover,.catlinks a:focus-visible{background:var(--sakura-3);border-color:var(--gold-2);color:var(--gold-deep)}
 .dishes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .dish{display:flex;flex-direction:column;min-height:250px;padding:28px;text-decoration:none;transition:border-color .3s,transform .3s var(--ease)}
 .dish:hover{border-color:var(--koi);transform:translateY(-3px)}
@@ -195,6 +198,7 @@
       <h2 id="h-dishes">{{COUNT}} rätter, <em class="foil">en meny</em></h2>
       <p>Allt rullas och tillagas när beställningen kommer in – därför blandar vi inte sorter i samma makirulle.</p>
     </div>
+    <nav class="catlinks reveal" aria-label="Menyns kategorier"><!--QUICKLINKS--></nav>
     <div class="dishes">
 <!--HIGHLIGHTS-->
     </div>

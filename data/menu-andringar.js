@@ -5,6 +5,7 @@
 //   add:   [{ after, id, name, price, desc }]        ny rad direkt efter raden "after"
 //   hide:  [id]                                     bocka ur "Visas på webben"
 //   notes: { kategori-id: "text" }                  kategoritext (tom rad = nytt stycke)
+//   cats:  { kategori-id: { name } }                kategorinamn
 export default [
   {
     "id": "2026-09-21-meny",
@@ -62,6 +63,14 @@ export default [
     ],
     "notes": {
       "bubble": "Njut av vår Bubble Tea med tapiokapärlor och 1 valfri popping boba – ingår!\nVälj mellan Classic, Matcha eller Taro.\n\nPopping boba: Mango, jordgubb, blåbär eller lychee.\n\nVill du ha extra topping? +10 kr/st."
+    }
+  },
+  {
+    "id": "2026-09-23-meny",
+    "cats": { "sushi": { "name": "Sushi mix" } },
+    "set": {
+      "maki-7": { "desc": "Välj mellan lax, avokado eller gurka" },
+      "maki-8": { "desc": "Välj mellan lax, avokado eller gurka" }
     }
   }
 ];

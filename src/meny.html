@@ -395,12 +395,16 @@ function setNote(k, note) { const c = cart.get(k); if (c) c.note = note.slice(0,
 let mixState = null;
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 function mixOpts() { const s = mixState, nigiri = {};
+  if (s.pick !== undefined) return { pick: s.pick };
   if (s.addon !== undefined) return { extra: s.addon };
   if (s.pieces) { const p = {}; MIX.items[s.id].perPiece.forEach(k => { if (s.pieces[k]) p[k] = s.pieces[k]; }); return { pieces: p }; }
   if (s.drink) return { boba: s.drink.boba, extra: MIX.drink.boba.filter(b => s.drink.extra.includes(b)), tapioca: s.drink.tapioca }; mixChoices(s.id).forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
 function openMix(id, key = null) {
   const cfg = MIX.items[id], o = key && cart.get(key)?.opts;
-  if (cfg.addon) {
+  if (cfg.choice) {
+    mixState = { id, key, pick: o ? o.pick : "" };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · välj ${cfg.choice.label.toLowerCase()}`;
+  } else if (cfg.addon) {
     mixState = { id, key, addon: o ? o.extra : 0 };
     $("#mixSub").textContent = `${kr(ITEMS[id].price)} · extra ${cfg.addon.label} ${cfg.addon.price} kr/st`;
   } else if (cfg.perPiece) {
@@ -461,7 +465,17 @@ function renderAddon() {
   ok.disabled = false;
   ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + n * a.price} kr`;
 }
+function renderChoice() {
+  const s = mixState, ch = MIX.items[s.id].choice;
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>${esc(ch.label)}<small>ingår i priset</small></legend>
+    <div class="mx-chips">${ch.options.map(v => `<label><input type="radio" name="mxpick" value="${esc(v)}" data-mxpick${s.pick === v ? " checked" : ""}>${cap(v)}</label>`).join("")}</div>
+    <p class="mx-state${s.pick ? "" : " todo"}" role="status">${s.pick ? `${ch.label}: ${s.pick}` : `Välj ${ch.label.toLowerCase()}`}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = !s.pick;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price} kr`;
+}
 function renderMix() {
+  if (mixState.pick !== undefined) return renderChoice();
   if (mixState.addon !== undefined) return renderAddon();
   if (mixState.pieces) return renderPieces();
   if (mixState.drink) return renderDrink();
@@ -559,7 +573,7 @@ function renderDrawer() {
     ${MIX.items[c.id]?.perPiece
       ? `<span class="qty"><span>${c.qty} st</span><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`
       : `<span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`}
-    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${MIX.items[c.id].addon ? (c.detail ? "Ändra extra" : "Lägg till extra") : MIX.items[c.id].perPiece ? "Ändra sort och antal" : c.detail ? "Ändra valen" : MIX.items[c.id].drink ? "Välj popping boba" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
+    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${MIX.items[c.id].choice ? "Ändra fyllning" : MIX.items[c.id].addon ? (c.detail ? "Ändra extra" : "Lägg till extra") : MIX.items[c.id].perPiece ? "Ändra sort och antal" : c.detail ? "Ändra valen" : MIX.items[c.id].drink ? "Välj popping boba" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
     ${noteOpen.has(k) || c.note
       ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
            <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
@@ -695,6 +709,7 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   if (e.target.dataset.mxroll && mixState) mixState.maki[Number(e.target.dataset.mxroll)] = e.target.value;
+  if (mixState && mixState.pick !== undefined && e.target.hasAttribute("data-mxpick")) { mixState.pick = e.target.value; renderChoice(); $(`[data-mxpick][value="${e.target.value}"]`)?.focus(); }
   if (mixState && mixState.drink) {
     const d = mixState.drink, t = e.target;
     if (t.hasAttribute("data-mxboba")) d.boba = t.value;
