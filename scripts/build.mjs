@@ -101,15 +101,24 @@ const menuHtml = menu.map((c, n) => `
 
 // Utvalda kategorier på startsidan
 const FEATURED = [
-  ["nigiri", "Handformade riskuddar med lax, tonfisk, räka eller avokado."],
+  ["lunch", "Sushi mix eller bowl, med dryck och misosoppa – vardagar 11–14."],
+  ["happy", "Stora sushi mix till lägre pris, varje dag 16–17."],
+  ["nigiri", "Handformade riskuddar – välj sort och antal själv."],
   ["sushi", "Kockens blandning – från 8 till 50 bitar."],
   ["maki", "Klassiska rullar – California, Philadelphia, Alaskan och egen hosomaki."],
+  ["lyx", "Rullar med lax, avokado och såser, toppade i lyxklass."],
   ["deluxe", "Friterade och flamberade rullar med rostad lök och teriyaki."],
+  ["sashimi", "Rena skivor av rå fisk, utan ris."],
   ["poke", "Sushiris, mango, edamame och sjögrässallad i skål."],
   ["varmt", "Gyoza, tempura, yakiniku och chicken katsu – varmt och mättande."],
+  ["burrito", "Friterad sushi i burritoform, toppad med såser."],
   ["bento", "Varmt och kallt i samma låda – en hel måltid."],
-  ["burrito", "Friterad sushi i burritoform, toppad med såser."]
+  ["barn", "Mindre portioner för de yngsta – byt nigiri fritt."],
+  ["tillbehor", "Karaage, vårrullar, edamame, såser och misosoppa."],
+  ["dryck", "Läsk, vatten och juice i kylen."],
+  ["bubble", "Classic, taro och matcha med tapioka och popping boba."]
 ];
+
 // Snabblänkar till varje kategori i menyn (visas ovanför korten)
 const quicklinks = menu.map(c => `<a href="/meny#cat-${c.id}">${esc(c.name.replace(/, friterad$/i, ""))}</a>`).join("");
 const highlights = FEATURED.map(([id, text], n) => {
