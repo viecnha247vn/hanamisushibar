@@ -1,6 +1,6 @@
 # Hanami Sushi Bar – hướng dẫn triển khai
 
-Apps Script + GitHub + Vercel + máy in Epson TM-T88VII
+Apps Script + GitHub + Vercel + máy in Epson TM-m30III
 
 ## Checklist triển khai
 
@@ -11,14 +11,14 @@ Apps Script + GitHub + Vercel + máy in Epson TM-T88VII
 | 2 | Sheet + Apps Script: `setup`, Skriptegenskaper, Distribuera webbapp | Bạn | Menu **Hanami** xuất hiện |
 | 3 | Vercel: env, deploy, Deploy Hook | Bạn | `/api/health` → `"ok": true` |
 | 4 | GitHub Actions secrets | Bạn | Action "Apps Script" xanh |
-| 5 | Máy in TM-T88VII | Bạn + quán | Testbeställning in ra |
+| 5 | Máy in TM-m30III | Bạn + quán | Testbeställning in ra |
 | 6 | Tên miền | Bạn + quán | `https://hanamisushibar.se` mở web mới |
 | 7 | In QR bàn, cài `/kok` trên iPad, hướng dẫn nhân viên | Quán | Đơn thử từ bàn in ra ở bếp |
 | 8 | Chạy thử 1 ngày trước khi quảng bá | Cả hai | Không có lỗi trong tab **Logg** |
 
 ### Một hàm serverless duy nhất
 
-Vercel gói Hobby chỉ cho tối đa 12 serverless function mỗi lần deploy. Vì vậy toàn bộ API đi qua **một** file duy nhất `api/[...route].js`, file này chuyển tiếp sang các handler trong `lib/routes/`:
+Vercel gói Hobby chỉ cho tối đa 12 serverless function mỗi lần deploy. Vì vậy toàn bộ API đi qua **một** file duy nhất `api/index.js`. Mọi địa chỉ `/api/...` được `rewrites` trong `vercel.json` chuyển về file này (`/api/:route*` → `/api/index?route=:route*`), rồi file này chuyển tiếp sang các handler trong `lib/routes/`:
 
 | Đường dẫn | Handler |
 |---|---|
@@ -30,7 +30,9 @@ Vercel gói Hobby chỉ cho tối đa 12 serverless function mỗi lần deploy.
 | `/api/sdp/<SDP_KEY>` | `lib/routes/sdp.js` – Epson Server Direct Print |
 | `/api/cloudprnt/<KEY>` | `lib/routes/cloudprnt.js` – Star CloudPRNT (dự phòng) |
 
-Thêm đường dẫn mới: viết handler trong `lib/routes/` rồi khai báo trong bảng `ROUTES` của router. Số lượng endpoint không còn bị giới hạn.
+Thêm đường dẫn mới: viết handler trong `lib/routes/` rồi khai báo trong bảng `ROUTES` (một tầng, ví dụ `/api/x`) hoặc `KEYED` (hai tầng, khoá nằm trong địa chỉ, ví dụ `/api/x/<khoá>`) của `api/index.js`. Số lượng endpoint không còn bị giới hạn.
+
+Lịch sử: bản đầu dùng catch-all `api/[...route].js`. Trên Vercel nó chỉ bắt được địa chỉ một tầng (`/api/submit`) nhưng **không** bắt được hai tầng (`/api/sdp/<khoá>`), máy in nhận trang 404 của Vercel. Vì thế đổi sang `api/index.js` + `rewrites` tường minh. Đừng đổi lại.
 
 Lưu ý: thư mục ảnh đặt tên `static/bilder/` chứ không phải `meny`, vì `/meny` đã là đường dẫn của trang menu; trùng tên sẽ làm trang menu không mở được.
 
@@ -64,7 +66,7 @@ Tạo khoá ngẫu nhiên trên Mac: `openssl rand -hex 24`
 | **Google Sheet** | Cơ sở dữ liệu: đơn hàng, đặt bàn, **menu**, nhật ký lỗi | Quán |
 | **Apps Script** (`apps-script/`) | Kiểm tra món và giá theo Sheet, đánh số đơn, gửi mail/SMS, trigger | Bạn (qua GitHub) |
 | **Vercel** (`api/`, `src/`) | Web, kiểm tra giờ mở cửa/định dạng, cổng API giữ kín khoá Apps Script, màn hình bếp, endpoint cho máy in | Bạn (qua GitHub) |
-| **Epson TM-T88VII** | Tự hỏi web mỗi 5 giây, có đơn là in (Server Direct Print) | Quán (chỉ cắm điện + LAN) |
+| **Epson TM-m30III** | Tự hỏi web mỗi 5 giây, có đơn là in (Server Direct Print) | Quán (chỉ cắm điện + LAN) |
 | **GitHub** | Nguồn duy nhất của code; tự test, tự deploy Apps Script | Bạn |
 
 Nguyên tắc:
@@ -225,59 +227,65 @@ Vercel tự deploy mỗi lần push `main`; mỗi pull request có bản Preview
 
 > Token trong `CLASPRC_JSON` thuộc tài khoản Google của bạn. Nếu đổi mật khẩu hoặc thu hồi quyền, chạy lại `clasp login` và cập nhật secret.
 
-## 5. Máy in Epson TM-T88VII
+## 5. Máy in Epson TM-m30III
 
-Máy in **Epson TM-T88VII** tự gọi lên web mỗi 5 giây, có đơn mới thì in, in xong báo lại. Không cần iPad, không cần máy tính trong bếp.
+Máy in **Epson TM-m30III** (khối vuông, giấy 80 mm, cổng LAN + USB, có NFC) tự gọi lên web mỗi 5 giây, có đơn mới thì in, in xong báo lại. Không cần iPad, không cần máy tính trong bếp.
 
 ```
 Beställning (web) → Vercel → Apps Script → Sheet (cột "Utskriven" trống)
                                                    ▲
- TM-T88VII ──POST GetRequest "có gì in không?"──▶ /api/sdp/<SDP_KEY> ──▶ hỏi Apps Script
+ TM-m30III ──POST GetRequest "có gì in không?"──▶ /api/sdp/<SDP_KEY> ──▶ hỏi Apps Script
            ◀── ePOS-Print XML: kvitto (tối đa 3 đơn/lần) ──┘
            ──POST SetResponse success="true"──▶ Sheet: "Utskriven" = giờ in
 ```
 
 Máy in mất điện hay hết giấy: đơn nằm chờ, in khi máy sẵn sàng (lỗi thì đơn không bị đánh dấu). Nút **🖨** trên mỗi thẻ đơn trong `/kok` để in lại.
 
-### 5.1 Mua máy
+### 5.1 Máy và phụ kiện
 
-| Hạng mục | Chọn | Ghi chú |
-|---|---|---|
-| Máy in | **Epson TM-T88VII, bản Ethernet + USB** (châu Âu thường ghi *(112)*, C31CJ57112) | Tránh bản chỉ Serial/Parallel |
-| Nguồn | **PS-180** | Kiểm tra có kèm; một số nơi bán "utan nätadapter" |
-| Giấy | Giấy nhiệt **80 mm**, lõi 12 mm, đường kính ≤ 83 mm, loại **không phenol** | |
-| Cáp | Cáp mạng Cat5e/Cat6 tới router | |
-| Tuỳ chọn | Còi **OT-BZ20** (~600 kr) | Bếp ồn thì rất nên có |
+| Hạng mục | Ghi chú |
+|---|---|
+| Máy in | **Epson TM-m30III** (đã mua). Số serial dưới đáy máy = mật khẩu mặc định của trang cấu hình |
+| Mạng | **Dây LAN** từ router quán vào cổng LAN sau máy. Máy này **không có Wi-Fi sẵn**; muốn Wi-Fi phải mua thêm dongle Epson **OT-WL06** cắm cổng USB. Dây LAN ổn định hơn, nên dùng |
+| Giấy | Giấy nhiệt **80 mm**, đường kính cuộn ≤ 80 mm, loại không phenol |
+| Tuỳ chọn | Còi **OT-BZ20** nếu bếp ồn |
 
-Giá tham khảo: 4 000–4 800 kr kèm moms. Đặt máy in xa bếp nóng và hơi nước: giấy nhiệt bị đen khi quá nóng.
+Đặt máy xa bếp nóng và hơi nước: giấy nhiệt bị đen khi quá nóng.
 
-### 5.2 Cấu hình máy in (khoảng 15 phút)
+### 5.2 Cấu hình máy in (khoảng 15 phút, làm một lần)
 
-1. Vercel → Environment Variables: kiểm tra đã có `SDP_KEY` (chỉ chữ và số, ≥ 32 ký tự) và `SDP_ID` = `hanami-kok`. Có thay đổi thì **Redeploy**.
-2. Lắp giấy, cắm LAN vào router, bật máy. Máy tự in một phiếu có **IP address** (nếu không: tắt máy, giữ nút **FEED**, bật máy, thả nút khi bắt đầu in).
-3. Vào router của quán, **đặt IP cố định** (DHCP reservation) cho máy in theo MAC in trên phiếu.
-4. Mở cấu hình máy in bằng một trong hai cách:
-   - Trình duyệt trên máy tính cùng mạng: `http://<IP máy in>` (tên đăng nhập `epson`, mật khẩu mặc định là số serial in dưới đáy máy), hoặc
-   - App **Epson TM Utility** trên điện thoại (cùng Wi-Fi quán).
-5. Mục **Server Direct Print**:
+**Trên Vercel (trước):** Settings → Environment Variables phải có `SDP_KEY` (chữ thường + số, ≥ 16 ký tự ngẫu nhiên, ví dụ `openssl rand -hex 12`) và `SDP_ID` = `hanami-kok`, cả hai ở **Production**. Đổi biến xong phải **Redeploy** bản Production.
+
+**Trên máy in:**
+
+1. Lắp giấy, cắm dây LAN vào **cổng LAN của router** (không phải cổng WAN/Internet), bật máy. Sau khoảng 1 phút máy tự in một phiếu có **IP Address** và dòng `DHCP: Enable`. Nếu in ra `192.168.192.168` và `DHCP: No Server` là dây chưa cắm đúng.
+2. Vào router của quán, **đặt IP cố định** (DHCP reservation) cho máy in theo địa chỉ MAC trên phiếu.
+3. Trên máy tính cùng mạng, mở `https://<IP máy in>` (trình duyệt cảnh báo chứng chỉ tự ký, chọn *Tiếp tục*). Bấm **Advanced Settings** → **Administrator Login**, mật khẩu = số serial (hoặc dòng *Initial Password* trên Network Status Sheet).
+4. Tab **Status** → menu trái **TM-Intelligent** → mở **TM-i Settings** (tab mới) → **Services → Server Direct Print**:
 
 | Trường | Giá trị |
 |---|---|
 | Server Direct Print | **Enable** |
-| ID | `hanami-kok` |
-| URL (Server 1) | `https://hanamisushibar.se/api/sdp/<SDP_KEY>` |
-| Interval | **5** giây |
-| Timeout | 10 giây (mặc định) |
+| Server1 → URL | `https://hanamisushibar.se/api/sdp/<SDP_KEY>` (khi chưa trỏ tên miền: `https://hanamisushibar.vercel.app/api/sdp/<SDP_KEY>`) |
+| Server1 → Interval | **5** |
+| Server2, Server3 | để trống |
+| ID | `hanami-kok` (phải đúng bằng `SDP_ID`) |
+| Password | để trống (không dùng) |
+| URL Encode / Server Authentication | giữ mặc định |
 
-6. Mục thời gian (**Time/SNTP**): bật, server `pool.ntp.org`, múi giờ Stockholm. Máy in cần giờ đúng để xác minh chứng chỉ HTTPS.
-7. Lưu, máy in khởi động lại.
-8. Kiểm tra: Sheet → **Hanami → Skicka testbeställning**. Trong vòng 10 giây kvitto phải in ra và cột **Utskriven** có giờ. Kiểm tra chữ **åäö** và cắt giấy.
+   Bấm **Apply & Restart**.
+5. Trang cấu hình chính → **Device Management → Date and Time → Time Server**: Enable, server `pool.ntp.org`. Máy in cần giờ đúng để xác minh chứng chỉ HTTPS.
+6. Kiểm tra từ máy tính: mở `https://hanamisushibar.vercel.app/api/sdp/<SDP_KEY>` trong trình duyệt → phải thấy `"ok": true` và `jobsWaiting`. Thấy `Not found` là key trên Vercel khác key trong URL; thấy trang 404 của Vercel là code `api/index.js` + `rewrites` chưa deploy.
+7. Kiểm tra từ máy in: nút nhỏ phía sau máy → menu in ra → bấm **Feed nhanh 3 lần**, giữ Feed 1 giây → **TM-i Status Sheet**. Mục *Server Direct Print → Access Test* phải là `HTTP Status Code : 200`.
+8. Đặt một đơn thử trên web (hoặc Sheet → **Hanami → Skicka testbeställning**). Trong 5–10 giây kvitto in ra, cột **Utskriven** có giờ. Kiểm tra chữ **åäö** và cắt giấy.
 
-Không in? Xem mục 8. Thường gặp nhất: sai URL/khoá, sai `ID`, giờ máy in sai (lỗi chứng chỉ), hoặc router chặn HTTPS ra ngoài.
+Không in? Xem mục 8. Thường gặp nhất: 404 (sai key hoặc chưa Redeploy), 403 (ID khác `SDP_ID`), giờ máy in sai (lỗi chứng chỉ), router chặn HTTPS ra ngoài.
+
+**Phím trên máy:** nút trên nắp (biểu tượng giấy) là **Feed**; nút nhỏ phía sau cạnh cổng mạng in Network Status Sheet (bấm nhanh) hoặc **reset mạng** (giữ ≥ 10 giây, tránh nhầm).
 
 ### 5.3 Kvitto
 
-Định dạng **ePOS-Print XML**, 42 ký tự mỗi dòng (`data/settings.js` → `receiptWidth`), bố cục trong `lib/receipt-epos.js`:
+Định dạng **ePOS-Print XML**, 48 ký tự mỗi dòng cho TM-m30III giấy 80 mm (`data/settings.js` → `receiptWidth`, có thể ghi đè tạm bằng biến môi trường `RECEIPT_WIDTH`), bố cục trong `lib/receipt-epos.js`. Ví dụ dưới minh hoạ bố cục (vẽ ở 42 cột):
 
 ```
               HANAMI SUSHI BAR             ← đậm, cao gấp đôi
@@ -390,7 +398,7 @@ File `data/menu-andringar.js` chứa danh sách thay đổi menu: đổi tên, g
 | Không có mail | `NOTIFY_EMAIL`; hạn mức Gmail thường 100 mail/ngày (Workspace 1 500) |
 | Không có SMS | Tab **Logg** trong Sheet ghi lỗi 46elks; kiểm tra số dư |
 | Mọi lỗi khác | Tab **Logg**; Vercel → Logs (lọc `[hanami]`); Apps Script → Körningar |
-| Máy in không in | `/api/health` ok? Máy in: đèn lỗi, giấy, URL/`SDP_KEY`, `ID` = `SDP_ID`, giờ máy in (SNTP), router cho phép HTTPS. Vercel → Logs lọc `[sdp]` |
+| Máy in không in | Mở `https://…/api/sdp/<SDP_KEY>` trong trình duyệt: `"ok": true` → web ổn, lỗi ở máy in (in TM-i Status Sheet xem Access Test); `Not found` → key sai/chưa Redeploy; trang 404 Vercel → thiếu `rewrites`. Máy in: đèn lỗi, giấy, `ID` = `SDP_ID`, giờ máy in (Time Server), router cho phép HTTPS. Vercel → Logs lọc `[sdp]` |
 | In 2 lần cùng một đơn | Mạng chập chờn làm máy in không gửi được SetResponse; đơn đã in vẫn đúng, chỉ cần bỏ bản thừa |
 | Chữ åäö sai | Đổi `lang` trong thẻ `<text lang=…>` ở `receipt-epos.js` (xem ePOS-Print XML manual) |
 

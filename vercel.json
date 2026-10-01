@@ -4,8 +4,11 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "functions": {
-    "api/[...route].js": { "maxDuration": 30 }
+    "api/index.js": { "maxDuration": 30 }
   },
+  "rewrites": [
+    { "source": "/api/:route*", "destination": "/api/index?route=:route*" }
+  ],
   "headers": [
     { "source": "/kok", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
     { "source": "/api/(.*)", "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }] },
