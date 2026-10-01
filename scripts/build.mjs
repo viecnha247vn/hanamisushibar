@@ -90,7 +90,7 @@ const menuHtml = menu.map((c, n) => `
   ${c.items.map(i => `<div class="item" id="${i.id}">
     <span class="nm">${esc(i.name)}</span>
     ${i.desc ? `<span class="ds">${esc(i.desc)}</span>` : ""}${MIX.items[i.id] ? `
-    <span class="mx">${MIX.items[i.id].choice ? `Välj ${MIX.items[i.id].choice.label.toLowerCase()}` : MIX.items[i.id].addon ? `Extra ${MIX.items[i.id].addon.label} +${MIX.items[i.id].addon.price} kr/st` : MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].freeSwaps >= 99 ? "Byt nigiri fritt" : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</span>` : ""}
+    ${(c => !c.choice && !c.addon && !c.perPiece && !c.drink && !c.freeChoice)(MIX.items[i.id]) ? `<button type="button" class="mx" data-mixopen="${i.id}">` : `<span class="mx">`}${MIX.items[i.id].choice ? `Välj ${MIX.items[i.id].choice.label.toLowerCase()}` : MIX.items[i.id].addon ? `Extra ${MIX.items[i.id].addon.label} +${MIX.items[i.id].addon.price} kr/st` : MIX.items[i.id].perPiece ? "Välj sort och antal" : MIX.items[i.id].drink ? "Välj popping boba" : MIX.items[i.id].freeChoice ? `Välj dina ${MIX.items[i.id].pick} bitar` : MIX.items[i.id].freeSwaps >= 99 ? "Byt nigiri fritt" : MIX.items[i.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}${(c => !c.choice && !c.addon && !c.perPiece && !c.drink && !c.freeChoice)(MIX.items[i.id]) ? "</button>" : "</span>"}` : ""}
     <span class="pr">${kr(i.price)}</span>
     ${i.price > 0
       ? `<button class="add" type="button" data-add="${i.id}" data-cat="${c.id}" data-name="${esc(i.name)}" data-price="${i.price}" aria-label="Lägg till ${esc(i.name)}">${plusIcon}</button>`
@@ -242,7 +242,7 @@ writeFileSync("dist/meny.html", page("src/meny.html", {
   headerExtra: `<button class="btn gold" type="button" data-cart aria-label="Öppna varukorg">Varukorg <span class="cartn" id="cartCount"></span></button>`
 }));
 
-const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name }));
+const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes }));
 writeFileSync("dist/kok.html", kok);
 
 console.log(`Byggt från ${source}: ${menu.length} kategorier, ${ids.length} rätter → dist/ (index, meny, kok)`);

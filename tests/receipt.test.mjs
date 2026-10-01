@@ -34,4 +34,16 @@ assert.ok(lines.includes("Tel 070-123 45 67") && !lines.some(l => l.includes("@"
 lines = text(eposReceipt({ ...base, kind: "table", table: 5 }));
 assert.ok(!lines.includes("KUND:"), "bordsbeställning utan kontakt → inget kundblock");
 console.log("  ✓ utan e-post / utan kontaktuppgifter");
+// Huvud: nummer + typ till vänster, dag + tid till höger. Ej betald i fetstil, betald stort.
+const raw = eposReceipt({ ...base, name: "Q", phone: "0701234567" });
+lines = text(raw);
+const head1 = lines.find(l => l.startsWith("H1011")), head2 = lines.find(l => l.startsWith("HÄMTNING"));
+assert.match(head1, /^H1011\s+\S+$/); assert.match(head2, /^HÄMTNING\s+KL 11:00$/);
+assert.equal(head1.length, 48); assert.equal(head2.length, 48);
+assert.ok(!/dw="true"[^>]*>H1011/.test(raw), "ordernumret i normal bredd");
+assert.match(raw, /em="true">EJ BETALD · KORT I KASSAN/);
+assert.match(eposReceipt({ ...base, paid: true }), /dw="true" dh="true" em="true">BETALD · KORT I KASSAN/);
+lines = text(eposReceipt({ ...base, kind: "table", table: 5 }));
+assert.ok(lines.some(l => l.trim() === "BORD 5"));
+console.log("  ✓ huvud vänster/höger, ej betald i fetstil, betald stort");
 console.log("receipt.test: OK");

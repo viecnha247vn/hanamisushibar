@@ -350,20 +350,22 @@ Thành phần từng mix, danh sách nigiri/maki được đổi và mức phí 
 
 Phí đổi được Vercel tính (`lib/mix.js`) rồi Apps Script cộng vào giá trong fliken Meny, nên sau khi cập nhật code phải đẩy cả Apps Script (`npm run gas:deploy` hoặc GitHub Actions).
 
-### 7.2 Förberedelsetid (giờ sớm nhất khách được lấy đồ)
+### 7.2 Giờ lấy đơn: chủ quán chọn "klar om …"
 
-Trong köksvy, tab Beställningar có ô **Förberedelsetid**, chọn từ 15 phút đến 2 tiếng (bước 5 phút). Đổi là lưu ngay.
+Khách **không tự chọn giờ lấy** nữa. Giờ lấy = **bây giờ (hoặc giờ mở cửa, nếu đặt trước khi mở) + thời gian chủ quán chọn**, làm tròn lên 5 phút.
 
-- Giá trị lưu trong Skriptegenskaper `PICKUP_LEAD` của Apps Script, nên còn nguyên sau khi deploy lại.
-- Trang khách lấy giá trị này qua `/api/availability`. Vercel cache 60 giây và trang khách hỏi lại mỗi 2 phút, nên thay đổi có hiệu lực chậm nhất khoảng 3 phút.
-- Apps Script kiểm tra lại khi nhận đơn: đơn lấy trong ngày mà sớm hơn `lead - 10` phút sẽ bị từ chối.
-- Chưa đặt gì thì dùng mặc định `pickupLeadMinutes` trong `data/settings.js` (30 phút).
+- Màn hình bếp `/kok`, tab Beställningar có hàng nút **Hämtning klar om**: 15 · 20 · 30 · 45 min · 1 h · 1 h 15 · 1 h 30 · 2 h. Bấm là lưu ngay. Quán đông thì bấm 45 hoặc 1 h, vắng thì về 30.
+- Giá trị lưu trong Skriptegenskaper `PICKUP_LEAD` của Apps Script. Apps Script tính giờ lấy cuối cùng khi nhận đơn, nên đơn luôn dùng giá trị mới nhất. Trang khách hiện giờ dự kiến; giá trị trên trang cập nhật chậm nhất khoảng 3 phút.
+- Chưa bấm gì thì dùng mặc định `pickupLeadMinutes` trong `data/settings.js` (30 phút).
+- Khách muốn lấy muộn hơn ghi vào ô **"Vill du hämta senare?"**. Nội dung vào phần ghi chú, in dưới **KOMMENTAR** dạng `Önskar hämta: kl 18.30`.
+- Ngày đóng cửa, sau giờ đóng cửa, hoặc khi giờ lấy vượt quá giờ đóng cửa: trang khách báo và không cho gửi đơn.
+- Chỉ nhận đơn lấy trong ngày. `pickupDaysAhead` không còn dùng cho đơn mang về.
 
 ### 7.3 Betald: đánh dấu đơn đã trả tiền
 
 Mỗi thẻ đơn trong köksvy có nút **Markera betald**. Bấm là ghi giờ vào cột `Betald` trong fliken Beställningar, thẻ hiện nhãn xanh "Betald".
 
-- Phiếu in: đơn đã trả in dòng **BETALD · SWISH** cỡ gấp đôi, in đậm. Đơn chưa trả in dòng `Ej betald · Swish` cỡ thường, chữ mảnh nên nhìn mờ hơn hẳn. Máy in nhiệt không in được màu xám, nên độ đậm nhạt làm bằng cỡ chữ và nét đậm.
+- Phiếu in: đơn đã trả in dòng **BETALD · SWISH** cỡ gấp đôi, in đậm. Đơn chưa trả in **EJ BETALD · SWISH** cỡ thường, in đậm, để chủ quán thấy ngay phải thu tiền.
 - Phiếu in ra lúc nhận đơn luôn là "Ej betald", vì lúc đó tiền chưa vào. Sau khi bấm Betald, bấm nút 🖨 trên thẻ để in lại phiếu cho chủ quán.
 - Hệ thống **không tự biết** khách đã Swish hay chưa. Nhân viên xem app Swish rồi bấm tay. Muốn tự động thì phải làm Swish Handel.
 - Cột `Betald` là cột mới, nên sau khi đẩy code phải **chạy `setup()` một lần** trong Apps Script để thêm cột vào Sheet.

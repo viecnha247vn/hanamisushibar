@@ -4,6 +4,9 @@
  * Här kontrolleras rätter och priser mot fliken Meny (enda sanningen).
  */
 
+/** Minuter efter midnatt → "HH:mm" */
+function hhmm_(m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); }
+
 function createOrder_(p) {
   const menu = menuIndex_();
   if (!Array.isArray(p.items) || !p.items.length) throw new ApiError(400, 'Varukorgen är tom.');
@@ -30,11 +33,27 @@ function createOrder_(p) {
   const total = sum + tip;
   const isTable = p.kind === 'table';
 
-  // Köket kan höja förberedelsetiden i köksvyn – kontrolleras här, där värdet bor
+  // Hämtningstid. Köket väljer förberedelsetiden i köksvyn (PICKUP_LEAD) – därför räknas tiden här, där värdet bor.
+  //   asap: tidigast möjligt = max(nu, öppning) + förberedelsetid, avrundat uppåt till 5 min, senast vid stängning.
+  //         Vercel skickar öppning/stängning för idag (openFrom/closeAt, minuter) och standardtiden (defaultLead).
+  //   annars (äldre klient): gästens valda tid kontrolleras mot förberedelsetiden.
   if (!isTable) {
-    const lead = lead_(), nowP = nowParts_(), m = toMin_(p.pickupTime);
-    if (lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
-      throw new ApiError(400, 'Köket behöver ' + lead + ' minuter just nu. Välj en senare hämtningstid.');
+    const nowP = nowParts_();
+    if (p.asap) {
+      const lead = lead_() || Math.round(Number(p.defaultLead)) || 30;
+      const open = Number(p.openFrom), close = Number(p.closeAt);
+      if (!(open >= 0 && close > open && close <= 1440)) throw new ApiError(400, 'Ogiltiga öppettider.');
+      if (nowP.minutes >= close) throw new ApiError(400, 'Vi har stängt för idag. Välkommen åter!');
+      const m = Math.ceil((Math.max(nowP.minutes, open) + lead) / 5) * 5;
+      if (m > close) throw new ApiError(400, 'Köket hinner tyvärr inte före stängning kl ' + hhmm_(close) + ' idag.');
+      p.pickupDate = nowP.date;
+      p.pickupTime = hhmm_(m);
+      p.whenText = 'idag kl ' + p.pickupTime;
+    } else {
+      const lead = lead_(), m = toMin_(p.pickupTime);
+      if (lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
+        throw new ApiError(400, 'Köket behöver ' + lead + ' minuter just nu. Välj en senare hämtningstid.');
+    }
   }
   const no = nextNumber_('H');
 
@@ -74,7 +93,7 @@ function createOrder_(p) {
         phone: p.phone, email: p.email, payment: p.payment, message: p.message, items: lines, tip: tip, total: total })) {
     setCell_(SHEET.ORDERS, 'Ordernr', no, 'Bekräftelse', now_('HH:mm'));
   }
-  return { no: no, total: total };
+  return { no: no, total: total, pickupTime: isTable ? '' : p.pickupTime, whenText: isTable ? '' : p.whenText };
 }
 
 function createBooking_(p) {

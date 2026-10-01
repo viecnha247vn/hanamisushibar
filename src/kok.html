@@ -29,6 +29,10 @@ header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
 main{padding:14px}
 .tools .lead{display:inline-flex;align-items:center;gap:.5rem;margin-left:auto}
 .tools .lead span{font-size:13px;color:#4C5B6B}
+.leadbtns{display:inline-flex;border:1px solid #C9D3DD;border-radius:6px;overflow:hidden}
+.leadbtns button{font:600 14px/1 inherit;padding:.6rem .75rem;border:0;border-left:1px solid #C9D3DD;background:#fff;color:#1D2A38;cursor:pointer;min-width:3.2rem}
+.leadbtns button:first-child{border-left:0}
+.leadbtns button[aria-pressed="true"]{background:#1D4E89;color:#fff}
 .tools .leadmsg{font-size:13px;color:#2F8F5B}
 .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .tools input,.tools select{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:42px}
@@ -131,9 +135,9 @@ ul li b{display:inline-block;min-width:2.2ch}
         <option value="table">Bara bord</option>
       </select>
       <button class="btn" type="button" id="oReload">Uppdatera</button>
-      <label class="lead"><span>Förberedelsetid</span>
-        <select id="oLead" aria-label="Förberedelsetid för hämtning"></select>
-      </label>
+      <div class="lead" role="group" aria-label="Hämtning klar om"><span>Hämtning klar om</span>
+        <div class="leadbtns" id="oLead"></div>
+      </div>
       <span class="leadmsg" id="oLeadMsg" role="status"></span>
     </div>
     <div class="grid" id="orders"></div>
@@ -358,19 +362,22 @@ document.addEventListener("click", async e => {
 });
 
 /* ---------- förberedelsetid ---------- */
-/* Gäller tidigaste hämtningstid på webbplatsen. Gästernas sida hämtar värdet var annan minut. */
+/* Hur länge köket behöver innan en hämtning är klar. Gästen ser "klar ca kl …" = nu + denna tid.
+   Höj när det är fullt. Gästernas sida hämtar värdet varannan minut. */
+const LEAD_STEPS = [15, 20, 30, 45, 60, 75, 90, 120];
+let leadNow = 0;
 function fillLead() {
-  const sel = $("#oLead"); sel.innerHTML = "";
-  for (let m = 15; m <= 120; m += 5) sel.insertAdjacentHTML("beforeend", `<option value="${m}">${m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60 ? `${m % 60} min` : ""}`.trim()}</option>`);
+  $("#oLead").innerHTML = LEAD_STEPS.map(m => `<button type="button" data-lead="${m}" aria-pressed="${m === leadNow}">${m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) : "")}</button>`).join("");
 }
 async function loadLead() {
-  try { const d = await api("?view=settings"); if (d.leadMinutes) $("#oLead").value = d.leadMinutes; } catch {}
+  try { const d = await api("?view=settings"); leadNow = d.leadMinutes || CFG.pickupLeadMinutes; } catch { leadNow = CFG.pickupLeadMinutes; }
+  fillLead();
 }
-async function saveLead() {
-  const m = Number($("#oLead").value), msg = $("#oLeadMsg");
-  msg.textContent = "Sparar …";
-  try { await api("", { method: "POST", body: JSON.stringify({ kind: "lead", minutes: m }) }); msg.textContent = `Sparat · tidigast om ${m} min`; }
-  catch (e) { msg.textContent = e.message; }
+async function saveLead(m) {
+  const msg = $("#oLeadMsg"), before = leadNow;
+  leadNow = m; fillLead(); msg.textContent = "Sparar …";
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "lead", minutes: m }) }); msg.textContent = `Sparat · nya beställningar klara om ${m} min`; }
+  catch (e) { leadNow = before; fillLead(); msg.textContent = e.message; }
   setTimeout(() => { msg.textContent = ""; }, 6000);
 }
 
@@ -388,7 +395,7 @@ function makeQr(){
 $("#qMake").onclick = makeQr;
 
 /* ---------- start ---------- */
-fillLead(); $("#oLead").onchange = saveLead;
+fillLead(); $("#oLead").onclick = e => { const b = e.target.closest("[data-lead]"); if (b) saveLead(Number(b.dataset.lead)); };
 $("#oDate").value = $("#bFrom").value = today();
 $("#qCount").value = CFG.tableCount;
 $("#oDate").onchange = $("#oFilter").onchange = $("#oReload").onclick = loadOrders;

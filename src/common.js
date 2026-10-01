@@ -45,6 +45,25 @@ function renderStatus() {
   $$("[data-now]").forEach(el => { el.hidden = !({ lunch, happy })[el.dataset.now]; });
 }
 
+/* Sparad varukorg (se meny.html). På övriga sidor visas antalet rätter vid "Meny" i sidhuvudet. */
+const CART_STORE = "hanami-cart", CART_TTL = 4 * 3600 * 1000;
+function cartBadge() {
+  if (document.getElementById("cartCount")) return;               // menysidan visar själv
+  let n = 0;
+  try {
+    const d = JSON.parse(localStorage.getItem(CART_STORE) || "null");
+    if (d && Date.now() - d.t <= CART_TTL) n = d.lines.reduce((a, [, c]) => a + (c.qty || 0), 0);
+  } catch {}
+  document.querySelectorAll('.hdr a[href="/meny"]').forEach(a => {
+    let b = a.querySelector(".cbadge");
+    if (!n) { b?.remove(); return; }
+    if (!b) { b = document.createElement("span"); b.className = "cbadge"; a.append(b); }
+    b.textContent = n; b.setAttribute("aria-label", `${n} i varukorgen`);
+  });
+}
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", cartBadge); else cartBadge();
+window.addEventListener("pageshow", cartBadge);                   // även när sidan visas via bakåtknappen
+
 function toast(msg) {
   const t = $("#toast"); if (!t) return;
   t.textContent = msg; t.classList.add("show");

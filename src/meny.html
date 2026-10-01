@@ -156,6 +156,10 @@
 .allergi{display:block;text-align:left;margin-top:.45rem;padding:.5rem .7rem;border-left:3px solid #C8463A;border-radius:2px;background:#FBE9E7;color:#8A2E27;font-size:.8rem;line-height:1.5}
 .allergi b{font-weight:600}
 .field .allergi{font-size:.85rem;margin-top:.5rem}
+.pickup{display:grid;gap:.35rem;margin-bottom:1.05rem;padding:.85rem 1rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3)}
+.pickup .lbl{font:500 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
+.pickup b{font:500 1.15rem/1.3 var(--serif);color:var(--ink)}
+.pickup small{font-size:.86rem;color:var(--ink-2)}
 .done .swish .sm{display:block;font-size:.88rem;color:var(--ink-2);margin-top:.35rem}
 .done .swish .btn{margin:.9rem 0 .2rem}
 .done .swish .qr{margin:.9rem auto 0;width:168px;line-height:0}
@@ -167,7 +171,9 @@
 #tipKr{width:100%;min-height:46px;padding:.6rem .8rem;border:1px solid var(--line-2);border-radius:2px;background:#fff}
 .line .dt{grid-column:1/-1;font-size:.86rem;line-height:1.45;color:var(--ink-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .line .dt b{font-weight:500;color:var(--gold-deep)}
-.item .mx{grid-column:1;margin-top:.15rem;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--koi)}
+.item .mx{grid-column:1;justify-self:start;margin-top:.15rem;padding:.2rem 0;border:0;background:none;font:inherit;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--koi)}
+.item button.mx:disabled{cursor:default;text-decoration:none;opacity:.5}
+.item button.mx{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(0,0,0,.2);text-underline-offset:3px}
 /* val i sushimix */
 .mixwrap{position:fixed;inset:0;z-index:55;display:grid;place-items:center;padding:16px;background:rgba(15,61,110,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s}
 .mixwrap.show{opacity:1}
@@ -218,7 +224,7 @@
   <div class="wrap">
     <span class="eyebrow" id="pEyebrow">Meny · {{COUNT}} rätter</span>
     <h1 id="pTitle">Vår <em class="foil">meny</em></h1>
-    <p class="lede" id="pLede">Välj rätter, lägg i varukorgen och välj när du vill hämta. Priserna är i kronor inklusive moms. Makirullar görs vid beställning och är alltid tio bitar.</p>
+    <p class="lede" id="pLede">Välj rätter och lägg i varukorgen – vi säger direkt när maten är klar att hämta. Priserna är i kronor inklusive moms. Makirullar görs vid beställning och är alltid tio bitar.</p>
     <div class="row">
       <span class="status" data-status>Öppettider</span>
       <span class="pill on" data-now="lunch" hidden>Lunch gäller nu</span>
@@ -322,6 +328,23 @@ function initSearch() {
 const cart = new Map();
 const noteOpen = new Set();
 let stage = "cart", lastOrder = null, lineSeq = 0;
+/* Varukorgen sparas i webbläsaren så att den finns kvar om gästen går till startsidan och tillbaka
+   (eller laddar om). Gäller i 4 timmar. Bordsbeställningar (QR) har en egen korg per bord. */
+const CART_KEY = TABLE ? `hanami-cart-bord-${TABLE}` : CART_STORE;
+function saveCart() {
+  try { cart.size ? localStorage.setItem(CART_KEY, JSON.stringify({ t: Date.now(), lines: [...cart] })) : localStorage.removeItem(CART_KEY); } catch {}
+}
+function loadCart() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CART_KEY) || "null");
+    if (!d || !Array.isArray(d.lines) || Date.now() - d.t > CART_TTL) return;
+    for (const [k, c] of d.lines) {
+      if (!c || !ITEMS[c.id] || !(c.qty >= 1 && c.qty <= 50)) continue;   // rätten finns inte längre på menyn
+      cart.set(k, c);
+      const n = Number(String(k).split("~")[1]); if (n > lineSeq) lineSeq = n;
+    }
+  } catch {}
+}
 /* Dricks: 0 = ingen, tal = procent, "egen" = valfri summa i kronor */
 let tipPct = 0, tipCustom = 0;
 const tipValue = () => tipPct === "egen" ? Math.max(0, Math.min(2000, Math.round(tipCustom || 0))) : Math.round(cartTotal() * tipPct / 100);
@@ -371,8 +394,14 @@ function syncHappy() {
 }
 function add(id) {
   if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${pad(SETTINGS.happyHour.from)}:00–${pad(SETTINGS.happyHour.to)}:00`); return; }
-  if (MIX.items[id]) return openMix(id);
-  addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}`);
+  if (MIX.items[id] && !mixHasDefault(id)) return openMix(id);   // måste välja (boba, fyllning, bitar …)
+  addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}${MIX.items[id] ? " · ändra i varukorgen" : ""}`);
+}
+/* Mixar som har en färdig sammansättning på menyn (sushimix, lunchmix, barn, vegan): + lägger till som på menyn,
+   valen öppnas bara om gästen trycker på "Välj maki · byt nigiri". */
+function mixHasDefault(id) {
+  const c = MIX.items[id];
+  return !!c && !c.choice && !c.addon && !c.perPiece && !c.drink && !c.freeChoice;
 }
 function addLine(id, opts, qty = 1, note = "") {
   const m = mixPrice(id, opts);
@@ -389,7 +418,7 @@ function setQty(k, q) {
   if (q <= 0) { cart.delete(k); noteOpen.delete(k); } else c.qty = q;
   syncCart(); if (!cart.size) stage = "cart"; renderDrawer();
 }
-function setNote(k, note) { const c = cart.get(k); if (c) c.note = note.slice(0, 120); }
+function setNote(k, note) { const c = cart.get(k); if (c) { c.note = note.slice(0, 120); saveCart(); } }
 
 /* ---------- val i sushimix: maki gratis, nigiri 4 byten ingår ---------- */
 let mixState = null;
@@ -522,23 +551,19 @@ function syncCart() {
     b.classList.toggle("in", !!q);
     b.innerHTML = q ? `<span class="q">${q}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
   });
+  saveCart();
 }
 
-function pickupOptions() {
-  const opts = [], now = nowSE();
-  for (let i = 0; i <= SETTINGS.pickupDaysAhead; i++) {
-    const d = new Date(now); d.setDate(now.getDate() + i);
-    const hrs = hoursOn(d); if (!hrs) continue;
-    let start = new Date(d); start.setHours(hrs[0], 0, 0, 0);
-    if (i === 0) { const lead = new Date(now.getTime() + SETTINGS.pickupLeadMinutes * 60000); lead.setMinutes(Math.ceil(lead.getMinutes() / 15) * 15, 0, 0); if (lead > start) start = lead; }
-    const end = new Date(d); end.setHours(hrs[1], -15, 0, 0);
-    const slots = [];
-    for (let t = new Date(start); t <= end; t.setMinutes(t.getMinutes() + 15)) slots.push(`${pad(t.getHours())}:${pad(t.getMinutes())}`);
-    const label = i === 0 ? "Idag" : i === 1 ? "Imorgon" : dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1) + ` ${d.getDate()}/${d.getMonth() + 1}`;
-    if (slots.length) opts.push({ label, date: isoDate(d), slots });
-    if (cartHas(isHappy)) break;   // happy hour hämtas samma dag
-  }
-  return opts;
+/* Hämtning "så snart som möjligt": max(nu, öppning) + förberedelsetid från köksvyn, avrundat till 5 min.
+   Samma regel som på servern (Apps Script räknar den slutliga tiden). */
+function pickupInfo() {
+  const now = nowSE(), hrs = hoursOn(now), nowMin = now.getHours() * 60 + now.getMinutes();
+  const lead = SETTINGS.pickupLeadMinutes;
+  const nextOpen = () => { const n = nextOpening(now); return n ? `${n.i === 1 ? "imorgon" : dayNames[n.d.getDay()]} kl ${pad(n.hrs[0])}.00` : ""; };
+  if (!hrs || nowMin >= hrs[1] * 60) return { closed: `Vi har stängt för idag. Du kan beställa igen ${nextOpen()}.` };
+  const base = Math.max(nowMin, hrs[0] * 60), m = Math.ceil((base + lead) / 5) * 5;
+  if (m > hrs[1] * 60) return { closed: `Köket hinner tyvärr inte före stängning kl ${pad(hrs[1])}.00. Ring ${SETTINGS.phone}.` };
+  return { time: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, lead, early: nowMin < hrs[0] * 60, opens: `${pad(hrs[0])}.00` };
 }
 
 function renderDrawer() {
@@ -587,15 +612,17 @@ function renderDrawer() {
 
   if (stage === "cart") {
     body.innerHTML = lines + total;
-    foot.innerHTML = `<button class="btn gold block" type="button" data-checkout>${TABLE ? "Gå vidare" : "Välj hämtningstid"}</button>`;
+    foot.innerHTML = `<button class="btn gold block" type="button" data-checkout>Gå vidare</button>`;
     return;
   }
-  const opts = TABLE ? [] : pickupOptions();
+  const pi = TABLE ? null : pickupInfo();
   body.innerHTML = lines + total + `
     <form id="orderForm" novalidate>
-      ${TABLE ? "" : `<div class="row2">
-        <div class="field"><label for="oDay">Hämtas</label><select id="oDay" name="day">${opts.map((o, i) => `<option value="${i}">${o.label}</option>`).join("")}</select></div>
-        <div class="field"><label for="oTime">Tid</label><select id="oTime" name="time"></select></div></div>`}
+      ${TABLE ? "" : pi.closed ? `<p class="err">${esc(pi.closed)}</p>` : `<div class="pickup">
+        <span class="lbl">Hämtning</span>
+        <b>Klar att hämta idag ca kl ${pi.time}</b>
+        <small>${pi.early ? `Vi öppnar kl ${pi.opens} och börjar laga maten då.` : `Köket behöver ca ${pi.lead} minuter just nu.`}</small></div>
+      <div class="field"><label for="oWish">Vill du hämta senare? (valfritt)</label><input id="oWish" name="wish" maxlength="40" placeholder="t.ex. kl 18.30" autocomplete="off"><small>Skriv önskad tid så lagar köket maten till dess.</small></div>`}
       <div class="field"><label for="oName">Namn${TABLE ? " (valfritt)" : ""}</label><input id="oName" name="name" autocomplete="name"></div>
       <div class="field"><label for="oPhone">Mobilnummer${TABLE ? " (valfritt)" : ""}</label><input id="oPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel">${TABLE ? "" : "<small>Vi sms:ar när maten är klar.</small>"}</div>
       <div class="field"><label for="oMail">E-post (valfritt)</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se"><small>Vi skickar en bekräftelse med hela beställningen.</small></div>
@@ -615,11 +642,7 @@ function renderDrawer() {
     </form>`;
   foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr</button>
     <button class="btn ghost block" type="button" data-back>Tillbaka</button>`;
-  if (!TABLE) {
-    const fill = () => { $("#oTime").innerHTML = opts[$("#oDay").value].slots.map(s => `<option>${s}</option>`).join(""); };
-    if (opts.length) { fill(); $("#oDay").addEventListener("change", fill); }
-    else { $("#oDay").closest(".row2").outerHTML = `<p class="err">Inga hämtningstider just nu. Ring ${SETTINGS.phone}.</p>`; $("#orderSubmit").disabled = true; }
-  }
+  if (pi && pi.closed) $("#orderSubmit").disabled = true;
 }
 
 async function submitOrder(e) {
@@ -629,17 +652,15 @@ async function submitOrder(e) {
   if (!TABLE && (name.length < 2 || phone.replace(/\D/g, "").length < 8)) { err.textContent = "Fyll i namn och mobilnummer så vi kan nå dig."; err.hidden = false; return; }
   if (cartHas(isHappy) && !syncHappy()) { err.textContent = "Happy hour är slut. Rätterna har tagits bort – kontrollera beställningen."; err.hidden = false; return; }
   err.hidden = true; btn.disabled = true; btn.textContent = "Skickar …";
-  const opts = TABLE ? null : pickupOptions();
-  const pick = opts && opts[f.day.value];
   const payload = {
     type: TABLE ? "table-order" : "pickup-order", table: TABLE || null, name, phone,
-    pickupDate: pick ? pick.date : null, pickupTime: pick ? f.time.value : null,
+    wishTime: TABLE ? "" : (f.wish ? f.wish.value.trim() : ""),
     payment: f.pay.value, tip: tipValue(), message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
     items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
   try {
     const r = await send(payload);
-    lastOrder = { no: r.no, total: r.total ?? payTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
+    lastOrder = { no: r.no, total: r.total ?? payTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: r.when || "" };
     cart.clear(); tipPct = 0; tipCustom = 0; syncCart(); stage = "done"; renderDrawer();
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;
@@ -672,6 +693,7 @@ async function syncAvailability() {
       const id = b.dataset.add, info = items[id], row = b.closest(".item");
       const ok = !!(info && info.available);
       row.classList.toggle("soldout", !ok);
+      const mo = row.querySelector("[data-mixopen]"); if (mo) mo.disabled = !ok;
       let tag = row.querySelector(".out");
       if (!ok && !tag) { tag = document.createElement("span"); tag.className = "out"; tag.textContent = "Slut idag"; row.append(tag); }
       if (ok && tag) tag.remove();
@@ -687,6 +709,7 @@ async function syncAvailability() {
 document.addEventListener("click", e => {
   const t = e.target.closest("button,a"); if (!t) return;
   if (t.dataset.add) add(t.dataset.add);
+  else if (t.dataset.mixopen) { if (isHappy(t.dataset.mixopen) && !syncHappy()) return; openMix(t.dataset.mixopen); }
   else if (t.dataset.mxn && mixState) { const k = t.dataset.mxn, d = Number(t.dataset.d); const tgt = mixState.pieces || mixState.nigiri; tgt[k] = Math.max(0, (tgt[k] || 0) + d); renderMix(); const nb = $(`[data-mxn="${k}"][data-d="${d}"]`); (nb && !nb.disabled ? nb : $(`[data-mxn="${k}"]:not(:disabled)`))?.focus(); }
   else if (t.dataset.mxa && mixState && mixState.addon !== undefined) { mixState.addon = Math.max(0, Math.min(10, mixState.addon + Number(t.dataset.mxa))); renderAddon(); ($(`[data-mxa="${t.dataset.mxa}"]:not(:disabled)`) || $("[data-mxa]:not(:disabled)"))?.focus(); }
   else if (t.hasAttribute("data-mixclose")) closeMix();
@@ -729,6 +752,7 @@ addEventListener("keydown", e => { if (e.key !== "Escape") return; if (mixState)
 initCommon();
 initChips();
 initSearch();
+loadCart();
 syncHappy(); setInterval(syncHappy, 30000);
 /* ångan rör sig bara när bilden syns på skärmen */
 if ("IntersectionObserver" in window) {

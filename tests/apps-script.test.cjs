@@ -131,6 +131,30 @@ test("köket kan höja förberedelsetiden och för tidiga hämtningar nekas", ()
   assert.equal(E.call("adminLead", { minutes: 2 }).status, 400);
   E.call("adminLead", { minutes: 15 });
 });
+test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelsetid", () => {
+  const nowMin = Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "HH")) * 60 +
+                 Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "mm"));
+  const hhmm = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
+  const base = { kind: "pickup", name: "Anna", phone: "+46701234567", asap: true, defaultLead: 30,
+    pickupDate: today, pickupTime: "00:00", whenText: "x", items: [{ id: "maki-1", qty: 1 }] };
+  if (nowMin > 1380) return;                                    // testet körs inte runt midnatt
+  E.call("adminLead", { minutes: 45 });
+  let r = E.call("order", { ...base, openFrom: 0, closeAt: 1440 });
+  const want = hhmm(Math.ceil((nowMin + 45) / 5) * 5);
+  assert.equal(r.pickupTime, want); assert.equal(r.whenText, "idag kl " + want);
+  const row = E.sheets["Beställningar"].data.find(x => x[1] === r.no);
+  assert.ok(row.includes(want), "arket får den räknade tiden, inte klientens");
+  // före öppning: räknas från öppningstiden
+  r = E.call("order", { ...base, openFrom: Math.min(nowMin + 60, 1300), closeAt: 1440 });
+  assert.equal(r.pickupTime, hhmm(Math.ceil((Math.min(nowMin + 60, 1300) + 45) / 5) * 5));
+  // köket hinner inte före stängning
+  r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin + 20 });
+  assert.equal(r.status, 400); assert.match(r.error, /hinner tyvärr inte/);
+  // stängt
+  r = E.call("order", { ...base, openFrom: 0, closeAt: Math.max(1, nowMin) });
+  assert.equal(r.status, 400);
+  E.call("adminLead", { minutes: 15 });
+});
 test("menyändringar från koden förs in i arket en gång", () => {
   const r = E.call("applyMenuPatches", { patches: [{ id: "test-1",
     set: { "barn-1": { name: "Testsushi" } }, hide: ["bubble-3"], notes: { bubble: "Ny text" },

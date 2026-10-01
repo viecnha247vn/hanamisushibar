@@ -228,3 +228,6 @@ p b.key,.offer p b{font-weight:400;color:#2C3036}
 .shoot.go i{animation:shootIn .55s cubic-bezier(.16,.86,.3,1.28) forwards;animation-delay:calc(var(--i) * 50ms)}
 @keyframes shootIn{60%{opacity:1;filter:blur(0)}to{opacity:1;transform:none;filter:blur(0)}}
 @media (prefers-reduced-motion:reduce){.shoot i{opacity:1!important;transform:none!important;filter:none!important}}
+
+/* antal rätter i sparad varukorg, vid "Meny" i sidhuvudet */
+.cbadge{display:inline-grid;place-items:center;min-width:1.35em;height:1.35em;margin-left:.35em;padding:0 .35em;border-radius:999px;background:var(--gold-2);color:#fff;font-size:.78em;letter-spacing:0;line-height:1;vertical-align:.1em}
