@@ -140,7 +140,7 @@ function printQueue_() {
     .map(r => ({
       no: r['Ordernr'], kind: r['Typ'] === 'Bord' ? 'table' : 'pickup', table: r['Bord'],
       pickupDate: r['Hämtas datum'], pickupTime: r['Hämtas tid'], received: r['Mottagen'],
-      name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
+      name: r['Namn'], phone: String(r['Telefon'] || ''), email: String(r['E-post'] || ''), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
       message: r['Kommentar'], paid: !!r['Betald'],
