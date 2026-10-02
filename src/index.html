@@ -13,9 +13,8 @@
 .hero{position:relative;min-height:min(100svh,880px);display:flex;align-items:center;padding:calc(var(--hdr) + 48px) 0 72px;overflow:hidden;
   background:radial-gradient(900px 640px at 78% 42%,#FBEEF2,transparent 62%),radial-gradient(700px 500px at 8% 92%,rgba(24,115,188,.08),transparent 60%),var(--bg)}
 .hero .wrap{position:relative;z-index:1;width:100%;display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,6vw,80px);align-items:center}
-.hero h1{text-transform:uppercase;letter-spacing:.02em;font-weight:700;font-size:clamp(2.5rem,6.8vw,4.9rem);line-height:1.02;margin:1.2rem 0 .6rem;color:var(--koi-deep)}
-.hero .sub{font:italic 400 clamp(1.3rem,2.7vw,1.95rem)/1.25 var(--serif);max-width:24ch;margin-bottom:1.3rem;color:var(--gold-2)}
-.hero .kicker{font:500 clamp(1.1rem,2vw,1.3rem)/1.3 var(--serif);color:var(--ink);margin:0 0 .6rem}
+.hero h1{text-transform:uppercase;letter-spacing:.02em;font-size:clamp(2.5rem,6.8vw,4.9rem);line-height:1.02;margin:1.2rem 0 .6rem;color:var(--koi-deep)}
+.hero .sub{font:italic 400 clamp(1.5rem,3.4vw,2.3rem)/1.2 var(--serif);margin-bottom:1.4rem;color:var(--gold-2)}
 .hero .actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2.2rem}
 .hero .meta{display:flex;flex-wrap:wrap;gap:.6rem 1.6rem;margin-top:2rem;color:var(--ink-2);font-size:.95rem}
 .hero .meta a{text-decoration:none}
@@ -44,7 +43,7 @@
 .offers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .offers .card{padding:clamp(24px,3.5vw,40px)}
 .offer .k{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.4rem}
-.offer h3{font-size:1.3rem;margin-bottom:.6rem}
+.offer h3{font-size:1.7rem;margin-bottom:.6rem}
 .offer p{color:var(--ink-2)}
 .offer .price{display:flex;align-items:baseline;gap:.5rem;margin-top:1.4rem}
 .offer .price b{font:400 2.4rem/1 var(--serif)}
@@ -56,9 +55,6 @@
 @media (max-width:860px){.offers{grid-template-columns:1fr}}
 
 /* ---------- från köket ---------- */
-.catlinks{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.8rem}
-.catlinks a{padding:.55rem .9rem;border:1px solid rgba(184,146,63,.45);border-radius:999px;background:#fff;font:600 11.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none;transition:background .2s,border-color .2s,color .2s}
-.catlinks a:hover,.catlinks a:focus-visible{background:var(--sakura-3);border-color:var(--gold-2);color:var(--gold-deep)}
 .dishes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .dish{display:flex;flex-direction:column;min-height:250px;padding:28px;text-decoration:none;transition:border-color .3s,transform .3s var(--ease)}
 .dish:hover{border-color:var(--koi);transform:translateY(-3px)}
@@ -68,7 +64,7 @@
 .dish:hover .dish-img img{transform:scale(1.05)}
 .dish.has-img .n{position:absolute;top:14px;left:18px;color:#fff;-webkit-text-stroke:0;text-shadow:0 2px 14px rgba(11,21,32,.5)}
 .dish .n{font:italic 400 2.6rem/1 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
-.dish h3{font-size:1.3rem;margin:auto 0 .5rem}
+.dish h3{font-size:1.75rem;margin:auto 0 .5rem}
 .dish p{color:var(--ink-2);font-size:.95rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .dish .ft{display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line-2)}
 .dish .ft b{font:400 1.25rem/1 var(--serif);color:var(--koi-deep)}
@@ -76,13 +72,13 @@
 .dish:hover .ft svg{transform:translateX(5px)}
 .center-cta{display:flex;justify-content:center;margin-top:44px}
 @media (max-width:960px){.dishes{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:760px){.dishes{grid-template-columns:repeat(2,1fr);gap:12px}.dish{min-height:0;padding:14px}.dish .n{font-size:1.7rem}.dish h3{margin-top:1rem;font-size:.95rem}.dish p{font-size:.8rem;-webkit-line-clamp:3}.dish .ft{margin-top:.9rem;padding-top:.7rem}.dish .ft .label{display:none}.dish .ft b{font-size:1rem}}
+@media (max-width:600px){.dishes{grid-template-columns:1fr}.dish{min-height:0}.dish h3{margin-top:1.6rem}}
 
 /* ---------- vid bordet ---------- */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(20px,4vw,48px);counter-reset:s;list-style:none;margin:0;padding:0}
 .steps li{position:relative;padding-top:1.6rem;border-top:1px solid rgba(228,143,168,.5)}
 .steps li::before{counter-increment:s;content:"0" counter(s);position:absolute;top:-.8em;left:0;padding-right:.8rem;background:linear-gradient(180deg,#FBEEF2,#F9EAEF);font:italic 400 1.4rem/1 var(--serif);color:var(--koi)}
-.steps h3{margin-bottom:.5rem;font-size:1.05rem}
+.steps h3{margin-bottom:.5rem}
 .steps p{color:var(--ink-2)}
 @media (max-width:760px){.steps{grid-template-columns:1fr;gap:36px}}
 
@@ -139,10 +135,9 @@
   <div class="wrap">
     <div>
       <span class="eyebrow">{{STREET_UP}} · {{CITY_UP}}</span>
-      <h1 class="shoot" data-text="Hanami Sushi">Hanami Sushi</h1>
-      <p class="sub foil">Det lokala japanska köket med en modern twist – alltid rullat på beställning, nära dig.</p>
-      <p class="kicker">Färskhet i varje detalj. Skapat för dig.</p>
-      <p class="lede">Från klassisk nigiri och maki till färgstarka poke bowls, mättande varma rätter och kompletta bento-menyer. Vi kombinerar det bästa från den japanska traditionen med en spännande, modern touch. Varje rätt tillagas från grunden med största omsorg, högsta råvarukvalitet och ett genuint hantverk.</p>
+      <h1 class="shoot" data-text="Hanami Sushi Bar">Hanami Sushi Bar</h1>
+      <p class="sub foil">Rullad när du beställer.</p>
+      <p class="lede">Nigiri, maki, poke bowls och bento – lagat i köket när beställningen kommer in. Ta med hem, boka bord eller beställ direkt från bordet.</p>
       <div class="actions">
         <a class="btn gold" href="/meny">Beställ take away</a>
         <a class="btn" href="#boka" data-book-link>Boka bord</a>
@@ -171,19 +166,19 @@
       <article class="card offer">
         <div class="k"><span class="label">Mån–fre · {{LUNCH_TIME}}</span><span class="now" data-now="lunch" hidden>Gäller nu</span></div>
         <h3>Dagens lunch</h3>
-        <p>Sushi mix eller bowl. <b>Dryck och misosoppa ingår.</b></p>
+        <p>Sushi mix eller bowl. Dryck och misosoppa ingår.</p>
         <div class="price"><span>från</span><b class="foil">{{LUNCH_FROM}}</b><span>kr</span></div>
       </article>
       <article class="card offer">
         <div class="k"><span class="label">Varje dag · {{HAPPY_TIME}}</span><span class="now" data-now="happy" hidden>Gäller nu</span></div>
         <h3>Happy hour</h3>
-        <p>Stora sushi mix till lägre pris. <b>Över 450 kr ingår en påse räkchips.</b></p>
+        <p>Stora sushi mix till lägre pris. Över 450 kr ingår en påse räkchips.</p>
         <div class="price"><span>30 bitar</span><b class="foil" style="--fd:-3s">{{HAPPY_FROM}}</b><span>kr</span></div>
       </article>
       <article class="card offer">
         <div class="k"><span class="label">Hela dagen</span></div>
         <h3>Student</h3>
-        <p><b>Visa giltig studentlegitimation i kassan.</b> Kan inte kombineras med happy hour och gäller inte vid betalning online.</p>
+        <p>Visa giltig studentlegitimation. Kan inte kombineras med happy hour.</p>
         <div class="price"><b class="foil" style="--fd:-6s">10 %</b><span>rabatt</span></div>
       </article>
     </div>
@@ -198,7 +193,6 @@
       <h2 id="h-dishes">{{COUNT}} rätter, <em class="foil">en meny</em></h2>
       <p>Allt rullas och tillagas när beställningen kommer in – därför blandar vi inte sorter i samma makirulle.</p>
     </div>
-    <nav class="catlinks reveal" aria-label="Menyns kategorier"><!--QUICKLINKS--></nav>
     <div class="dishes">
 <!--HIGHLIGHTS-->
     </div>
@@ -213,9 +207,9 @@
       <h2 id="h-table">Beställ utan <em class="foil">att vänta</em></h2>
     </div>
     <ol class="steps reveal">
-      <li><h3>Skanna koden</h3><p>QR‑koden på bordet öppnar menyn med ditt bordsnummer. <b class="key">Ingen app, inget konto.</b></p></li>
+      <li><h3>Skanna koden</h3><p>QR‑koden på bordet öppnar menyn med ditt bordsnummer. Ingen app, inget konto.</p></li>
       <li><h3>Välj tillsammans</h3><p>Alla vid bordet kan lägga till i samma beställning från sin egen mobil.</p></li>
-      <li><h3>Köket börjar direkt</h3><p><b class="key">Beställningen skrivs ut i köket direkt.</b> Betala med Swish eller kort när ni går.</p></li>
+      <li><h3>Köket börjar direkt</h3><p>Beställningen skrivs ut i köket direkt. Betala med Swish eller kort när ni går.</p></li>
     </ol>
   </div>
 </section>
@@ -236,7 +230,6 @@
         <div class="btns">
           <a class="btn gold" href="https://www.google.com/maps/dir/?api=1&amp;destination={{MAPQ}}" target="_blank" rel="noopener"><svg width="16" height="16" aria-hidden="true"><use href="#i-pin"/></svg>Vägbeskrivning</a>
           <a class="btn" href="tel:{{TEL}}"><svg width="16" height="16" aria-hidden="true"><use href="#i-phone"/></svg>{{PHONE}}</a>
-          <a class="btn" href="mailto:{{EMAIL}}">{{EMAIL}}</a>
         </div>
       </div>
       <div class="card map" id="map">

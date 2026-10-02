@@ -19,7 +19,7 @@ Design: samma system som Vietfood (QDesign) – vitt, körsbärsrosa och koi-bl�
         │
         ├─ MailApp → restaurangens e-post
         ├─ 46elks  → sms till gästen
-        ├─ Epson TM-m30III (Server Direct Print) ← /api/sdp/<nyckel> (ingen dator behövs)
+        ├─ Epson TM-T88VII (Server Direct Print) ← /api/sdp/<nyckel> (ingen dator behövs)
         ├─ Star CloudPRNT-skrivare ← /api/cloudprnt/<nyckel>
         └─ print-bridge/ (dator i köket) → valfri ESC/POS-skrivare, t.ex. Epson TM-T20III
 ```

@@ -17,13 +17,29 @@ function onOpen() {
     .addItem('Nollställ "Slut idag"', 'resetSoldOut')
     .addItem('Visa API-nyckel för Vercel', 'showSecret')
     .addItem('Skicka testbeställning', 'testOrder')
+    .addSubMenu(ui.createMenu('Städning')
+      .addItem('Provkör (räknar bara, ändrar inget)', 'cleanupDryRun')
+      .addItem('Städa nu', 'cleanupNow')
+      .addItem('Slå på nattlig städning', 'cleanupEnable')
+      .addItem('Stäng av', 'cleanupDisable')
+      .addItem('Öppna arkivarket', 'openArchive'))
     .addSeparator()
     .addItem('Installera / reparera', 'setup')
     .addToUi();
 }
 
-/** Kör en gång. Säker att köra igen – skriver aldrig över data. */
-function setup() {
+/** Kör en gång. Säker att köra igen – skriver aldrig över data.
+ *  Den tunga formateringen (text-, pris- och statusformat över hela fliken) görs bara
+ *  när en flik är NY. Att göra om den på ett ark med tusentals rader tar flera minuter
+ *  utan att ändra någonting – kör setupRepair() om formateringen verkligen behöver läggas om. */
+function setup() { return setup_(false); }
+
+/** Som setup() men lägger om all formatering. Tar några minuter på ett fullt ark. */
+function setupRepair() { return setup_(true); }
+
+const FRESH_ = {};                      // fliknamn -> true om fliken skapades i denna körning
+
+function setup_(force) {
   const ss = SpreadsheetApp.getActive();
   ss.setSpreadsheetTimeZone(APP.TZ);
 
@@ -33,16 +49,21 @@ function setup() {
   ensureSheet_(SHEET.LOG, HEADERS.LOG, { 'Detaljer': 500 });
 
   // Text-format så att datum, tider och +46-nummer inte tolkas om av Sheets
-  textColumns_(orders, ['Mottagen', 'Ordernr', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Telefon', 'Sms klar', 'Utskriven']);
-  textColumns_(bookings, ['Mottagen', 'Boknr', 'Datum', 'Tid', 'Telefon', 'Sms bekräftad']);
-  textColumns_(menu, ['Kategori-id', 'Id']);
-  orders.getRange(2, colMap_(orders)['Summa'], orders.getMaxRows() - 1).setNumberFormat('#,##0" kr"');
-  menu.getRange(2, colMap_(menu)['Pris'], menu.getMaxRows() - 1).setNumberFormat('0" kr"');
-  orders.getRange(2, colMap_(orders)['Beställning'], orders.getMaxRows() - 1).setWrap(true);
-  orders.hideColumns(colMap_(orders)['Rader (data)']);
-
-  statusRules_(orders, ORDER_STATUS, STATUS_COLORS.ORDERS);
-  statusRules_(bookings, BOOKING_STATUS, STATUS_COLORS.BOOKINGS);
+  if (force || FRESH_[SHEET.ORDERS]) {
+    textColumns_(orders, ['Mottagen', 'Ordernr', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Telefon', 'Sms klar', 'Utskriven']);
+    orders.getRange(2, colMap_(orders)['Summa'], orders.getMaxRows() - 1).setNumberFormat('#,##0" kr"');
+    orders.getRange(2, colMap_(orders)['Beställning'], orders.getMaxRows() - 1).setWrap(true);
+    orders.hideColumns(colMap_(orders)['Rader (data)']);
+    statusRules_(orders, ORDER_STATUS, STATUS_COLORS.ORDERS);
+  }
+  if (force || FRESH_[SHEET.BOOKINGS]) {
+    textColumns_(bookings, ['Mottagen', 'Boknr', 'Datum', 'Tid', 'Telefon', 'Sms bekräftad']);
+    statusRules_(bookings, BOOKING_STATUS, STATUS_COLORS.BOOKINGS);
+  }
+  if (force || FRESH_[SHEET.MENU]) {
+    textColumns_(menu, ['Kategori-id', 'Id']);
+    menu.getRange(2, colMap_(menu)['Pris'], menu.getMaxRows() - 1).setNumberFormat('0" kr"');
+  }
 
   // Meny: fyll på första gången
   if (menu.getLastRow() < 2) {
@@ -50,6 +71,7 @@ function setup() {
   }
   const mc = colMap_(menu);
   const n = Math.max(menu.getLastRow() - 1, 1);
+  if (force || FRESH_[SHEET.MENU]) {
   menu.getRange(2, mc['Visas på webben'], n).insertCheckboxes();
   menu.getRange(2, mc['Slut idag'], n).insertCheckboxes();
   menu.setConditionalFormatRules([
@@ -60,6 +82,7 @@ function setup() {
   ]);
   menu.getRange(2, mc['Pris'], menu.getMaxRows() - 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireNumberBetween(0, 10000).setAllowInvalid(false).setHelpText('Pris i hela kronor').build());
+  }
 
   // Ta bort tomt standardblad
   ['Blad1', 'Sheet1', 'Trang tính1'].forEach(name => {
@@ -70,16 +93,20 @@ function setup() {
 
   // Triggers
   ScriptApp.getProjectTriggers().forEach(t => {
-    if (['handleEdit', 'resetSoldOut'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+    if (['handleEdit', 'resetSoldOut', 'nightlyCleanup'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('handleEdit').forSpreadsheet(ss).onEdit().create();
   ScriptApp.newTrigger('resetSoldOut').timeBased().atHour(4).everyDays(1).inTimezone(APP.TZ).create();
+  // Städningen en halvtimme senare, så att de två jobben inte krockar om låset.
+  ScriptApp.newTrigger('nightlyCleanup').timeBased().atHour(4).nearMinute(30).everyDays(1).inTimezone(APP.TZ).create();
 
   // Hemlig nyckel
   const props = PropertiesService.getScriptProperties();
   if (!props.getProperty('API_SECRET')) props.setProperty('API_SECRET', Utilities.getUuid() + Utilities.getUuid().slice(0, 8));
   if (!props.getProperty('SEQ_H')) props.setProperty('SEQ_H', '1000');
   if (!props.getProperty('SEQ_B')) props.setProperty('SEQ_B', '1000');
+  // Städningen börjar alltid i provkörningsläge – den slås på medvetet från menyn.
+  if (!props.getProperty('CLEANUP_ENABLED')) props.setProperty('CLEANUP_ENABLED', 'off');
   clearMenuCache_();
   log_('INFO', 'Setup', 'Klar');
 
@@ -87,12 +114,15 @@ function setup() {
   say_('Installationen är klar ✅\n\n' +
     'Nästa steg:\n1. Distribuera → Ny distribution → Webbapp (Kör som: Jag, Åtkomst: Alla)\n' +
     '2. Hanami → Visa API-nyckel för Vercel\n' +
+    '3. Hanami → Städning → Provkör, och slå på den när siffrorna ser rätt ut\n' +
     (missing.length ? '\nSaknade skriptegenskaper: ' + missing.join(', ') : ''));
 }
 
 function ensureSheet_(name, headers, widths) {
   const ss = SpreadsheetApp.getActive();
-  const sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  const existed = !!ss.getSheetByName(name);
+  const sh = existed ? ss.getSheetByName(name) : ss.insertSheet(name);
+  FRESH_[name] = !existed;
   if (sh.getLastRow() === 0) {
     sh.getRange(1, 1, 1, headers.length).setValues([headers]);
   } else {
@@ -100,12 +130,14 @@ function ensureSheet_(name, headers, widths) {
     const have = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
     headers.filter(h => have.indexOf(h) < 0).forEach(h => sh.getRange(1, sh.getLastColumn() + 1).setValue(h));
   }
-  const width = sh.getLastColumn();
-  sh.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#161B26').setFontColor('#FFFFFF').setVerticalAlignment('middle');
-  sh.setFrozenRows(1);
-  sh.setRowHeight(1, 32);
-  const map = colMap_(sh);
-  headers.forEach(h => sh.setColumnWidth(map[h], (widths && widths[h]) || 120));
+  if (!existed) {                       // rubrikrad och kolumnbredder behöver bara sättas en gång
+    const width = sh.getLastColumn();
+    sh.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#161B26').setFontColor('#FFFFFF').setVerticalAlignment('middle');
+    sh.setFrozenRows(1);
+    sh.setRowHeight(1, 32);
+    const map = colMap_(sh);
+    headers.forEach(h => sh.setColumnWidth(map[h], (widths && widths[h]) || 120));
+  }
   return sh;
 }
 

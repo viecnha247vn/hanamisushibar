@@ -91,13 +91,13 @@ export default [
         "id": "nigiri-1",
         "name": "Nigiri",
         "price": 19,
-        "desc": "Riskudde med valbar topping: lax, tonfisk, avokado, krabbstick, jätteräka, tofu, wakame eller krabbröra. Välj sort och antal."
+        "desc": "Riskudde med valbar topping: lax, tonfisk, avokado, krabbstick, jätteräka, tofu, wakame eller krabbröra"
       },
       {
         "id": "nigiri-2",
         "name": "Special nigiri",
         "price": 23,
-        "desc": "Flamberad lax eller flamberad jätteräka. Välj sort och antal."
+        "desc": "Flamberad lax eller flamberad räka"
       },
       {
         "id": "nigiri-3",
@@ -115,7 +115,7 @@ export default [
   },
   {
     "id": "sushi",
-    "name": "Sushi mix",
+    "name": "Sushi",
     "items": [
       {
         "id": "sushi-1",
@@ -487,13 +487,13 @@ export default [
     "items": [
       {
         "id": "barn-1",
-        "name": "Doraemon sushi",
+        "name": "Barnsushi",
         "price": 80,
         "desc": "1 lax, 1 räka, 1 avokado, 4 små maki (gurka)"
       },
       {
         "id": "barn-2",
-        "name": "Conan karaage",
+        "name": "Barn karaage",
         "price": 80,
         "desc": "5 bitar kycklinglårfilé med ris, sallad, sesamfrön och teriyakisås"
       },
@@ -578,21 +578,6 @@ export default [
         "price": 40
       },
       {
-        "id": "tillbehor-22",
-        "name": "Kycklinggyoza, 2 st",
-        "price": 32
-      },
-      {
-        "id": "tillbehor-23",
-        "name": "Chicken katsu, 1 st",
-        "price": 60
-      },
-      {
-        "id": "tillbehor-24",
-        "name": "Tempura ebi, 2 st",
-        "price": 35
-      },
-      {
         "id": "tillbehor-11",
         "name": "Wakamesallad",
         "price": 39,
@@ -671,21 +656,26 @@ export default [
   {
     "id": "bubble",
     "name": "Bubble tea",
-    "note": "Njut av vår Bubble Tea med tapiokapärlor och 1 valfri popping boba – ingår!\nVälj mellan Classic, Matcha eller Taro.\n\nPopping boba: Mango, jordgubb, blåbär eller lychee.\n\nVill du ha extra topping? +10 kr/st.",
+    "note": "Dryck med tapiokapärlor, juice balls och fruktjelly. Välj te: classic, matcha eller taro. Välj sedan smak på popping boba.",
     "items": [
       {
         "id": "bubble-1",
-        "name": "Classic milk tea",
+        "name": "Bubble tea mango",
         "price": 69
       },
       {
         "id": "bubble-2",
-        "name": "Taro milk tea",
+        "name": "Bubble tea jordgubb",
         "price": 69
       },
       {
         "id": "bubble-3",
-        "name": "Matcha milk tea",
+        "name": "Bubble tea blåbär",
+        "price": 69
+      },
+      {
+        "id": "bubble-4",
+        "name": "Bubble tea litchi",
         "price": 69
       }
     ]

@@ -4,9 +4,6 @@
  * Här kontrolleras rätter och priser mot fliken Meny (enda sanningen).
  */
 
-/** Minuter efter midnatt → "HH:mm" */
-function hhmm_(m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); }
-
 function createOrder_(p) {
   const menu = menuIndex_();
   if (!Array.isArray(p.items) || !p.items.length) throw new ApiError(400, 'Varukorgen är tom.');
@@ -19,42 +16,10 @@ function createOrder_(p) {
     if (!(it.price > 0)) throw new ApiError(400, it.name + ' kan inte beställas separat.');
     if (!(qty >= 1 && qty <= 50)) throw new ApiError(400, 'Ogiltigt antal.');
     const note = String(r.note == null ? '' : r.note).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
-    // Tillägg för byten i sushimix räknas av Vercel (lib/mix.js) och läggs på arkets pris
-    const extra = r.extra == null ? 0 : Number(r.extra);
-    if (!(Number.isInteger(extra) && extra >= 0 && extra <= 2000)) throw new ApiError(400, 'Ogiltigt tillägg.');
-    const detail = String(r.detail == null ? '' : r.detail).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 240);
-    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price + extra,
-             note: [detail, note].filter(String).join(' · ') };
+    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price, note: note };
   });
-  const sum = lines.reduce((s, l) => s + l.qty * l.price, 0);
-  // Dricks: gästen väljer procent eller egen summa. Räknas om här mot arkets priser.
-  const tip = Math.round(Number(p.tip) || 0);
-  if (!(tip >= 0 && tip <= 2000 && tip <= sum)) throw new ApiError(400, 'Ogiltig dricks.');
-  const total = sum + tip;
+  const total = lines.reduce((s, l) => s + l.qty * l.price, 0);
   const isTable = p.kind === 'table';
-
-  // Hämtningstid. Köket väljer förberedelsetiden i köksvyn (PICKUP_LEAD) – därför räknas tiden här, där värdet bor.
-  //   asap: tidigast möjligt = max(nu, öppning) + förberedelsetid, avrundat uppåt till 5 min, senast vid stängning.
-  //         Vercel skickar öppning/stängning för idag (openFrom/closeAt, minuter) och standardtiden (defaultLead).
-  //   annars (äldre klient): gästens valda tid kontrolleras mot förberedelsetiden.
-  if (!isTable) {
-    const nowP = nowParts_();
-    if (p.asap) {
-      const lead = lead_() || Math.round(Number(p.defaultLead)) || 30;
-      const open = Number(p.openFrom), close = Number(p.closeAt);
-      if (!(open >= 0 && close > open && close <= 1440)) throw new ApiError(400, 'Ogiltiga öppettider.');
-      if (nowP.minutes >= close) throw new ApiError(400, 'Vi har stängt för idag. Välkommen åter!');
-      const m = Math.ceil((Math.max(nowP.minutes, open) + lead) / 5) * 5;
-      if (m > close) throw new ApiError(400, 'Köket hinner tyvärr inte före stängning kl ' + hhmm_(close) + ' idag.');
-      p.pickupDate = nowP.date;
-      p.pickupTime = hhmm_(m);
-      p.whenText = 'idag kl ' + p.pickupTime;
-    } else {
-      const lead = lead_(), m = toMin_(p.pickupTime);
-      if (lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
-        throw new ApiError(400, 'Köket behöver ' + lead + ' minuter just nu. Välj en senare hämtningstid.');
-    }
-  }
   const no = nextNumber_('H');
 
   appendObject_(sheet_(SHEET.ORDERS), {
@@ -69,13 +34,11 @@ function createOrder_(p) {
     'E-post': p.email || '',
     'Betalning': p.payment === 'kort' ? 'Kort i kassan' : 'Swish',
     'Beställning': lines.map(l => l.qty + ' × ' + l.name + (l.note ? '\n     ↳ ' + l.note : '')).join('\n'),
-    'Dricks': tip || '',
     'Summa': total,
     'Kommentar': p.message || '',
     'Status': 'Ny',
     'Bekräftelse': '',
     'Utskriven': '',
-    'Betald': '',
     'Rader (data)': JSON.stringify(lines)
   });
 
@@ -84,16 +47,15 @@ function createOrder_(p) {
     subject: (isTable ? '🍽 Bord ' + p.table : '🛍 Hämtning ' + p.whenText) + ' · ' + no + ' · ' + total + ' kr',
     title: 'Ny beställning ' + no,
     rows: [['Typ', when], ['Namn', p.name || '–'], ['Telefon', pretty_(p.phone) || '–'],
-           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']]
-           .concat(tip ? [['Dricks', tip + ' kr']] : []),
-    items: lines, tip: tip, total: total
+           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']],
+    items: lines, total: total
   });
   if (!isTable) sms_(p.phone, SMS.orderReceived(no, p.whenText));
   if (p.email && mailOrderConfirmation_({ no: no, kind: p.kind, table: p.table, when: p.whenText, name: p.name,
-        phone: p.phone, email: p.email, payment: p.payment, message: p.message, items: lines, tip: tip, total: total })) {
+        phone: p.phone, email: p.email, payment: p.payment, message: p.message, items: lines, total: total })) {
     setCell_(SHEET.ORDERS, 'Ordernr', no, 'Bekräftelse', now_('HH:mm'));
   }
-  return { no: no, total: total, pickupTime: isTable ? '' : p.pickupTime, whenText: isTable ? '' : p.whenText };
+  return { no: no, total: total };
 }
 
 function createBooking_(p) {
@@ -129,15 +91,16 @@ function listOrders_(date) {
       name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-      message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven'], paid: !!r['Betald'],
-      tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
+      message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven']
     }))
     .reverse();
 }
 
 function listBookings_(from) {
   from = /^\d{4}-\d{2}-\d{2}$/.test(from || '') ? from : now_('yyyy-MM-dd');
-  return rows_(sheet_(SHEET.BOOKINGS))
+  // Taket håller köksvyn snabb även om fliken hunnit bli lång. Kommande bokningar
+  // ligger alltid bland de sista raderna, så inget framtida bord kan falla utanför.
+  return rows_(sheet_(SHEET.BOOKINGS), 500)
     .filter(r => r['Datum'] >= from)
     .map(r => ({
       no: r['Boknr'], date: r['Datum'], time: r['Tid'], guests: Number(r['Gäster']) || 0,
@@ -159,11 +122,10 @@ function printQueue_() {
     .map(r => ({
       no: r['Ordernr'], kind: r['Typ'] === 'Bord' ? 'table' : 'pickup', table: r['Bord'],
       pickupDate: r['Hämtas datum'], pickupTime: r['Hämtas tid'], received: r['Mottagen'],
-      name: r['Namn'], phone: String(r['Telefon'] || ''), email: String(r['E-post'] || ''), payment: r['Betalning'],
+      name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-      message: r['Kommentar'], paid: !!r['Betald'],
-      tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
+      message: r['Kommentar']
     }));
 }
 
@@ -180,8 +142,7 @@ function printJob_(no) {
     name: r['Namn'], phone: pretty_(r['Telefon']), payment: r['Betalning'],
     items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
     total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
-    message: r['Kommentar'], status: r['Status'], paid: !!r['Betald'],
-    tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
+    message: r['Kommentar'], status: r['Status']
   };
 }
 
@@ -191,14 +152,6 @@ function markPrinted_(no, printed) {
   if (!row) throw new ApiError(404, 'Hittar inte ' + no + '.');
   sh.getRange(row, colMap_(sh)['Utskriven']).setValue(printed ? now_('HH:mm') : '');
   return no;
-}
-
-/** Markerar en beställning som betald (eller tar bort markeringen). Köket ser det i köksvyn och på kvittot. */
-function setPaid_(no, paid) {
-  const sh = sheet_(SHEET.ORDERS);
-  if (!findRow_(sh, 'Ordernr', no)) throw new ApiError(404, 'Hittar inte ' + no + '.');
-  setCell_(SHEET.ORDERS, 'Ordernr', no, 'Betald', paid ? now_('HH:mm') : '');
-  return { no: no, paid: !!paid };
 }
 
 function safeJson_(s) { try { return JSON.parse(s); } catch (e) { return null; } }
