@@ -17,27 +17,26 @@ function onOpen() {
     .addItem('Nollställ "Slut idag"', 'resetSoldOut')
     .addItem('Visa API-nyckel för Vercel', 'showSecret')
     .addItem('Skicka testbeställning', 'testOrder')
+    .addSeparator()
     .addSubMenu(ui.createMenu('Städning')
       .addItem('Provkör (räknar bara, ändrar inget)', 'cleanupDryRun')
       .addItem('Städa nu', 'cleanupNow')
       .addItem('Slå på nattlig städning', 'cleanupEnable')
-      .addItem('Stäng av', 'cleanupDisable')
+      .addItem('Stäng av nattlig städning', 'cleanupDisable')
       .addItem('Öppna arkivarket', 'openArchive'))
     .addSeparator()
     .addItem('Installera / reparera', 'setup')
+    .addItem('Lägg om formatering (långsamt)', 'setupRepair')
     .addToUi();
 }
 
 /** Kör en gång. Säker att köra igen – skriver aldrig över data.
- *  Den tunga formateringen (text-, pris- och statusformat över hela fliken) görs bara
- *  när en flik är NY. Att göra om den på ett ark med tusentals rader tar flera minuter
- *  utan att ändra någonting – kör setupRepair() om formateringen verkligen behöver läggas om. */
+ *  Formatering över hela flikar (textformat, prisformat, statusfärger) görs bara när fliken är NY –
+ *  på ett ark med tusentals rader tar det annars flera minuter utan att ändra något. setupRepair() tvingar. */
 function setup() { return setup_(false); }
-
-/** Som setup() men lägger om all formatering. Tar några minuter på ett fullt ark. */
 function setupRepair() { return setup_(true); }
 
-const FRESH_ = {};                      // fliknamn -> true om fliken skapades i denna körning
+const FRESH_ = {};   // fliknamn -> true om fliken skapades i den här körningen
 
 function setup_(force) {
   const ss = SpreadsheetApp.getActive();
@@ -48,9 +47,9 @@ function setup_(force) {
   const menu = ensureSheet_(SHEET.MENU, HEADERS.MENU, { 'Kategori': 170, 'Kategoritext': 220, 'Namn': 220, 'Beskrivning': 420 });
   ensureSheet_(SHEET.LOG, HEADERS.LOG, { 'Detaljer': 500 });
 
-  // Text-format så att datum, tider och +46-nummer inte tolkas om av Sheets
+  // Text-format så att datum, tider och +46-nummer inte tolkas om av Sheets – bara på nya flikar (eller setupRepair)
   if (force || FRESH_[SHEET.ORDERS]) {
-    textColumns_(orders, ['Mottagen', 'Ordernr', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Telefon', 'Sms klar', 'Utskriven']);
+    textColumns_(orders, ['Mottagen', 'Ordernr', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Telefon', 'Sms klar', 'Utskriven', 'Betald']);
     orders.getRange(2, colMap_(orders)['Summa'], orders.getMaxRows() - 1).setNumberFormat('#,##0" kr"');
     orders.getRange(2, colMap_(orders)['Beställning'], orders.getMaxRows() - 1).setWrap(true);
     orders.hideColumns(colMap_(orders)['Rader (data)']);
@@ -71,7 +70,6 @@ function setup_(force) {
   }
   const mc = colMap_(menu);
   const n = Math.max(menu.getLastRow() - 1, 1);
-  if (force || FRESH_[SHEET.MENU]) {
   menu.getRange(2, mc['Visas på webben'], n).insertCheckboxes();
   menu.getRange(2, mc['Slut idag'], n).insertCheckboxes();
   menu.setConditionalFormatRules([
@@ -82,7 +80,6 @@ function setup_(force) {
   ]);
   menu.getRange(2, mc['Pris'], menu.getMaxRows() - 1).setDataValidation(
     SpreadsheetApp.newDataValidation().requireNumberBetween(0, 10000).setAllowInvalid(false).setHelpText('Pris i hela kronor').build());
-  }
 
   // Ta bort tomt standardblad
   ['Blad1', 'Sheet1', 'Trang tính1'].forEach(name => {
@@ -97,7 +94,7 @@ function setup_(force) {
   });
   ScriptApp.newTrigger('handleEdit').forSpreadsheet(ss).onEdit().create();
   ScriptApp.newTrigger('resetSoldOut').timeBased().atHour(4).everyDays(1).inTimezone(APP.TZ).create();
-  // Städningen en halvtimme senare, så att de två jobben inte krockar om låset.
+  // Städningen en halvtimme senare så att de två nattjobben inte krockar om låset
   ScriptApp.newTrigger('nightlyCleanup').timeBased().atHour(4).nearMinute(30).everyDays(1).inTimezone(APP.TZ).create();
 
   // Hemlig nyckel
@@ -105,8 +102,7 @@ function setup_(force) {
   if (!props.getProperty('API_SECRET')) props.setProperty('API_SECRET', Utilities.getUuid() + Utilities.getUuid().slice(0, 8));
   if (!props.getProperty('SEQ_H')) props.setProperty('SEQ_H', '1000');
   if (!props.getProperty('SEQ_B')) props.setProperty('SEQ_B', '1000');
-  // Städningen börjar alltid i provkörningsläge – den slås på medvetet från menyn.
-  if (!props.getProperty('CLEANUP_ENABLED')) props.setProperty('CLEANUP_ENABLED', 'off');
+  if (!props.getProperty('CLEANUP_ENABLED')) props.setProperty('CLEANUP_ENABLED', 'off');   // städningen slås på medvetet från menyn
   clearMenuCache_();
   log_('INFO', 'Setup', 'Klar');
 
@@ -114,7 +110,7 @@ function setup_(force) {
   say_('Installationen är klar ✅\n\n' +
     'Nästa steg:\n1. Distribuera → Ny distribution → Webbapp (Kör som: Jag, Åtkomst: Alla)\n' +
     '2. Hanami → Visa API-nyckel för Vercel\n' +
-    '3. Hanami → Städning → Provkör, och slå på den när siffrorna ser rätt ut\n' +
+    '3. Hanami → Städning → Provkör, och slå på nattlig städning när siffrorna ser rätt ut\n' +
     (missing.length ? '\nSaknade skriptegenskaper: ' + missing.join(', ') : ''));
 }
 
@@ -130,14 +126,12 @@ function ensureSheet_(name, headers, widths) {
     const have = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
     headers.filter(h => have.indexOf(h) < 0).forEach(h => sh.getRange(1, sh.getLastColumn() + 1).setValue(h));
   }
-  if (!existed) {                       // rubrikrad och kolumnbredder behöver bara sättas en gång
-    const width = sh.getLastColumn();
-    sh.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#161B26').setFontColor('#FFFFFF').setVerticalAlignment('middle');
-    sh.setFrozenRows(1);
-    sh.setRowHeight(1, 32);
-    const map = colMap_(sh);
-    headers.forEach(h => sh.setColumnWidth(map[h], (widths && widths[h]) || 120));
-  }
+  const width = sh.getLastColumn();
+  sh.getRange(1, 1, 1, width).setFontWeight('bold').setBackground('#161B26').setFontColor('#FFFFFF').setVerticalAlignment('middle');
+  sh.setFrozenRows(1);
+  sh.setRowHeight(1, 32);
+  const map = colMap_(sh);
+  headers.forEach(h => sh.setColumnWidth(map[h], (widths && widths[h]) || 120));
   return sh;
 }
 

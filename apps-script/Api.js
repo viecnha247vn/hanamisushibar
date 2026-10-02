@@ -27,18 +27,22 @@ function doGet() {
 }
 
 const ACTIONS = {
-  health:        () => ({ sheet: SpreadsheetApp.getActive().getName(), time: now_(), sms: !!prop_('ELKS_USER'), email: !!prop_('NOTIFY_EMAIL') }),
+  health:        () => ({ sheet: SpreadsheetApp.getActive().getName(), time: now_(), sms: !!prop_('ELKS_USER'), email: !!prop_('NOTIFY_EMAIL'),
+                          rows: { orders: Math.max(0, sheet_(SHEET.ORDERS).getLastRow() - 1), bookings: Math.max(0, sheet_(SHEET.BOOKINGS).getLastRow() - 1), log: Math.max(0, sheet_(SHEET.LOG).getLastRow() - 1) },
+                          cleanup: cleanupEnabled_() ? 'on' : 'dry-run' }),
   menu:          () => ({ menu: menuForWeb_() }),
-  availability:  () => ({ items: availability_() }),
+  availability:  () => ({ items: availability_(), leadMinutes: lead_() }),
   order:         p => withLock_(() => createOrder_(p)),
   booking:       p => withLock_(() => createBooking_(p)),
   adminOrders:   p => ({ orders: listOrders_(p.date), sheetUrl: SpreadsheetApp.getActive().getUrl() }),
   adminBookings: p => ({ bookings: listBookings_(p.from), sheetUrl: SpreadsheetApp.getActive().getUrl() }),
   adminStatus:   p => withLock_(() => setStatus_(p.kind, p.no, p.status)),
   adminMenu:     () => ({ menu: menuForKitchen_() }),
-  adminArchive:  p => ({ orders: listArchivedOrders_(p.date) }),
-  adminReport:   p => ({ report: monthReport_(p.month) }),
   adminSoldOut:  p => withLock_(() => setSoldOut_(p.id, !!p.soldOut)),
+  adminLead:     p => withLock_(() => setLead_(p.minutes)),
+  applyMenuPatches: p => withLock_(() => applyMenuPatches_(p.patches)),
+  adminPaid:     p => withLock_(() => setPaid_(p.no, !!p.paid)),
+  adminSettings: () => ({ leadMinutes: lead_() }),
   // skrivarbryggan (print-bridge/)
   printQueue:    () => ({ jobs: printQueue_() }),
   printJob:      p => ({ job: printJob_(p.no) }),

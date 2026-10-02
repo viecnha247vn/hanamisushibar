@@ -86,6 +86,8 @@ function mailOrderConfirmation_(o) {
     '<div style="font-size:15px;color:#1B2A3A;margin-bottom:18px">' +
       (isTable ? 'Bord ' + esc_(o.table) + ' – maten kommer till bordet.' : 'Hämtas ' + esc_(o.when) + ' på ' + esc_(APP.STREET) + '.') + '</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:15px">' + rows +
+      (o.tip ? '<tr><td style="padding:10px 0;border-top:1px solid #EFE7E9;color:#4C5B6B">Dricks</td>' +
+        '<td style="padding:10px 0;border-top:1px solid #EFE7E9;text-align:right;color:#9A7732">' + o.tip + ' kr</td></tr>' : '') +
       '<tr><td style="padding:12px 0;border-top:2px solid #1B2A3A;font-size:17px"><b>Summa</b></td>' +
       '<td style="padding:12px 0;border-top:2px solid #1B2A3A;text-align:right;font-size:17px"><b>' + o.total + ' kr</b></td></tr></table>' +
     (o.message ? '<div style="margin-top:16px;background:#FBEEF2;border-radius:3px;padding:12px 14px;font-size:14px;color:#1B2A3A"><b>Meddelande till köket:</b><br>' + esc_(o.message) + '</div>' : '') +

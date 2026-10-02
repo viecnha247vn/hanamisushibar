@@ -12,6 +12,9 @@
  *   SMS_FROM            avsändarnamn, max 11 tecken (standard "Hanami")
  *   VERCEL_DEPLOY_HOOK  URL från Vercel → Settings → Git → Deploy Hooks
  *   SITE_URL            t.ex. https://hanamisushibar.se
+ *   CLEANUP_ENABLED     "on" = nattlig städning på riktigt (annars provkörning) – se Cleanup.js
+ *   ARCHIVE_ID          arkivarkets id, skapas automatiskt
+ *   CLEANUP_EMAIL       dit städfel mejlas (annars NOTIFY_EMAIL)
  */
 
 const APP = {
@@ -30,7 +33,7 @@ const SHEET = {
 
 const HEADERS = {
   ORDERS: ['Mottagen', 'Ordernr', 'Typ', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Namn', 'Telefon', 'E-post', 'Betalning',
-           'Beställning', 'Summa', 'Kommentar', 'Status', 'Sms klar', 'Bekräftelse', 'Utskriven', 'Rader (data)'],
+           'Beställning', 'Dricks', 'Summa', 'Kommentar', 'Status', 'Sms klar', 'Bekräftelse', 'Utskriven', 'Betald', 'Rader (data)'],
   BOOKINGS: ['Mottagen', 'Boknr', 'Datum', 'Tid', 'Gäster', 'Namn', 'Telefon', 'E-post', 'Meddelande', 'Status', 'Sms bekräftad', 'Bekräftelse'],
   MENU: ['Kategori-id', 'Kategori', 'Kategoritext', 'Id', 'Namn', 'Pris', 'Beskrivning', 'Visas på webben', 'Slut idag'],
   LOG: ['Tid', 'Nivå', 'Händelse', 'Detaljer']

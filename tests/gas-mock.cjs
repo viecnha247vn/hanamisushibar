@@ -10,6 +10,7 @@ function makeEnv() {
     getLastColumn() { return Math.max(0, ...this.data.map(r => { let n = r.length; while (n && (r[n-1] === "" || r[n-1] == null)) n--; return n; })); }
     getMaxRows() { return this.maxRows; }
     cell(r, c) { while (this.data.length < r) this.data.push([]); const row = this.data[r - 1]; while (row.length < c) row.push(""); return row; }
+    insertRowAfter(r) { this.data.splice(r, 0, []); return this; }
     appendRow(vals) { this.data.splice(this.getLastRow(), 0, vals.slice()); }
     deleteRows(start, n) { this.data.splice(start - 1, n); }
     getRange(r, c, nr = 1, nc = 1) { return new Range(this, r, c, nr, nc); }
@@ -32,27 +33,20 @@ function makeEnv() {
     createTextFinder(text) { const self = this; return { matchEntireCell() { return this; }, findNext() {
       const v = self.getDisplayValues(); for (let i = 0; i < v.length; i++) for (let j = 0; j < v[i].length; j++) if (v[i][j] === text) return new Range(self.sh, self.r + i, self.c + j); return null; } }; }
   }
-  ["setFontWeight","setBackground","setFontColor","setVerticalAlignment","setNumberFormat","setWrap","setDataValidation"].forEach(m => Range.prototype[m] = function () { return this; });
-  const files = {};                       // id -> kalkylark (drift + arkiv)
-  function makeSS(id, name) {
+  ["copyTo","setFontWeight","setBackground","setFontColor","setVerticalAlignment","setNumberFormat","setWrap","setDataValidation"].forEach(m => Range.prototype[m] = function () { return this; });
+  /** Ett kalkylark med flikar. Huvudarket + ev. arkivark som skapas av städningen. */
+  function makeSS(name, id) {
     const sheets = {};
     const ss = {
-      _sheets: sheets, _id: id,
-      getId: () => id, getName: () => name,
-      getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = new Sheet(n)), getSheets: () => Object.values(sheets),
-      deleteSheet: sh => delete sheets[sh.name], setActiveSheet() {},
-      getUrl: () => "https://docs.google.com/spreadsheets/d/" + id,
-      setSpreadsheetTimeZone() {}, toast: m => log.toasts.push(m)
+      sheets, getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = new Sheet(n)), getSheets: () => Object.values(sheets),
+      deleteSheet: sh => delete sheets[sh.name], setActiveSheet() {}, getUrl: () => "https://docs.google.com/spreadsheets/d/" + id, getId: () => id, getName: () => name,
+      setSpreadsheetTimeZone() {}, toast: (m) => log.toasts.push(m), getOwner: () => ({ getEmail: () => "owner@test.se" })
     };
-    files[id] = ss;
+    sheets["Blad1"] = new Sheet("Blad1");
     return ss;
   }
-  const ss = makeSS("TEST", "Hanami – Drift");
-  const sheets = ss._sheets;
-  sheets["Blad1"] = new Sheet("Blad1");
-  let newId = 0;
-  const ui = { alert: (a, b, c) => { log.alerts.push(c ? a + "\n" + b : a); return c ? "YES" : undefined; },
-               createMenu: () => chain(), ButtonSet: { YES_NO: "yn" }, Button: { YES: "YES" } };
+  const ss = makeSS("Hanami – Drift", "TEST"), sheets = ss.sheets, files = { TEST: ss };
+  const ui = { alert: m => { log.alerts.push(m); return "OK"; }, createMenu: () => chain(), ButtonSet: { OK_CANCEL: 1 }, Button: { OK: "OK" } };
   const props = {};
   const cache = {};
   const tzFmt = (d, tz, f) => {
@@ -61,13 +55,9 @@ function makeEnv() {
   };
   const ctx = {
     console, JSON, Math, Date, Number, String, Object, Array, Error, RegExp,
-    SpreadsheetApp: {
-      getActive: () => ss, getUi: () => ui, newDataValidation: chain, newConditionalFormatRule: chain, flush() {},
-      create: name => makeSS("ARK" + (++newId), name),
-      openById: id => { if (!files[id]) { const e = new Error("Hittar inte " + id); throw e; } return files[id]; }
-    },
-    DriveApp: { getFileById: () => ({ getParents: () => ({ hasNext: () => false, next: () => null }), moveTo() {} }) },
-    Session: { getEffectiveUser: () => ({ getEmail: () => "agare@exempel.se" }) },
+    SpreadsheetApp: { CopyPasteType: { PASTE_FORMAT: 1, PASTE_DATA_VALIDATION: 2 }, getActive: () => ss, getUi: () => ui, newDataValidation: chain, newConditionalFormatRule: chain,
+      create: name => { const id = "ARK" + Object.keys(files).length; return (files[id] = makeSS(name, id)); },
+      openById: id => { if (!files[id]) throw new Error("Hittar inte " + id); return files[id]; } },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
@@ -82,9 +72,8 @@ function makeEnv() {
   const dir = process.env.GAS_DIR || require("path").join(__dirname, "..", "apps-script");
   const code = fs.readdirSync(dir).filter(f => f.endsWith(".js")).sort((a, b) => (a === "Config.js" ? -1 : b === "Config.js" ? 1 : a.localeCompare(b)))
     .map(f => fs.readFileSync(dir + "/" + f, "utf8")).join("\n;\n");
-  vm.runInContext(code + "\n;this.__api={doPost,setup,setupRepair,handleEdit,resetSoldOut,publishSite,testOrder,showSecret,onOpen," +
-    "nightlyCleanup,installCleanup,cleanupDryRun,cleanupNow,cleanupEnable,cleanupDisable,openArchive,runCleanup:runCleanup_,archiveSS:archiveSS_};", ctx);
+  vm.runInContext(code + "\n;this.__api={doPost,setup,setupRepair,handleEdit,resetSoldOut,publishSite,testOrder,showSecret,onOpen,nightlyCleanup,cleanupDryRun,cleanupNow,cleanupEnable,cleanupDisable,runCleanup_};", ctx);
   const call = (action, payload, secret = props.API_SECRET) => JSON.parse(ctx.__api.doPost({ postData: { contents: JSON.stringify({ secret, action, payload }) } }).text);
-  return { ctx, api: ctx.__api, call, sheets, props, log, files, ss };
+  return { ctx, api: ctx.__api, call, sheets, props, log, files };
 }
 module.exports = { makeEnv };

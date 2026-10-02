@@ -31,7 +31,7 @@
 .search input:focus{outline:none;border-color:var(--koi)}
 .chips{display:flex;gap:.3rem;overflow-x:auto;scrollbar-width:none;flex:1;mask-image:linear-gradient(90deg,#000 92%,transparent)}
 .chips::-webkit-scrollbar{display:none}
-.chips a{flex:0 0 auto;padding:.6rem .9rem;font:400 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--ink-2);border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
+.chips a{flex:0 0 auto;padding:.6rem .9rem;font:600 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--ink);border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
 .chips a:hover{color:var(--ink)}
 .chips a.active{color:var(--koi);border-color:var(--koi)}
 @media (max-width:760px){.tools .wrap{flex-direction:column;align-items:stretch;gap:.4rem;padding-top:.6rem;padding-bottom:.2rem}.search{flex:none}}
@@ -43,16 +43,41 @@
 .cat-img{margin:1.2rem 0 1.6rem;border-radius:4px;overflow:hidden;position:relative;aspect-ratio:16/7;background:var(--sakura-3);box-shadow:0 18px 40px rgba(27,42,58,.10)}
 .cat-img img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.02);transition:transform 1.2s var(--ease)}
 .cat:hover .cat-img img{transform:scale(1)}
+/* ånga över de varma rätterna – mjuka, höga slöjor som stiger, sväljer och bleknar */
+.cat-img .steam{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;mix-blend-mode:screen}
+.cat-img .steam i{position:absolute;left:var(--x);bottom:var(--b,12%);width:var(--w,18%);height:0;padding-bottom:calc(var(--w,18%) * 1.35);border-radius:50% 50% 45% 45%;
+  background:radial-gradient(50% 55% at 50% 60%,rgba(255,255,255,.95),rgba(255,255,255,.4) 45%,rgba(255,255,255,0) 72%);
+  filter:blur(10px);opacity:0;transform-origin:50% 100%;will-change:transform,opacity;
+  animation:steam var(--d,8s) cubic-bezier(.45,.05,.55,.95) infinite;animation-delay:var(--dl,0s)}
+.cat-img .steam i:nth-child(even){animation-name:steam2}
+@keyframes steam{0%{opacity:0;transform:translate3d(0,20%,0) scale(.55,.5)}
+  18%{opacity:.88}
+  45%{opacity:.6;transform:translate3d(12%,-45%,0) scale(.9,1.1) rotate(4deg)}
+  75%{opacity:.28;transform:translate3d(-8%,-95%,0) scale(1.2,1.45) rotate(-5deg)}
+  100%{opacity:0;transform:translate3d(10%,-140%,0) scale(1.45,1.75) rotate(6deg)}}
+@keyframes steam2{0%{opacity:0;transform:translate3d(0,20%,0) scale(.5,.55)}
+  20%{opacity:.82}
+  50%{opacity:.5;transform:translate3d(-14%,-50%,0) scale(.95,1.15) rotate(-5deg)}
+  80%{opacity:.22;transform:translate3d(9%,-100%,0) scale(1.25,1.5) rotate(4deg)}
+  100%{opacity:0;transform:translate3d(-10%,-145%,0) scale(1.5,1.8) rotate(-6deg)}}
+.cat-img:not(.inview) .steam i{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){.cat-img .steam{display:none}}
 .cat-img::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -60px 60px -40px rgba(11,21,32,.25);pointer-events:none}
 @media (max-width:760px){.cat-img{aspect-ratio:16/9;margin:1rem -0 1.3rem;border-radius:3px}}
 .cat-head .n{font:italic 400 3rem/.8 var(--serif);color:transparent;-webkit-text-stroke:1px var(--sakura-2)}
-.cat-head h2{font-size:clamp(1.8rem,3.6vw,2.5rem)}
+/* kategorirubriker: versaler i Cinzel med en lugn guldglans – samma familj som HAPPY HOUR men dämpad */
+.cat-head h2{font:700 clamp(1.45rem,3.2vw,2.2rem)/1.15 'Cinzel','Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:.07em;
+  background:linear-gradient(100deg,#7A5E24 0%,#B8923F 30%,#E9D7A6 42%,#B8923F 54%,#8A6A2A 100%);background-size:250% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:catShine 11s linear infinite;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.8)) drop-shadow(0 3px 6px rgba(154,119,50,.18))}
+@keyframes catShine{from{background-position:130% 0}to{background-position:-130% 0}}
+@media (prefers-reduced-motion:reduce){.cat-head h2{animation:none;background-position:40% 0}}
 .cat-head .tag{font:500 10.5px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;padding:.45rem .7rem;border:1px solid rgba(228,143,168,.5);background:var(--sakura-3);border-radius:2px;color:var(--gold-2);white-space:nowrap}
 .cat-head .tag.on{color:var(--ok);border-color:rgba(47,143,91,.4);background:#EAF6EF}
 .cat-head p{grid-column:1/-1;color:var(--ink-2);font-size:.95rem;max-width:70ch}
 .items{display:grid;grid-template-columns:1fr 1fr;column-gap:clamp(24px,5vw,64px)}
 .item{display:grid;grid-template-columns:1fr auto auto;gap:.2rem 1rem;align-items:center;padding:1.1rem 0;border-bottom:1px solid var(--line-2)}
-.item .nm{font-weight:400;font-size:1.05rem;color:var(--ink)}
+.item .nm{font-weight:400;font-size:.98rem;color:var(--ink)}
 .item .ds{grid-column:1;color:var(--ink-3);font-size:.9rem;line-height:1.5}
 .item .pr{grid-column:2;grid-row:1/span 2;font:400 1.25rem/1 var(--serif);color:var(--gold-2);white-space:nowrap}
 .item .add{grid-column:3;grid-row:1/span 2;width:40px;height:40px;border-radius:50%;border:1px solid var(--koi);background:#fff;color:var(--koi);display:grid;place-items:center;transition:background .2s,color .2s,transform .15s}
@@ -70,6 +95,32 @@
 .searching .item.hit{display:grid}
 .nores{padding:80px 0;text-align:center;color:var(--ink-2)}
 @media (max-width:860px){.items{grid-template-columns:1fr}}
+/* Happy hour – egen ram */
+.cat.hh{position:relative;overflow:hidden;isolation:isolate;margin-top:clamp(48px,7vw,80px);padding:clamp(24px,4vw,48px);border:1px solid rgba(184,146,63,.6);border-radius:6px;background:linear-gradient(165deg,#FFF7F9 0%,var(--sakura-3) 100%);box-shadow:inset 0 0 0 6px #FFF7F9,inset 0 0 0 7px rgba(184,146,63,.35),0 22px 50px rgba(228,143,168,.18)}
+.cat.hh .hh-branch{width:min(420px,70%);right:-110px;bottom:-60px;--r:-8deg;--ox:100%;--oy:100%;--dur:17s;opacity:.24;z-index:-1}
+.cat.hh .cat-head{border-bottom-color:rgba(184,146,63,.35)}
+.cat.hh .cat-head{align-items:center}
+.cat-head h2.hh-title{--hhg:linear-gradient(100deg,#6E5420 0%,#B8923F 16%,#E5CF98 26%,#FFFBEA 31%,#E5CF98 36%,#B8923F 48%,#7A5E24 62%,#C9A96A 78%,#8A6A2A 100%);position:relative;margin:0 0 .5em;font:700 clamp(2.1rem,5.2vw,3.7rem)/1 'Cinzel','Playfair Display',Georgia,serif;text-transform:uppercase;letter-spacing:.09em;white-space:nowrap;background:var(--hhg);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:hhShine 4.5s linear infinite;filter:drop-shadow(0 1px 0 rgba(255,255,255,.9)) drop-shadow(0 3px 2px rgba(122,94,36,.35)) drop-shadow(0 10px 18px rgba(154,119,50,.28))}
+.cat-head h2.hh-title::after{content:attr(data-text);position:absolute;left:0;right:0;top:100%;margin-top:.06em;height:1em;overflow:hidden;background:var(--hhg);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:inherit;transform:scaleY(-1);opacity:.24;-webkit-mask-image:linear-gradient(to bottom,transparent 35%,#000 100%);mask-image:linear-gradient(to bottom,transparent 35%,#000 100%);pointer-events:none}
+@media (max-width:760px){.cat-head h2.hh-title{font-size:clamp(1.55rem,7.2vw,2.2rem)}.cat.hh .cat-head .tag{grid-column:1/-1;grid-row:2;justify-self:start;margin-top:.2rem}}
+@keyframes hhShine{from{background-position:130% 0}to{background-position:-130% 0}}
+@media (prefers-reduced-motion:reduce){.cat-head h2.hh-title,.cat-head h2.hh-title::after{animation:none;background-position:40% 0}}
+.cat.hh .cat-head .tag{background:#fff}
+.cat.hh .item{border-bottom-color:rgba(184,146,63,.18)}
+.cat.hh .item .add{background:transparent}
+.cat:not(#cat-tillbehor) .item .nm{text-transform:uppercase;font-weight:600;letter-spacing:.05em;font-size:.9rem}
+.cat.hh .item .nm{text-transform:uppercase;font-weight:700;letter-spacing:.06em;font-size:1rem}
+.cat-head p .para{display:block}
+.cat-head p .para+.para{margin-top:.55rem}
+.hh-state{display:flex;align-items:center;gap:.55rem;margin:.6rem 0 0;font-size:.95rem;color:var(--ink-2)}
+.hh-state::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--ink-3)}
+.hh-state.on{color:var(--ok);font-weight:500}
+.hh-state.on::before{background:var(--ok);box-shadow:0 0 0 4px rgba(47,143,91,.15)}
+.cat.hh.locked .item .add{opacity:.35;cursor:not-allowed;pointer-events:none}
+.cat.hh.locked .item .add:hover{background:transparent;color:var(--koi)}
+@media (max-width:760px){.cat.hh{padding:22px 18px;margin-left:calc(var(--pad) * -.4);margin-right:calc(var(--pad) * -.4)}}
+@media (prefers-reduced-motion:reduce){.cat.hh .hh-branch{animation:none}}
+
 
 /* ---------- beställningsrad ---------- */
 .obar{position:fixed;left:0;right:0;bottom:0;z-index:36;padding:.8rem var(--pad) calc(.8rem + env(safe-area-inset-bottom));background:rgba(15,61,110,.96);color:#fff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .35s var(--ease)}
@@ -102,6 +153,56 @@
 .line .note input{width:100%;min-height:42px;padding:.55rem .75rem;border:1px solid var(--line-2);border-radius:2px;background:#fff;font-size:.95rem}
 .line .note input:focus{outline:none;border-color:var(--koi);box-shadow:0 0 0 3px rgba(24,115,188,.12)}
 .line .note small{display:block;color:var(--ink-3);font-size:.78rem;margin-top:.3rem}
+.allergi{display:block;text-align:left;margin-top:.45rem;padding:.5rem .7rem;border-left:3px solid #C8463A;border-radius:2px;background:#FBE9E7;color:#8A2E27;font-size:.8rem;line-height:1.5}
+.allergi b{font-weight:600}
+.field .allergi{font-size:.85rem;margin-top:.5rem}
+.pickup{display:grid;gap:.35rem;margin-bottom:1.05rem;padding:.85rem 1rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3)}
+.pickup .lbl{font:500 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
+.pickup b{font:500 1.15rem/1.3 var(--serif);color:var(--ink)}
+.pickup small{font-size:.86rem;color:var(--ink-2)}
+.done .swish .sm{display:block;font-size:.88rem;color:var(--ink-2);margin-top:.35rem}
+.done .swish .btn{margin:.9rem 0 .2rem}
+.done .swish .qr{margin:.9rem auto 0;width:168px;line-height:0}
+.done .swish{margin:1rem auto 0;padding:.8rem 1rem;max-width:26rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3);color:var(--ink);line-height:1.6}
+.total.sub{border-top:0;padding-top:0;font-size:.95rem;color:var(--ink-2)}
+.choice.tips{gap:.4rem}
+.choice.tips label{gap:.35rem;padding:.35rem .7rem;border-radius:999px;font:400 .85rem/1 var(--sans);letter-spacing:0;text-transform:none}
+.choice.tips input{width:13px;height:13px}
+#tipKr{width:100%;min-height:46px;padding:.6rem .8rem;border:1px solid var(--line-2);border-radius:2px;background:#fff}
+.line .dt{grid-column:1/-1;font-size:.86rem;line-height:1.45;color:var(--ink-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
+.line .dt b{font-weight:500;color:var(--gold-deep)}
+.item .mx{grid-column:1;justify-self:start;margin-top:.15rem;padding:.2rem 0;border:0;background:none;font:inherit;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--koi)}
+.item button.mx:disabled{cursor:default;text-decoration:none;opacity:.5}
+.item button.mx{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(0,0,0,.2);text-underline-offset:3px}
+/* val i sushimix */
+.mixwrap{position:fixed;inset:0;z-index:55;display:grid;place-items:center;padding:16px;background:rgba(15,61,110,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s}
+.mixwrap.show{opacity:1}
+.mixbox{width:min(560px,100%);max-height:min(88vh,880px);display:flex;flex-direction:column;background:var(--bg);border:1px solid rgba(184,146,63,.45);border-radius:6px;box-shadow:0 30px 70px rgba(27,42,58,.35);transform:translateY(14px);transition:transform .3s var(--ease)}
+.mixwrap.show .mixbox{transform:none}
+.mixbox header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:1.2rem 1.4rem 1rem;border-bottom:1px solid var(--line)}
+.mixbox header .x{position:static;flex:none}
+.mixbox h2{margin:0;font:500 1.55rem/1.15 var(--serif);color:var(--ink)}
+.mixbox header p{margin:.3rem 0 0;color:var(--ink-3);font-size:.9rem}
+.mixbox .mbody{overflow:auto;overscroll-behavior:contain;padding:1.1rem 1.4rem .4rem}
+.mixbox .mfoot{padding:1rem 1.4rem calc(1rem + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.mx-sec{border:0;margin:0 0 1.5rem;padding:0;min-width:0}
+.mx-sec legend{display:flex;flex-wrap:wrap;gap:.3rem .6rem;align-items:baseline;padding:0;margin-bottom:.75rem;font:500 11px/1.3 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
+.mx-sec legend small{letter-spacing:.02em;text-transform:none;color:var(--ink-3);font-size:.86rem}
+.mx-chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.mx-chips label{position:relative;display:inline-flex;align-items:center;padding:.55rem .9rem;border:1px solid var(--line-2);border-radius:999px;background:#fff;font-size:.92rem;cursor:pointer;transition:border-color .2s,background .2s}
+.mx-chips input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.mx-chips label:has(input:checked){border-color:var(--koi);background:rgba(24,115,188,.08);color:var(--koi-deep);font-weight:500}
+.mx-chips label:has(input:focus-visible){outline:2px solid var(--koi);outline-offset:2px}
+.mx-rule{margin:0 0 .5rem;color:var(--ink-3);font-size:.88rem;line-height:1.5}
+.mx-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.4rem 0;border-bottom:1px solid var(--line)}
+.mx-row>span:first-child{color:var(--ink-3)}
+.mx-row.on>span:first-child{color:var(--ink);font-weight:500}
+.mx-row .qty button:disabled{opacity:.3;cursor:not-allowed}
+.mx-row .qty button:disabled:hover{border-color:var(--line-2);color:var(--ink)}
+.mx-state{margin:.9rem 0 0;padding:.55rem .75rem;border-radius:2px;background:var(--sakura-3);font-weight:500;font-size:.92rem;color:var(--ink-2)}
+.mx-state.paid{color:var(--gold-deep)}
+.mx-state.todo{background:#FFF3C4;color:#7A5E24}
+@media (max-width:600px){.mixwrap{place-items:end stretch;padding:0}.mixbox{max-height:92vh;border-radius:14px 14px 0 0;border-width:1px 0 0}.mixwrap .mixbox{transform:translateY(40px)}.mixwrap.show .mixbox{transform:none}}
 .line .has{grid-column:1/-1;margin-top:.45rem;font-size:.88rem;color:var(--gold-2);background:var(--sakura-3);border-radius:2px;padding:.35rem .6rem}
 .total{display:flex;justify-content:space-between;align-items:baseline;padding:1.4rem 0 1.2rem;font:400 1.6rem/1 var(--serif)}
 .total b{font-weight:400;color:var(--koi-deep)}
@@ -112,7 +213,7 @@
 </style>
 </head>
 <body>
-<!--SPLASH-->
+<!-- ingen koi-intro på menysidan – gästen ska rakt in i maten (intron visas på startsidan) -->
 <!--SYMBOLS-->
 <!--HEADER-->
 <div class="tablebar" id="tablebar" hidden role="status"><div class="wrap"><svg width="18" height="18" aria-hidden="true"><use href="#i-table"/></svg><span><b id="tableLabel">Bord</b> · beställningen går direkt till köket</span></div></div>
@@ -123,7 +224,7 @@
   <div class="wrap">
     <span class="eyebrow" id="pEyebrow">Meny · {{COUNT}} rätter</span>
     <h1 id="pTitle">Vår <em class="foil">meny</em></h1>
-    <p class="lede" id="pLede">Välj rätter, lägg i varukorgen och välj när du vill hämta. Priserna är i kronor inklusive moms. Makirullar görs vid beställning och är alltid tio bitar.</p>
+    <p class="lede" id="pLede">Välj rätter och lägg i varukorgen – vi säger direkt när maten är klar att hämta. Priserna är i kronor inklusive moms. Makirullar görs vid beställning och är alltid tio bitar.</p>
     <div class="row">
       <span class="status" data-status>Öppettider</span>
       <span class="pill on" data-now="lunch" hidden>Lunch gäller nu</span>
@@ -165,8 +266,17 @@
   <div class="foot" id="drawerFoot"></div>
 </aside>
 
+<div class="mixwrap" id="mixdlg" hidden>
+  <div class="mixbox" role="dialog" aria-modal="true" aria-labelledby="mixTitle">
+    <header><div><h2 id="mixTitle"></h2><p id="mixSub"></p></div><button class="x" type="button" data-mixclose aria-label="Stäng"><svg width="14" height="14"><use href="#i-x"/></svg></button></header>
+    <div class="mbody" id="mixBody"></div>
+    <div class="mfoot"><button class="btn gold block" type="button" id="mixOk"></button></div>
+  </div>
+</div>
+
 <script>
 <!--COMMON_JS-->
+<!--MIX_JS-->
 
 /* ================= menysidan ================= */
 const ITEMS = {};
@@ -213,20 +323,219 @@ function initSearch() {
 }
 
 /* ---------- varukorg ---------- */
+/* cart: radnyckel -> { id, sig, qty, note, opts, extra, detail }
+   Vanliga rätter har rätt-id som nyckel. En sushimix med egna val får en egen rad per kombination. */
 const cart = new Map();
 const noteOpen = new Set();
-let stage = "cart", lastOrder = null;
-const cartTotal = () => [...cart].reduce((s, [id, c]) => s + ITEMS[id].price * c.qty, 0);
+let stage = "cart", lastOrder = null, lineSeq = 0;
+/* Varukorgen sparas i webbläsaren så att den finns kvar om gästen går till startsidan och tillbaka
+   (eller laddar om). Gäller i 4 timmar. Bordsbeställningar (QR) har en egen korg per bord. */
+const CART_KEY = TABLE ? `hanami-cart-bord-${TABLE}` : CART_STORE;
+function saveCart() {
+  try { cart.size ? localStorage.setItem(CART_KEY, JSON.stringify({ t: Date.now(), lines: [...cart] })) : localStorage.removeItem(CART_KEY); } catch {}
+}
+function loadCart() {
+  try {
+    const d = JSON.parse(localStorage.getItem(CART_KEY) || "null");
+    if (!d || !Array.isArray(d.lines) || Date.now() - d.t > CART_TTL) return;
+    for (const [k, c] of d.lines) {
+      if (!c || !ITEMS[c.id] || !(c.qty >= 1 && c.qty <= 50)) continue;   // rätten finns inte längre på menyn
+      cart.set(k, c);
+      const n = Number(String(k).split("~")[1]); if (n > lineSeq) lineSeq = n;
+    }
+  } catch {}
+}
+/* Dricks: 0 = ingen, tal = procent, "egen" = valfri summa i kronor */
+let tipPct = 0, tipCustom = 0;
+const tipValue = () => tipPct === "egen" ? Math.max(0, Math.min(2000, Math.round(tipCustom || 0))) : Math.round(cartTotal() * tipPct / 100);
+const payTotal = () => cartTotal() + tipValue();
+const unitPrice = c => ITEMS[c.id].price + (c.extra || 0);
+const cartTotal = () => [...cart.values()].reduce((s, c) => s + unitPrice(c) * c.qty, 0);
 const cartQty = () => [...cart.values()].reduce((a, c) => a + c.qty, 0);
-
-/* cart: id -> { qty, note } */
-function add(id) { const c = cart.get(id); cart.set(id, { qty: (c ? c.qty : 0) + 1, note: c ? c.note : "" }); syncCart(); toast(`Tillagd · ${ITEMS[id].name}`); }
-function setQty(id, q) {
-  const c = cart.get(id) || { qty: 0, note: "" };
-  q <= 0 ? cart.delete(id) : cart.set(id, { qty: q, note: c.note });
+const cartHas = test => [...cart.values()].some(c => test(c.id));
+function dropId(id) { for (const [k, c] of cart) if (c.id === id) { cart.delete(k); noteOpen.delete(k); } }
+/* Happy hour-rätter kan bara läggas till och beställas medan happy hour pågår (samma regel kontrolleras på servern) */
+const isHappy = id => id.startsWith("happy-");
+/* Swish-knapp. Två format som båda fyller i betalningen:
+   1. https://app.swish.nu/1/p/sw/?sw=…&amt=…&cur=SEK&msg=…  – Swish egen länk (universal link/app link),
+      visar "Ladda ner Swish" om appen saknas och läses även av telefonens kamera som QR.
+   2. swish://payment?data=<URL-kodad JSON>  – appens egen scheme, reservlänk under knappen.
+      version måste vara talet 1, belopp med decimalpunkt, inga editable-nycklar (allt låst).
+   På Android öppnar en https-länk inte alltid appen, därför intent-länk med fallback.
+   På datorn visas QR-koden med format 1 i stället. */
+const swishLink = (amt, msg) => `https://app.swish.nu/1/p/sw/?sw=${SETTINGS.swish}&amt=${amt}&cur=SEK&msg=${encodeURIComponent(msg)}&src=qr`;
+const isAndroid = /Android/i.test(navigator.userAgent);
+const isPhone = isAndroid || /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+const swishHref = (amt, msg) => isAndroid
+  ? `intent://${swishLink(amt, msg).slice(8)}#Intent;scheme=https;package=se.bankgirot.swish;S.browser_fallback_url=${encodeURIComponent(swishLink(amt, msg))};end`
+  : swishLink(amt, msg);
+const swishScheme = (amt, msg) => "swish://payment?data=" + encodeURIComponent(JSON.stringify({
+  version: 1, payee: { value: String(SETTINGS.swish) }, amount: { value: Number(amt) }, message: { value: String(msg) }
+}));
+function drawSwishQr(amt, msg) {
+  const el = $("#swishQr"); if (!el) return;
+  const draw = () => { if (window.qrSvg && $("#swishQr")) $("#swishQr").innerHTML = qrSvg(swishLink(amt, msg), 168); };
+  if (window.qrSvg) return draw();
+  const sc = document.createElement("script"); sc.src = "/qr.js"; sc.onload = draw; document.head.appendChild(sc);
+}
+const swishNo = SETTINGS.swish.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, "$1 $2 $3 $4");
+function happyNow() { const { h, open } = nowInfo(); return open && h >= SETTINGS.happyHour.from && h < SETTINGS.happyHour.to; }
+function syncHappy() {
+  const on = happyNow(), sec = $("#cat-happy"), st = $("[data-hh]");
+  const hh = SETTINGS.happyHour, t = `${pad(hh.from)}:00–${pad(hh.to)}:00`;
+  if (sec) sec.classList.toggle("locked", !on);
+  $$("#cat-happy [data-add]").forEach(b => { b.disabled = !on; b.title = on ? "" : `Kan beställas ${t}`; });
+  if (st) { st.classList.toggle("on", on); st.textContent = on ? `Pågår nu – beställ före ${pad(hh.to)}:00` : `Kan bara beställas under happy hour, ${t}, de dagar vi har öppet.`; }
+  if (!on) {
+    const gone = [...new Set([...cart.values()].map(c => c.id).filter(isHappy))];
+    if (gone.length) { gone.forEach(dropId); syncCart(); toast("Happy hour är slut – rätterna togs bort ur varukorgen"); if (!$("#drawer").hidden) { if (!cart.size) stage = "cart"; renderDrawer(); } }
+  }
+  return on;
+}
+function add(id) {
+  if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${pad(SETTINGS.happyHour.from)}:00–${pad(SETTINGS.happyHour.to)}:00`); return; }
+  if (MIX.items[id] && !mixHasDefault(id)) return openMix(id);   // måste välja (boba, fyllning, bitar …)
+  addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}${MIX.items[id] ? " · ändra i varukorgen" : ""}`);
+}
+/* Mixar som har en färdig sammansättning på menyn (sushimix, lunchmix, barn, vegan): + lägger till som på menyn,
+   valen öppnas bara om gästen trycker på "Välj maki · byt nigiri". */
+function mixHasDefault(id) {
+  const c = MIX.items[id];
+  return !!c && !c.choice && !c.addon && !c.perPiece && !c.drink && !c.freeChoice;
+}
+function addLine(id, opts, qty = 1, note = "") {
+  const m = mixPrice(id, opts);
+  if (!m.detail) opts = null;                       // inga ändringar = vanlig rad
+  const sig = opts ? JSON.stringify(opts) : "";
+  const perPiece = !!(MIX.items[id] && MIX.items[id].perPiece);   // antalet = bitarna i valen, slås inte ihop
+  if (!perPiece) for (const [k, c] of cart) if (c.id === id && c.sig === sig) { c.qty += qty; if (note && !c.note) c.note = note; syncCart(); return k; }
+  const k = sig ? `${id}~${++lineSeq}` : id;
+  cart.set(k, { id, sig, qty, note, opts, extra: m.extra, detail: m.detail });
+  syncCart(); return k;
+}
+function setQty(k, q) {
+  const c = cart.get(k); if (!c) return;
+  if (q <= 0) { cart.delete(k); noteOpen.delete(k); } else c.qty = q;
   syncCart(); if (!cart.size) stage = "cart"; renderDrawer();
 }
-function setNote(id, note) { const c = cart.get(id); if (c) cart.set(id, { qty: c.qty, note: note.slice(0, 120) }); }
+function setNote(k, note) { const c = cart.get(k); if (c) { c.note = note.slice(0, 120); saveCart(); } }
+
+/* ---------- val i sushimix: maki gratis, nigiri 4 byten ingår ---------- */
+let mixState = null;
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function mixOpts() { const s = mixState, nigiri = {};
+  if (s.pick !== undefined) return { pick: s.pick };
+  if (s.addon !== undefined) return { extra: s.addon };
+  if (s.pieces) { const p = {}; MIX.items[s.id].perPiece.forEach(k => { if (s.pieces[k]) p[k] = s.pieces[k]; }); return { pieces: p }; }
+  if (s.drink) return { boba: s.drink.boba, extra: MIX.drink.boba.filter(b => s.drink.extra.includes(b)), tapioca: s.drink.tapioca }; mixChoices(s.id).forEach(k => { if (s.nigiri[k]) nigiri[k] = s.nigiri[k]; }); return { maki: [...s.maki], nigiri }; }
+function openMix(id, key = null) {
+  const cfg = MIX.items[id], o = key && cart.get(key)?.opts;
+  if (cfg.choice) {
+    mixState = { id, key, pick: o ? o.pick : "" };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · välj ${cfg.choice.label.toLowerCase()}`;
+  } else if (cfg.addon) {
+    mixState = { id, key, addon: o ? o.extra : 0 };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · extra ${cfg.addon.label} ${cfg.addon.price} kr/st`;
+  } else if (cfg.perPiece) {
+    mixState = { id, key, pieces: { ...(o ? o.pieces : {}) } };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} per bit · välj sort och antal`;
+  } else if (cfg.drink) {
+    mixState = { id, key, drink: { boba: o ? o.boba : "", extra: o ? [...(o.extra || [])] : [], tapioca: !!(o && o.tapioca) } };
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · tapioka och en popping boba ingår`;
+  } else {
+    const rolls = cfg.chooseMaki === false ? 0 : cfg.maki / MIX.makiPerRoll;
+    mixState = { id, key, maki: o ? [...o.maki] : Array(rolls).fill(""), nigiri: { ...(o ? o.nigiri : cfg.nigiri) } };  // freeChoice: tom start, gästen väljer allt
+    $("#mixSub").textContent = `${kr(ITEMS[id].price)} · ${mixNeed(id)} nigiri${cfg.maki ? ` och ${cfg.maki} maki` : ""}`;
+  }
+  $("#mixTitle").textContent = ITEMS[id].name;
+  renderMix();
+  const w = $("#mixdlg"); w.hidden = false; requestAnimationFrame(() => w.classList.add("show"));
+  document.body.classList.add("no-scroll");
+  $("#mixdlg [data-mixclose]").focus();
+}
+function closeMix() {
+  const w = $("#mixdlg"); w.classList.remove("show");
+  setTimeout(() => { w.hidden = true; }, 250);
+  if ($("#drawer").hidden) document.body.classList.remove("no-scroll");
+  mixState = null;
+}
+function renderDrink() {
+  const s = mixState, d = s.drink, D = MIX.drink;
+  const n = d.extra.length + (d.tapioca ? 1 : 0), extra = n * D.extra;
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>Popping boba<small>1 ingår</small></legend>
+    <div class="mx-chips">${D.boba.map(b => `<label><input type="radio" name="mxboba" value="${esc(b)}" data-mxboba${d.boba === b ? " checked" : ""}>${cap(b)}</label>`).join("")}</div></fieldset>
+    <fieldset class="mx-sec"><legend>Extra<small>+${D.extra} kr styck</small></legend>
+    <div class="mx-chips">${D.boba.map(b => `<label><input type="checkbox" value="${esc(b)}" data-mxextra${d.extra.includes(b) ? " checked" : ""}>${cap(b)}</label>`).join("")}
+      <label><input type="checkbox" data-mxtap${d.tapioca ? " checked" : ""}>Tapioka</label></div>
+    <p class="mx-state${!d.boba ? " todo" : extra ? " paid" : ""}" role="status">${!d.boba ? "Välj en popping boba" : extra ? `Tillägg +${extra} kr` : "Tapioka och boba ingår i priset"}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = !d.boba;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + extra} kr`;
+}
+function renderPieces() {
+  const s = mixState, list = MIX.items[s.id].perPiece, price = ITEMS[s.id].price;
+  const n = list.reduce((a, k) => a + (s.pieces[k] || 0), 0);
+  const rows = list.map(k => { const v = s.pieces[k] || 0; return `<div class="mx-row${v ? " on" : ""}"><span>${cap(k)}</span>
+    <span class="qty"><button type="button" data-mxn="${k}" data-d="-1" aria-label="En ${k} mindre"${v ? "" : " disabled"}>−</button><span>${v}</span><button type="button" data-mxn="${k}" data-d="1" aria-label="En ${k} till"${n < 50 ? "" : " disabled"}>+</button></span></div>`; }).join("");
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>Nigiri<small>${kr(price)} per bit</small></legend>
+    <p class="mx-rule">Tryck + för varje bit du vill ha.</p>${rows}
+    <p class="mx-state${n ? "" : " todo"}" role="status">${n ? `${n} ${n === 1 ? "bit" : "bitar"} · ${n * price} kr` : "Välj minst en bit"}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = !n;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${n * price} kr`;
+}
+function renderAddon() {
+  const s = mixState, a = MIX.items[s.id].addon, n = s.addon;
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>Extra<small>${a.price} kr per styck</small></legend>
+    <div class="mx-row${n ? " on" : ""}"><span>Extra ${esc(a.label)}</span>
+    <span class="qty"><button type="button" data-mxa="-1" aria-label="En mindre"${n ? "" : " disabled"}>−</button><span>${n}</span><button type="button" data-mxa="1" aria-label="En till"${n < 10 ? "" : " disabled"}>+</button></span></div>
+    <p class="mx-state${n ? " paid" : ""}" role="status">${n ? `Tillägg +${n * a.price} kr` : "Ingen extra – rätten som den är"}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = false;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + n * a.price} kr`;
+}
+function renderChoice() {
+  const s = mixState, ch = MIX.items[s.id].choice;
+  $("#mixBody").innerHTML = `<fieldset class="mx-sec"><legend>${esc(ch.label)}<small>ingår i priset</small></legend>
+    <div class="mx-chips">${ch.options.map(v => `<label><input type="radio" name="mxpick" value="${esc(v)}" data-mxpick${s.pick === v ? " checked" : ""}>${cap(v)}</label>`).join("")}</div>
+    <p class="mx-state${s.pick ? "" : " todo"}" role="status">${s.pick ? `${ch.label}: ${s.pick}` : `Välj ${ch.label.toLowerCase()}`}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = !s.pick;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price} kr`;
+}
+function renderMix() {
+  if (mixState.pick !== undefined) return renderChoice();
+  if (mixState.addon !== undefined) return renderAddon();
+  if (mixState.pieces) return renderPieces();
+  if (mixState.drink) return renderDrink();
+  const s = mixState, cfg = MIX.items[s.id], need = mixNeed(s.id);
+  const choices = mixChoices(s.id);
+  const have = choices.reduce((a, k) => a + (s.nigiri[k] || 0), 0);
+  const swaps = cfg.freeChoice ? 0 : choices.reduce((a, k) => a + Math.max(0, (s.nigiri[k] || 0) - (cfg.nigiri[k] || 0)), 0);
+  const free = cfg.freeSwaps != null ? cfg.freeSwaps : MIX.freeSwaps, extra = Math.max(0, swaps - free) * MIX.extraPerSwap;
+  const rolls = s.maki.map((m, i) => `<fieldset class="mx-sec"><legend>${s.maki.length > 1 ? `Maki, rulle ${i + 1}` : "Maki"}<small>${MIX.makiPerRoll} bitar · byte ingår</small></legend>
+    <div class="mx-chips">${["", ...MIX.maki].map(v => `<label><input type="radio" name="mx${i}" value="${esc(v)}" data-mxroll="${i}"${v === m ? " checked" : ""}>${v ? esc(v) : "Kockens val"}</label>`).join("")}</div></fieldset>`).join("");
+  const rows = choices.map(k => { const n = s.nigiri[k] || 0; return `<div class="mx-row${n ? " on" : ""}"><span>${cap(k)}</span>
+    <span class="qty"><button type="button" data-mxn="${k}" data-d="-1" aria-label="En ${k} mindre"${n ? "" : " disabled"}>−</button><span>${n}</span><button type="button" data-mxn="${k}" data-d="1" aria-label="En ${k} till"${have < need ? "" : " disabled"}>+</button></span></div>`; }).join("");
+  const state = have < need ? `Välj ${need - have} ${need - have === 1 ? "bit" : "bitar"} till`
+    : cfg.freeChoice ? `${need} av ${need} valda`
+    : swaps ? `${swaps} ${swaps === 1 ? "byte" : "byten"} · ${extra ? `tillägg +${extra} kr` : "ingår i priset"}` : "Som på menyn";
+  $("#mixBody").innerHTML = rolls + `<fieldset class="mx-sec"><legend>Nigiri<small>${have} av ${need} bitar</small></legend>
+    <p class="mx-rule">${cfg.freeChoice ? `Välj dina ${need} bitar – fritt ur listan, utan tillägg.`
+      : `${s.maki.length || !cfg.maki ? "" : cfg.makiText ? `Makin är ${cfg.makiText}. ` : `Makin (${cfg.maki} bitar) är alltid kockens val i den här mixen. `}Ta bort en bit med − och välj en annan med +. ${free >= 99 ? "Byt hur du vill – utan extra kostnad." : `${free} byten ingår, därefter +${MIX.extraPerSwap} kr per bytt bit.`}`}</p>
+    ${rows}<p class="mx-state${have < need ? " todo" : extra ? " paid" : ""}" role="status">${state}</p></fieldset>`;
+  const ok = $("#mixOk");
+  ok.disabled = have !== need;
+  ok.textContent = `${s.key ? "Spara" : "Lägg i varukorgen"} · ${ITEMS[s.id].price + extra} kr`;
+}
+function saveMix() {
+  const s = mixState; if (!s) return;
+  let opts; try { opts = mixOpts(); mixPrice(s.id, opts); } catch (e) { toast(e.message); return; }
+  const pieces = s.pieces ? Object.values(opts.pieces).reduce((a, b) => a + b, 0) : 0;
+  if (s.key) { const old = cart.get(s.key); cart.delete(s.key); noteOpen.delete(s.key); addLine(s.id, opts, pieces || (old ? old.qty : 1), old ? old.note : ""); renderDrawer(); }
+  else { addLine(s.id, opts, pieces || 1); toast(`Tillagd · ${ITEMS[s.id].name}`); }
+  closeMix();
+}
 
 function syncCart() {
   const n = cartQty();
@@ -235,27 +544,26 @@ function syncCart() {
   $("#obTotal").textContent = `${cartTotal()} kr`;
   $("#obar").classList.toggle("on", n > 0);
   $("#fab")?.classList.toggle("off", n > 0);
+  const per = {};
+  cart.forEach(c => { per[c.id] = (per[c.id] || 0) + c.qty; });
   $$("[data-add]").forEach(b => {
-    const c = cart.get(b.dataset.add);
-    b.classList.toggle("in", !!c);
-    b.innerHTML = c ? `<span class="q">${c.qty}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
+    const q = per[b.dataset.add];
+    b.classList.toggle("in", !!q);
+    b.innerHTML = q ? `<span class="q">${q}</span>` : `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
   });
+  saveCart();
 }
 
-function pickupOptions() {
-  const opts = [], now = nowSE();
-  for (let i = 0; i <= SETTINGS.pickupDaysAhead; i++) {
-    const d = new Date(now); d.setDate(now.getDate() + i);
-    const hrs = hoursOn(d); if (!hrs) continue;
-    let start = new Date(d); start.setHours(hrs[0], 0, 0, 0);
-    if (i === 0) { const lead = new Date(now.getTime() + SETTINGS.pickupLeadMinutes * 60000); lead.setMinutes(Math.ceil(lead.getMinutes() / 15) * 15, 0, 0); if (lead > start) start = lead; }
-    const end = new Date(d); end.setHours(hrs[1], -15, 0, 0);
-    const slots = [];
-    for (let t = new Date(start); t <= end; t.setMinutes(t.getMinutes() + 15)) slots.push(`${pad(t.getHours())}:${pad(t.getMinutes())}`);
-    const label = i === 0 ? "Idag" : i === 1 ? "Imorgon" : dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1) + ` ${d.getDate()}/${d.getMonth() + 1}`;
-    if (slots.length) opts.push({ label, date: isoDate(d), slots });
-  }
-  return opts;
+/* Hämtning "så snart som möjligt": max(nu, öppning) + förberedelsetid från köksvyn, avrundat till 5 min.
+   Samma regel som på servern (Apps Script räknar den slutliga tiden). */
+function pickupInfo() {
+  const now = nowSE(), hrs = hoursOn(now), nowMin = now.getHours() * 60 + now.getMinutes();
+  const lead = SETTINGS.pickupLeadMinutes;
+  const nextOpen = () => { const n = nextOpening(now); return n ? `${n.i === 1 ? "imorgon" : dayNames[n.d.getDay()]} kl ${pad(n.hrs[0])}.00` : ""; };
+  if (!hrs || nowMin >= hrs[1] * 60) return { closed: `Vi har stängt för idag. Du kan beställa igen ${nextOpen()}.` };
+  const base = Math.max(nowMin, hrs[0] * 60), m = Math.ceil((base + lead) / 5) * 5;
+  if (m > hrs[1] * 60) return { closed: `Köket hinner tyvärr inte före stängning kl ${pad(hrs[1])}.00. Ring ${SETTINGS.phone}.` };
+  return { time: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, lead, early: nowMin < hrs[0] * 60, opens: `${pad(hrs[0])}.00` };
 }
 
 function renderDrawer() {
@@ -267,9 +575,16 @@ function renderDrawer() {
       <div class="big foil">${esc(o.no)}</div>
       <p><b style="color:var(--ink)">Summa ${o.total} kr</b></p>
       <p>${TABLE ? "Köket har fått beställningen och börjar direkt. Betala med Swish eller kort när ni går." : `Hämtas ${esc(o.when)}. Vi sms:ar ${esc(o.phone)} när maten är klar.`}</p>
+      ${o.payment === "swish" ? `<div class="swish"><b>Swisha ${o.total} kr till ${swishNo}</b>
+        <span class="sm">${esc(SETTINGS.name)} · meddelande ${esc(o.no)}</span>
+        ${isPhone
+          ? `<a class="btn gold block" href="${swishHref(o.total, o.no)}">Öppna Swish</a>
+             <span class="sm">Belopp och ordernummer är redan ifyllda. Öppnas inte appen? <a href="${swishScheme(o.total, o.no)}">Prova den här länken</a>.</span>`
+          : `<div class="qr" id="swishQr" aria-hidden="true"></div><span class="sm">Skanna med Swish-appen i mobilen – belopp och ordernummer följer med.</span>`}</div>` : ""}
       ${o.email ? `<p style="font-size:.9rem">En bekräftelse är skickad till ${esc(o.email)}.</p>` : ""}
       ${o.demo ? `<p style="font-size:.85rem">Demoläge – inget skickades.</p>` : ""}</div>`;
     foot.innerHTML = `<button class="btn block" type="button" data-close>Stäng</button>`;
+    if (o.payment === "swish" && !isPhone) drawSwishQr(o.total, o.no);
     return;
   }
   title.textContent = TABLE ? `Bord ${TABLE}` : "Din beställning";
@@ -278,44 +593,56 @@ function renderDrawer() {
     foot.innerHTML = `<button class="btn gold block" type="button" data-close>Till menyn</button>`;
     return;
   }
-  const lines = [...cart].map(([id, c]) => `<div class="line"><span class="nm">${esc(ITEMS[id].name)}</span><span class="pr">${ITEMS[id].price * c.qty} kr</span>
-    <span class="qty"><button type="button" data-q="${id}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${id}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${id}" data-d="-99">Ta bort</button></span>
-    ${noteOpen.has(id) || c.note
-      ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[id].name)}</span>
-           <input type="text" maxlength="120" data-note="${id}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
-           <small>Allergi? Skriv det här och i meddelandet till köket.</small></label>`
-      : `<button class="notebtn" type="button" data-noteopen="${id}">+ Önskemål för den här rätten</button>`}
+  const lines = [...cart].map(([k, c]) => `<div class="line"><span class="nm">${esc(ITEMS[c.id].name)}</span><span class="pr">${unitPrice(c) * c.qty} kr</span>
+    ${c.detail ? `<span class="dt">${esc(c.detail)}${c.extra ? ` <b>+${c.extra} kr</b>` : ""}</span>` : ""}
+    ${MIX.items[c.id]?.perPiece
+      ? `<span class="qty"><span>${c.qty} st</span><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`
+      : `<span class="qty"><button type="button" data-q="${k}" data-d="-1" aria-label="Minska">−</button><span>${c.qty}</span><button type="button" data-q="${k}" data-d="1" aria-label="Öka">+</button><button class="rm" type="button" data-q="${k}" data-d="-99">Ta bort</button></span>`}
+    ${MIX.items[c.id] ? `<button class="notebtn" type="button" data-edit="${k}">${MIX.items[c.id].choice ? "Ändra fyllning" : MIX.items[c.id].addon ? (c.detail ? "Ändra extra" : "Lägg till extra") : MIX.items[c.id].perPiece ? "Ändra sort och antal" : c.detail ? "Ändra valen" : MIX.items[c.id].drink ? "Välj popping boba" : MIX.items[c.id].freeChoice ? `Välj dina ${mixNeed(c.id)} bitar` : MIX.items[c.id].chooseMaki === false ? "Byt nigiri" : "Välj maki · byt nigiri"}</button>` : ""}
+    ${noteOpen.has(k) || c.note
+      ? `<label class="note"><span class="sr">Önskemål för ${esc(ITEMS[c.id].name)}</span>
+           <input type="text" maxlength="120" data-note="${k}" value="${esc(c.note)}" placeholder="T.ex. utan avokado, extra wasabi, ingen fisk">
+           <small class="allergi"><b>Allergi?</b> Skriv det här och i meddelandet till köket.
+             Våra rätter kan innehålla ${SETTINGS.allergens.join(", ")}. Allt tillagas i samma kök, så vi kan inte garantera att en rätt är helt fri från ett ämne.</small></label>`
+      : `<button class="notebtn" type="button" data-noteopen="${k}">+ Önskemål för den här rätten</button>`}
   </div>`).join("");
-  const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>`;
+  const total = `<div class="total"><span>Summa</span><b>${cartTotal()} kr</b></div>` +
+    (stage === "checkout" && tipValue() ? `<div class="total sub"><span>Dricks</span><b>${tipValue()} kr</b></div>
+       <div class="total"><span>Att betala</span><b>${payTotal()} kr</b></div>` : "");
 
   if (stage === "cart") {
     body.innerHTML = lines + total;
-    foot.innerHTML = `<button class="btn gold block" type="button" data-checkout>${TABLE ? "Gå vidare" : "Välj hämtningstid"}</button>`;
+    foot.innerHTML = `<button class="btn gold block" type="button" data-checkout>Gå vidare</button>`;
     return;
   }
-  const opts = TABLE ? [] : pickupOptions();
+  const pi = TABLE ? null : pickupInfo();
   body.innerHTML = lines + total + `
     <form id="orderForm" novalidate>
-      ${TABLE ? "" : `<div class="row2">
-        <div class="field"><label for="oDay">Hämtas</label><select id="oDay" name="day">${opts.map((o, i) => `<option value="${i}">${o.label}</option>`).join("")}</select></div>
-        <div class="field"><label for="oTime">Tid</label><select id="oTime" name="time"></select></div></div>`}
+      ${TABLE ? "" : pi.closed ? `<p class="err">${esc(pi.closed)}</p>` : `<div class="pickup">
+        <span class="lbl">Hämtning</span>
+        <b>Klar att hämta idag ca kl ${pi.time}</b>
+        <small>${pi.early ? `Vi öppnar kl ${pi.opens} och börjar laga maten då.` : `Köket behöver ca ${pi.lead} minuter just nu.`}</small></div>
+      <div class="field"><label for="oWish">Vill du hämta senare? (valfritt)</label><input id="oWish" name="wish" maxlength="40" placeholder="t.ex. kl 18.30" autocomplete="off"><small>Skriv önskad tid så lagar köket maten till dess.</small></div>`}
       <div class="field"><label for="oName">Namn${TABLE ? " (valfritt)" : ""}</label><input id="oName" name="name" autocomplete="name"></div>
       <div class="field"><label for="oPhone">Mobilnummer${TABLE ? " (valfritt)" : ""}</label><input id="oPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel">${TABLE ? "" : "<small>Vi sms:ar när maten är klar.</small>"}</div>
       <div class="field"><label for="oMail">E-post (valfritt)</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se"><small>Vi skickar en bekräftelse med hela beställningen.</small></div>
+      <div class="field"><span class="lbl">Dricks (valfritt)</span>
+        <div class="choice tips">${[0, 5, 10, 15, 20].map(v => `<label><input type="radio" name="tip" value="${v}"${tipPct === v ? " checked" : ""}>${v ? v + " %" : "Ingen"}</label>`).join("")}
+          <label><input type="radio" name="tip" value="egen"${tipPct === "egen" ? " checked" : ""}>Egen summa</label></div>
+        ${tipPct === "egen" ? `<input type="number" id="tipKr" min="0" max="2000" step="1" inputmode="numeric" placeholder="Belopp i kr" value="${tipCustom || ""}">` : ""}
+        <small id="tipInfo">${tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Tack, men ingen dricks behövs – vi blir lika glada ändå."}</small></div>
       <div class="field"><span class="lbl">Betalning</span><div class="choice">
         <label><input type="radio" name="pay" value="swish" checked>Swish</label>
-        <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div></div>
-      <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea></div>
+        <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div>
+        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Ange ditt ordernummer som meddelande.<br>Swisha gärna direkt – då kan vi fokusera på maten.</small></div>
+      <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
+        <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div id="orderErr" class="err" hidden></div>
     </form>`;
-  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${cartTotal()} kr</button>
+  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr</button>
     <button class="btn ghost block" type="button" data-back>Tillbaka</button>`;
-  if (!TABLE) {
-    const fill = () => { $("#oTime").innerHTML = opts[$("#oDay").value].slots.map(s => `<option>${s}</option>`).join(""); };
-    if (opts.length) { fill(); $("#oDay").addEventListener("change", fill); }
-    else { $("#oDay").closest(".row2").outerHTML = `<p class="err">Inga hämtningstider just nu. Ring ${SETTINGS.phone}.</p>`; $("#orderSubmit").disabled = true; }
-  }
+  if (pi && pi.closed) $("#orderSubmit").disabled = true;
 }
 
 async function submitOrder(e) {
@@ -323,22 +650,21 @@ async function submitOrder(e) {
   const f = e.target, err = $("#orderErr"), btn = $("#orderSubmit");
   const name = f.name.value.trim(), phone = f.phone.value.trim();
   if (!TABLE && (name.length < 2 || phone.replace(/\D/g, "").length < 8)) { err.textContent = "Fyll i namn och mobilnummer så vi kan nå dig."; err.hidden = false; return; }
+  if (cartHas(isHappy) && !syncHappy()) { err.textContent = "Happy hour är slut. Rätterna har tagits bort – kontrollera beställningen."; err.hidden = false; return; }
   err.hidden = true; btn.disabled = true; btn.textContent = "Skickar …";
-  const opts = TABLE ? null : pickupOptions();
-  const pick = opts && opts[f.day.value];
   const payload = {
     type: TABLE ? "table-order" : "pickup-order", table: TABLE || null, name, phone,
-    pickupDate: pick ? pick.date : null, pickupTime: pick ? f.time.value : null,
-    payment: f.pay.value, message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
-    items: [...cart].map(([id, c]) => ({ id, qty: c.qty, note: c.note }))
+    wishTime: TABLE ? "" : (f.wish ? f.wish.value.trim() : ""),
+    payment: f.pay.value, tip: tipValue(), message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
+    items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
   try {
     const r = await send(payload);
-    lastOrder = { no: r.no, total: r.total ?? cartTotal(), phone, email: payload.email, demo: r.demo, when: pick ? `${pick.label.toLowerCase()} kl ${f.time.value}` : "" };
-    cart.clear(); syncCart(); stage = "done"; renderDrawer();
+    lastOrder = { no: r.no, total: r.total ?? payTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: r.when || "" };
+    cart.clear(); tipPct = 0; tipCustom = 0; syncCart(); stage = "done"; renderDrawer();
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;
-    btn.disabled = false; btn.textContent = TABLE ? "Skicka till köket" : "Skicka beställning";
+    btn.disabled = false; btn.textContent = `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
     if (/slut idag|finns inte längre/.test(ex.message)) syncAvailability();
   }
 }
@@ -361,16 +687,18 @@ async function syncAvailability() {
   if (!ENDPOINT) return;
   try {
     const r = await fetch("/api/availability"); if (!r.ok) return;
-    const { items } = await r.json();
+    const { items, leadMinutes } = await r.json();
+    if (leadMinutes) SETTINGS.pickupLeadMinutes = leadMinutes;   // köket kan höja tiden när det är fullt
     $$("[data-add]").forEach(b => {
       const id = b.dataset.add, info = items[id], row = b.closest(".item");
       const ok = !!(info && info.available);
       row.classList.toggle("soldout", !ok);
+      const mo = row.querySelector("[data-mixopen]"); if (mo) mo.disabled = !ok;
       let tag = row.querySelector(".out");
       if (!ok && !tag) { tag = document.createElement("span"); tag.className = "out"; tag.textContent = "Slut idag"; row.append(tag); }
       if (ok && tag) tag.remove();
       if (info && info.price !== ITEMS[id].price) { ITEMS[id].price = info.price; b.dataset.price = info.price; row.querySelector(".pr").textContent = kr(info.price); }
-      if (!ok && cart.has(id)) { cart.delete(id); noteOpen.delete(id); toast(`${ITEMS[id].name} är slut idag`); }
+      if (!ok && cartHas(x => x === id)) { dropId(id); toast(`${ITEMS[id].name} är slut idag`); }
     });
     syncCart();
     if (!$("#drawer").hidden) renderDrawer();
@@ -381,6 +709,12 @@ async function syncAvailability() {
 document.addEventListener("click", e => {
   const t = e.target.closest("button,a"); if (!t) return;
   if (t.dataset.add) add(t.dataset.add);
+  else if (t.dataset.mixopen) { if (isHappy(t.dataset.mixopen) && !syncHappy()) return; openMix(t.dataset.mixopen); }
+  else if (t.dataset.mxn && mixState) { const k = t.dataset.mxn, d = Number(t.dataset.d); const tgt = mixState.pieces || mixState.nigiri; tgt[k] = Math.max(0, (tgt[k] || 0) + d); renderMix(); const nb = $(`[data-mxn="${k}"][data-d="${d}"]`); (nb && !nb.disabled ? nb : $(`[data-mxn="${k}"]:not(:disabled)`))?.focus(); }
+  else if (t.dataset.mxa && mixState && mixState.addon !== undefined) { mixState.addon = Math.max(0, Math.min(10, mixState.addon + Number(t.dataset.mxa))); renderAddon(); ($(`[data-mxa="${t.dataset.mxa}"]:not(:disabled)`) || $("[data-mxa]:not(:disabled)"))?.focus(); }
+  else if (t.hasAttribute("data-mixclose")) closeMix();
+  else if (t.id === "mixOk") saveMix();
+  else if (t.dataset.edit) { const c = cart.get(t.dataset.edit); if (c) openMix(c.id, t.dataset.edit); }
   else if (t.hasAttribute("data-cart")) openDrawer();
   else if (t.hasAttribute("data-close")) closeDrawer();
   else if (t.hasAttribute("data-checkout")) { stage = "checkout"; renderDrawer(); setTimeout(() => $("#drawerBody").scrollTo({ top: $("#orderForm").offsetTop - 16, behavior: "smooth" }), 50); }
@@ -388,14 +722,43 @@ document.addEventListener("click", e => {
   else if (t.dataset.q) setQty(t.dataset.q, (cart.get(t.dataset.q)?.qty || 0) + Number(t.dataset.d));
   else if (t.dataset.noteopen) { noteOpen.add(t.dataset.noteopen); renderDrawer(); $(`[data-note="${t.dataset.noteopen}"]`)?.focus(); }
 });
-document.addEventListener("input", e => { if (e.target.dataset.note) setNote(e.target.dataset.note, e.target.value); });
+document.addEventListener("input", e => {
+  if (e.target.dataset.note) setNote(e.target.dataset.note, e.target.value);
+  if (e.target.id === "tipKr") {                       // uppdatera utan att rita om, så fältet behåller fokus
+    tipCustom = Number(e.target.value) || 0;
+    $("#tipInfo").textContent = tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Ingen dricks.";
+    $("#orderSubmit").textContent = `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.dataset.mxroll && mixState) mixState.maki[Number(e.target.dataset.mxroll)] = e.target.value;
+  if (mixState && mixState.pick !== undefined && e.target.hasAttribute("data-mxpick")) { mixState.pick = e.target.value; renderChoice(); $(`[data-mxpick][value="${e.target.value}"]`)?.focus(); }
+  if (mixState && mixState.drink) {
+    const d = mixState.drink, t = e.target;
+    if (t.hasAttribute("data-mxboba")) d.boba = t.value;
+    else if (t.hasAttribute("data-mxextra")) d.extra = t.checked ? [...new Set([...d.extra, t.value])] : d.extra.filter(b => b !== t.value);
+    else if (t.hasAttribute("data-mxtap")) d.tapioca = t.checked;
+    else return;
+    const sel = t.hasAttribute("data-mxboba") ? `[data-mxboba][value="${t.value}"]` : t.hasAttribute("data-mxtap") ? "[data-mxtap]" : `[data-mxextra][value="${t.value}"]`;
+    renderDrink(); $(sel)?.focus();
+  }
+  if (e.target.name === "tip") { tipPct = e.target.value === "egen" ? "egen" : Number(e.target.value); renderDrawer(); $("#tipKr")?.focus(); }
+});
+$("#mixdlg").addEventListener("click", e => { if (e.target.id === "mixdlg") closeMix(); });
 document.addEventListener("submit", e => { if (e.target.id === "orderForm") submitOrder(e); });
 $("#scrim").addEventListener("click", closeDrawer);
-addEventListener("keydown", e => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });
+addEventListener("keydown", e => { if (e.key !== "Escape") return; if (mixState) closeMix(); else if (!$("#drawer").hidden) closeDrawer(); });
 
 initCommon();
 initChips();
 initSearch();
+loadCart();
+syncHappy(); setInterval(syncHappy, 30000);
+/* ångan rör sig bara när bilden syns på skärmen */
+if ("IntersectionObserver" in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle("inview", e.isIntersecting)), { rootMargin: "80px" });
+  $$(".cat-img .steam").forEach(sv => io.observe(sv.parentElement));
+} else $$(".cat-img .steam").forEach(sv => sv.parentElement.classList.add("inview"));
 initPick({ onOrder: () => { $(".tools").scrollIntoView({ behavior: "smooth" }); setTimeout(() => $("#q").focus({ preventScroll: true }), 500); } });
 syncCart();
 syncAvailability();

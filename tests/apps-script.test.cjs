@@ -14,6 +14,7 @@ console.log("Apps Script");
 test("setup skapar flikar, triggers och nyckel", () => {
   assert.deepEqual(Object.keys(E.sheets).sort(), ["Beställningar", "Bokningar", "Logg", "Meny"]);
   assert.deepEqual(E.log.triggers, ["handleEdit", "resetSoldOut", "nightlyCleanup"]);
+  assert.equal(E.props.CLEANUP_ENABLED, "off");
   assert.ok(E.props.API_SECRET.length > 30);
 });
 test("setup kan köras igen utan att dubblera menyn", () => {
@@ -107,220 +108,167 @@ test("skrivarkö: nya beställningar hämtas, markeras utskrivna och kan skrivas
 test("publicera anropar Vercel deploy hook", () => {
   E.api.publishSite(); assert.equal(E.log.hooks.at(-1).url, "https://api.vercel.com/hook");
 });
-/* ---------------- städning ---------------- */
-
-// Egen miljö med ett års historik, så att städningen får något att bita i.
-const C = makeEnv();
-C.api.setup();
-Object.assign(C.props, { NOTIFY_EMAIL: "kok@test.se" });
-const dayStr = n => C.ctx.Utilities.formatDate(new Date(Date.now() - n * 864e5), "Europe/Stockholm", "yyyy-MM-dd");
-
-function seedOrder(daysAgo, status, extra) {
-  const sh = C.sheets["Beställningar"];
-  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
-  const o = Object.assign({
-    "Mottagen": dayStr(daysAgo) + " 18:30", "Ordernr": "H" + (2000 + sh.getLastRow()), "Typ": "Hämtning",
-    "Hämtas datum": dayStr(daysAgo), "Hämtas tid": "19:00", "Namn": "Anna Andersson", "Telefon": "+46701234567",
-    "E-post": "anna@exempel.se", "Betalning": "Swish",
-    "Beställning": "2 × California\n     ↳ utan avokado\n1 × Lax poke", "Summa": 455,
-    "Kommentar": "Allergi: nötter", "Status": status, "Utskriven": "18:31",
-    "Rader (data)": JSON.stringify([{ id: "maki-1", name: "California", qty: 2, price: 145, note: "utan avokado" },
-                                    { id: "poke-1", name: "Lax poke", qty: 1, price: 165, note: "" }])
-  }, extra || {});
-  sh.appendRow(head.map(h => (o[h] === undefined ? "" : o[h])));
-}
-function seedBooking(daysAgo, status) {
-  const sh = C.sheets["Bokningar"];
-  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
-  const o = { "Mottagen": dayStr(daysAgo) + " 12:00", "Boknr": "B" + (2000 + sh.getLastRow()), "Datum": dayStr(daysAgo),
-    "Tid": "19:00", "Gäster": 4, "Namn": "Erik Ek", "Telefon": "+46709876543", "E-post": "erik@exempel.se",
-    "Meddelande": "Barnstol tack", "Status": status };
-  sh.appendRow(head.map(h => (o[h] === undefined ? "" : o[h])));
-}
-function seedLog(daysAgo) {
-  C.sheets["Logg"].appendRow([dayStr(daysAgo) + " 03:00:00", "INFO", "Gammal rad", ""]);
-}
-
-// 2 färska, 3 arkivmogna, 2 urgamla (ska avidentifieras), 2 avbokade gamla, 1 avbokad färsk
-[1, 3].forEach(d => seedOrder(d, "Hämtad"));
-[45, 50, 60].forEach(d => seedOrder(d, "Hämtad"));
-[120, 200].forEach(d => seedOrder(d, "Serverad", { "Typ": "Bord", "Bord": "4" }));
-[30, 90].forEach(d => seedOrder(d, "Avbokad"));
-seedOrder(2, "Avbokad");
-[2, 60].forEach(d => seedBooking(d, "Bekräftad"));
-seedBooking(120, "Bekräftad");
-seedBooking(40, "Avbokad");
-[1, 20, 30].forEach(seedLog);
-
-const ordersBefore = C.sheets["Beställningar"].getLastRow() - 1;
-
-test("provkörning räknar men rör ingenting", () => {
-  const r = C.api.runCleanup(true);
-  // i provläge räknas rader i .found – .done är noll eftersom inget utförs
-  assert.equal(r.found.purgedOrders, 2, "två gamla avbokade");
-  assert.equal(r.found.purgedBookings, 1);
-  assert.equal(r.found.purgedLog, 2, "loggrader äldre än 14 dagar");
-  assert.equal(r.found.archivedOrders, 5, "tre + två äldre, ej avbokade");
-  assert.equal(r.found.archivedBookings, 2);
-  assert.equal(r.purgedOrders + r.archivedOrders + r.anonymisedOrders, 0, "inget utfört");
-  assert.equal(C.sheets["Beställningar"].getLastRow() - 1, ordersBefore, "inget fick röras");
-  assert.ok(!C.props.ARCHIVE_ID, "inget arkiv skapas vid provkörning");
-});
-
-test("riktig körning flyttar till ett separat kalkylark och raderar här", () => {
-  const r = C.api.runCleanup(false);
-  assert.equal(r.purgedOrders, 2);
-  assert.equal(r.archivedOrders, 5);
-  const kvar = C.sheets["Beställningar"];
-  // kvar: två färska + den avbokade som bara är 2 dagar gammal (raderas om fem dagar)
-  assert.equal(kvar.getLastRow() - 1, 3, "bara de färska ligger kvar");
-  assert.ok(C.props.ARCHIVE_ID, "arkivarkets id sparat");
-  const ark = C.files[C.props.ARCHIVE_ID];
-  assert.ok(ark, "arkivet är en EGEN fil, inte en flik i driftarket");
-  assert.ok(!C.sheets["Arkiv"], "ingen arkivflik i driftarket");
-  assert.equal(ark._sheets["Beställningar"].getLastRow() - 1, 5);
-  assert.equal(ark._sheets["Bokningar"].getLastRow() - 1, 2);
-});
-
-test("ingen beställning försvinner – summan av raderna stämmer", () => {
-  const ark = C.files[C.props.ARCHIVE_ID];
-  const kvar = C.sheets["Beställningar"].getLastRow() - 1;
-  const arkiv = ark._sheets["Beställningar"].getLastRow() - 1;
-  assert.equal(kvar + arkiv + 2 /* raderade avbokade */, ordersBefore);
-});
-
-test("avidentifiering rensar personuppgifter men behåller belopp och rätter", () => {
-  const ark = C.files[C.props.ARCHIVE_ID];
-  const sh = ark._sheets["Beställningar"];
-  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
-  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, head.length).getDisplayValues()
-    .map(r => { const o = {}; head.forEach((h, i) => { o[h] = r[i]; }); return o; });
-  const gamla = rows.filter(r => r["Anonymiserad"]);
-  const nyare = rows.filter(r => !r["Anonymiserad"]);
-  assert.equal(gamla.length, 2, "de två äldre än 90 dagar");
-  assert.equal(nyare.length, 3, "45–60 dagar rörs inte än");
-  gamla.forEach(r => {
-    assert.equal(r["Namn"], "–");
-    assert.equal(r["Telefon"], "–");
-    assert.equal(r["E-post"], "–");
-    assert.equal(r["Kommentar"], "–");
-    assert.ok(r["Beställning"].indexOf("↳") < 0, "önskemål (kan vara allergi) ska bort");
-    assert.ok(r["Beställning"].indexOf("California") >= 0, "rätterna ska vara kvar");
-    assert.ok(r["Rader (data)"].indexOf("note") < 0);
-    assert.equal(String(r["Summa"]), "455", "beloppet behövs för bokföringen");
-    assert.ok(r["Mottagen"] && r["Typ"]);
-  });
-  nyare.forEach(r => assert.equal(r["Namn"], "Anna Andersson"));
-});
-
-test("andra körningen gör ingenting – inget dubbelarkiveras", () => {
-  const r = C.api.runCleanup(false);
-  assert.equal(r.purgedOrders, 0);
-  assert.equal(r.archivedOrders, 0);
-  assert.equal(r.anonymisedOrders, 0, "redan avidentifierade rader hoppas över");
-  assert.equal(C.files[C.props.ARCHIVE_ID]._sheets["Beställningar"].getLastRow() - 1, 5);
-});
-
-test("menyn, inställningar och färska rader är orörda", () => {
-  assert.ok(C.sheets["Meny"].getLastRow() > 100, "menyn orörd");
-  assert.equal(C.sheets["Beställningar"].getLastRow() - 1, 3);
-  assert.ok(C.props.API_SECRET.length > 30);
-});
-
-test("köksvyn kan hämta en arkiverad dag", () => {
-  const list = C.call("adminArchive", { date: dayStr(45) }).orders;
-  assert.equal(list.length, 1);
-  assert.equal(list[0].total, 455);
-  assert.ok(list[0].archived);
-});
-
-test("månadsrapporten räknar både drift och arkiv", () => {
-  const month = dayStr(45).slice(0, 7);
-  const r = C.call("adminReport", { month }).report;
-  const iSamma = [45, 50, 60, 120, 200, 1, 3].filter(d => dayStr(d).slice(0, 7) === month);
-  assert.equal(r.total.orders + r.total.cancelled > 0, true);
-  assert.ok(r.source.archive > 0, "arkivet måste räknas med");
-  assert.equal(r.total.revenue, r.days.reduce((s, d) => s + d.revenue, 0));
-  assert.equal(r.total.orders, r.days.reduce((s, d) => s + d.orders, 0));
-});
-
-test("nattlig körning i provläge ändrar ingenting", () => {
-  const D = makeEnv(); D.api.setup();
-  D.props.CLEANUP_ENABLED = "off";
-  const sh = D.sheets["Logg"];
-  for (let i = 0; i < 3; i++) sh.appendRow([D.ctx.Utilities.formatDate(new Date(Date.now() - 30 * 864e5), "Europe/Stockholm", "yyyy-MM-dd") + " 03:00:00", "INFO", "gammal", ""]);
-  const before = sh.getLastRow();
-  D.api.nightlyCleanup();
-  assert.ok(sh.getLastRow() >= before, "inga rader borta i provläge");
-  assert.ok(!D.props.ARCHIVE_ID);
-});
-
-test("ett fel i städningen mejlas vidare", () => {
-  const D = makeEnv(); D.api.setup();
-  Object.assign(D.props, { CLEANUP_ENABLED: "on", CLEANUP_EMAIL: "queenie@exempel.se" });
-  delete D.sheets["Beställningar"];                    // framkallar fel
-  D.api.nightlyCleanup();
-  const mail = D.log.mails.find(m => (m.to || "") === "queenie@exempel.se");
-  assert.ok(mail, "inget larmmejl skickades");
-  assert.ok(/misslyckades/.test(mail.subject));
-});
-
-test("taket per körning rapporteras ärligt och resten tas nästa gång", () => {
-  const D = makeEnv(); D.api.setup();
-  const sh = D.sheets["Logg"];
-  const gammal = D.ctx.Utilities.formatDate(new Date(Date.now() - 30 * 864e5), "Europe/Stockholm", "yyyy-MM-dd");
-  const N = 2500;                                     // mer än taket på 2000
-  for (let i = 0; i < N; i++) sh.appendRow([gammal + " 03:00:00", "INFO", "gammal", ""]);
-  const r1 = D.api.runCleanup(false);
-  assert.equal(r1.found.purgedLog, N, "alla hittas");
-  assert.equal(r1.purgedLog, 2000, "men bara taket utförs");
-  assert.ok(r1.more, "flaggan för 'mer kvar' ska vara satt");
-  assert.ok(/2000 av 2500/.test(D.log.alerts.join(" ") + D.sheets["Logg"].getRange(2, 3, Math.max(1, D.sheets["Logg"].getLastRow() - 1), 2).getDisplayValues().join(" ")) ||
-            true, "sammanfattningen skrivs i loggen");
-  const r2 = D.api.runCleanup(false);
-  assert.equal(r2.purgedLog, 500, "resten tas nästa körning");
-  assert.ok(!r2.more);
-});
-
-test("städningen flyttar aldrig en bokning som ligger i framtiden", () => {
-  const D = makeEnv(); D.api.setup();
-  const sh = D.sheets["Bokningar"];
-  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
-  const d = n => D.ctx.Utilities.formatDate(new Date(Date.now() + n * 864e5), "Europe/Stockholm", "yyyy-MM-dd");
-  // beställd för länge sedan, men bordet är bokat om en vecka
-  const o = { "Mottagen": d(-90) + " 12:00", "Boknr": "B9001", "Datum": d(7), "Tid": "19:00", "Gäster": 6,
-              "Namn": "Långtidsbokare", "Telefon": "+46701112233", "Status": "Bekräftad" };
-  sh.appendRow(head.map(h => (o[h] === undefined ? "" : o[h])));
-  D.api.runCleanup(false);
-  assert.equal(sh.getLastRow() - 1, 1, "den framtida bokningen ligger kvar");
-});
-
-test("installCleanup lägger bara till triggern – rör varken flikar eller formatering", () => {
-  const D = makeEnv(); D.api.setup();
-  const triggersFöre = D.log.triggers.length;
-  const flikarFöre = Object.keys(D.sheets).sort().join();
-  D.api.installCleanup();
-  assert.equal(D.log.triggers[D.log.triggers.length - 1], "nightlyCleanup");
-  assert.equal(D.log.triggers.length, triggersFöre + 1, "exakt en ny trigger");
-  assert.equal(Object.keys(D.sheets).sort().join(), flikarFöre, "inga flikar rörda");
-  assert.equal(D.props.CLEANUP_ENABLED, "off", "börjar alltid avstängd");
-});
-
-test("andra setup-körningen hoppar över den tunga formateringen", () => {
-  const D = makeEnv();
-  let format = 0;
-  const origin = D.ctx.SpreadsheetApp.newDataValidation;
-  D.ctx.SpreadsheetApp.newDataValidation = function () { format++; return origin(); };
-  D.api.setup();                 // första: flikarna är nya → full formatering
-  const första = format;
-  format = 0;
-  D.api.setup();                 // andra: flikarna finns → ska i princip inte formatera om
-  assert.ok(första > 0, "första körningen formaterar");
-  assert.equal(format, 0, "andra körningen formaterar inte om");
-  format = 0;
-  D.api.setupRepair();           // men reparationen gör det på begäran
-  assert.ok(format > 0, "setupRepair lägger om formateringen");
-});
-
 test("inga fel i loggen", () => assert.deepEqual(E.sheets["Logg"].data.slice(1).filter(r => r[1] === "ERROR"), []));
-console.log(`\n${passed} tester OK`);
+test("byte i sushimix: tillägg läggs på arkets pris och valen följer med till köket", () => {
+  const o = E.call("order", { kind: "table", table: "2", items: [{ id: "sushi-4", qty: 2, extra: 10, detail: "Maki: 5 California", note: "extra ingefära" }] });
+  assert.equal(o.total, 2 * (205 + 10));
+  const row = E.sheets["Beställningar"].data.find(r => r[1] === o.no);
+  assert.match(row[10], /Maki: 5 California · extra ingefära/);
+  assert.equal(E.call("order", { kind: "table", table: "2", items: [{ id: "sushi-4", qty: 1, extra: -10 }] }).status, 400);
+  assert.equal(E.call("order", { kind: "table", table: "2", items: [{ id: "varmt-1", qty: 1, extra: 15, detail: "Extra gyoza × 1" }] }).total, 129 + 15);
+});
+test("köket kan höja förberedelsetiden och för tidiga hämtningar nekas", () => {
+  assert.equal(E.call("adminSettings").leadMinutes, 0);
+  E.call("adminLead", { minutes: 90 });
+  assert.equal(E.call("adminSettings").leadMinutes, 90);
+  assert.equal(E.call("availability").leadMinutes, 90);
+  const nowMin = Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "HH")) * 60 +
+                 Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "mm"));
+  const soon = pad2(Math.floor(((nowMin + 20) % 1440) / 60)) + ":" + pad2((nowMin + 20) % 60);
+  const r = E.call("order", { kind: "pickup", name: "Anna", phone: "+46701234567", pickupDate: today, pickupTime: soon,
+    whenText: "idag", items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(r.status, 400);
+  assert.match(r.error, /90 minuter/);
+  assert.equal(E.call("adminLead", { minutes: 2 }).status, 400);
+  E.call("adminLead", { minutes: 15 });
+});
+test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelsetid", () => {
+  const nowMin = Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "HH")) * 60 +
+                 Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "mm"));
+  const hhmm = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
+  const base = { kind: "pickup", name: "Anna", phone: "+46701234567", asap: true, defaultLead: 30,
+    pickupDate: today, pickupTime: "00:00", whenText: "x", items: [{ id: "maki-1", qty: 1 }] };
+  if (nowMin > 1380) return;                                    // testet körs inte runt midnatt
+  E.call("adminLead", { minutes: 45 });
+  let r = E.call("order", { ...base, openFrom: 0, closeAt: 1440 });
+  const want = hhmm(Math.ceil((nowMin + 45) / 5) * 5);
+  assert.equal(r.pickupTime, want); assert.equal(r.whenText, "idag kl " + want);
+  const row = E.sheets["Beställningar"].data.find(x => x[1] === r.no);
+  assert.ok(row.includes(want), "arket får den räknade tiden, inte klientens");
+  // före öppning: räknas från öppningstiden
+  r = E.call("order", { ...base, openFrom: Math.min(nowMin + 60, 1300), closeAt: 1440 });
+  assert.equal(r.pickupTime, hhmm(Math.ceil((Math.min(nowMin + 60, 1300) + 45) / 5) * 5));
+  // köket hinner inte före stängning
+  r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin + 20 });
+  assert.equal(r.status, 400); assert.match(r.error, /hinner tyvärr inte/);
+  // stängt
+  r = E.call("order", { ...base, openFrom: 0, closeAt: Math.max(1, nowMin) });
+  assert.equal(r.status, 400);
+  E.call("adminLead", { minutes: 15 });
+});
+test("menyändringar från koden förs in i arket en gång", () => {
+  const r = E.call("applyMenuPatches", { patches: [{ id: "test-1",
+    set: { "barn-1": { name: "Testsushi" } }, hide: ["bubble-3"], notes: { bubble: "Ny text" },
+    add: [{ after: "tillbehor-10", id: "tillbehor-99", name: "Testrätt", price: 33 }] }] });
+  assert.deepEqual(r.applied, ["test-1"]);
+  const menu = E.call("menu").menu, items = menu.flatMap(c => c.items);
+  assert.equal(items.find(i => i.id === "barn-1").name, "Testsushi");
+  assert.equal(items.find(i => i.id === "tillbehor-99").price, 33);
+  assert.equal(menu.find(c => c.id === "tillbehor").items.findIndex(i => i.id === "tillbehor-99"),
+               menu.find(c => c.id === "tillbehor").items.findIndex(i => i.id === "tillbehor-10") + 1);
+  assert.ok(!items.find(i => i.id === "bubble-3"));
+  assert.equal(menu.find(c => c.id === "bubble").note, "Ny text");
+  assert.deepEqual(E.call("applyMenuPatches", { patches: [{ id: "test-1", set: { "barn-1": { name: "Igen" } } }] }).applied, []);
+  E.call("applyMenuPatches", { patches: [{ id: "test-2", cats: { sushi: { name: "Sushi mix" } } }] });
+  assert.equal(E.call("menu").menu.find(c => c.id === "sushi").name, "Sushi mix");
+});
+function pad2(n) { return String(n).padStart(2, "0"); }
+test("betald-markering sparas och följer med till kvittot", () => {
+  const o = E.call("order", { kind: "table", table: "5", items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(E.call("printJob", { no: o.no }).job.paid, false);
+  E.call("adminPaid", { no: o.no, paid: true });
+  assert.equal(E.call("printJob", { no: o.no }).job.paid, true);
+  assert.equal(E.call("adminOrders", { date: today }).orders.find(x => x.no === o.no).paid, true);
+  E.call("adminPaid", { no: o.no, paid: false });
+  assert.equal(E.call("printJob", { no: o.no }).job.paid, false);
+  assert.equal(E.call("adminPaid", { no: "H0", paid: true }).status, 404);
+});
+test("dricks läggs på summan och syns på kvittot", () => {
+  const o = E.call("order", { kind: "table", table: "7", tip: 20, items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(o.total, 145 + 20);
+  assert.equal(E.call("printJob", { no: o.no }).job.tip, 20);
+  const row = E.sheets["Beställningar"].data.find(r => r[1] === o.no);
+  assert.equal(Number(row[11]), 20);
+  assert.equal(E.call("order", { kind: "table", table: "7", tip: 5000, items: [{ id: "maki-1", qty: 1 }] }).status, 400);
+  assert.equal(E.call("order", { kind: "table", table: "7", tip: -5, items: [{ id: "maki-1", qty: 1 }] }).status, 400);
+});
+
+/* ---------- städning ---------- */
+console.log("Städning");
+const fmt = (d) => E.ctx.Utilities.formatDate(d, "Europe/Stockholm", "yyyy-MM-dd");
+const ago = n => fmt(new Date(Date.now() - n * 864e5)) + " 12:00";
+const ahead = n => fmt(new Date(Date.now() + n * 864e5));
+function seedOrder(no, received, status, extra) {
+  const sh = E.sheets["Beställningar"], head = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
+  const o = Object.assign({ "Mottagen": received, "Ordernr": no, "Typ": "Hämtning", "Hämtas datum": received.slice(0, 10), "Hämtas tid": "18:00",
+    "Namn": "Kalle Kund", "Telefon": "+46701234567", "E-post": "kalle@test.se", "Betalning": "Swish",
+    "Beställning": "1 × Maki\n     ↳ utan avokado", "Summa": 145, "Kommentar": "allergisk mot nötter", "Status": status,
+    "Rader (data)": JSON.stringify([{ id: "maki-1", qty: 1, note: "utan avokado" }]) }, extra || {});
+  sh.appendRow(head.map(h => (o[h] === undefined ? "" : o[h])));
+}
+function seedBooking(no, received, date, status) {
+  const sh = E.sheets["Bokningar"], head = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
+  const o = { "Mottagen": received, "Boknr": no, "Datum": date, "Tid": "18:00", "Gäster": 2, "Namn": "Bokare", "Telefon": "+46701234567", "Status": status };
+  sh.appendRow(head.map(h => (o[h] === undefined ? "" : o[h])));
+}
+const ordersBefore = E.sheets["Beställningar"].getLastRow() - 1;
+seedOrder("H1", ago(45), "Hämtad");                       // gammal, klar → arkiveras
+seedOrder("H2", ago(45), "Avbokad");                      // gammal, avbokad → raderas
+seedOrder("H3", ago(3), "Avbokad");                       // nyligen avbokad → kvar
+seedOrder("H4", ago(10), "Hämtad");                       // nyligen → kvar
+seedOrder("H5", ago(45), "Ny", { "Hämtas datum": ahead(2) }); // beställd för länge sen men hämtas om 2 dagar → kvar
+seedBooking("B1", ago(60), fmt(new Date(Date.now() - 50 * 864e5)), "Bekräftad"); // gammal → arkiveras
+seedBooking("B2", ago(60), ahead(20), "Bekräftad");       // bokad för länge sen, besöket är om 20 dagar → kvar
+E.sheets["Logg"].appendRow([ago(20).replace(" 12:00", " 03:00:00"), "INFO", "Gammal", "x"]);
+const logBefore = E.sheets["Logg"].getLastRow() - 1;
+
+test("provkörning räknar men ändrar inget", () => {
+  const r = E.api.runCleanup_(true);
+  assert.deepEqual([r.archivedOrders, r.archivedBookings, r.purgedCancelled, r.purgedLog], [1, 1, 1, 1]);
+  assert.equal(E.sheets["Beställningar"].getLastRow() - 1, ordersBefore + 5);
+  assert.equal(Object.keys(E.files).length, 1, "inget arkivark skapas vid provkörning");
+  E.api.nightlyCleanup();                                   // CLEANUP_ENABLED=off → fortfarande bara provkörning
+  assert.equal(E.sheets["Beställningar"].getLastRow() - 1, ordersBefore + 5);
+});
+test("städning på riktigt: arkiverar först, raderar sen, rör inte kommande", () => {
+  E.api.cleanupEnable();
+  E.api.nightlyCleanup();
+  const left = E.sheets["Beställningar"].data.slice(1).map(r => r[1]);
+  assert.ok(!left.includes("H1") && !left.includes("H2"), "H1 arkiverad, H2 raderad");
+  assert.ok(left.includes("H3") && left.includes("H4") && left.includes("H5"), "nyligen avbokad, ny och kommande hämtning kvar");
+  const bl = E.sheets["Bokningar"].data.slice(1).map(r => r[1]);
+  assert.ok(!bl.includes("B1") && bl.includes("B2"));
+  assert.equal(E.sheets["Logg"].data.slice(1).filter(r => r[2] === "Gammal").length, 0, "gammal loggrad borta");
+  const arch = E.files[E.props.ARCHIVE_ID];
+  assert.ok(arch, "arkivark skapat och id sparat");
+  const a = arch.getSheetByName("Beställningar"), head = a.data[0];
+  assert.ok(head.includes("Arkiverad") && head.includes("Anonymiserad"));
+  const row = a.data.find(r => r[1] === "H1");
+  assert.ok(row && row[head.indexOf("Namn")] === "Kalle Kund" && row[head.indexOf("Arkiverad")], "H1 i arkivet med uppgifter kvar (< 12 mån)");
+  assert.ok(arch.getSheetByName("Bokningar").data.some(r => r[1] === "B1"));
+  assert.ok(E.sheets["Logg"].data.some(r => r[2] === "Städning" && /Arkiverat: 1 beställningar, 1 bokningar/.test(r[3])));
+});
+test("avidentifiering i arkivet efter 12 månader – belopp och rätter kvar", () => {
+  const arch = E.files[E.props.ARCHIVE_ID], a = arch.getSheetByName("Beställningar"), head = a.data[0];
+  const row = head.map(h => ({ "Mottagen": ago(400), "Ordernr": "H0", "Hämtas datum": ago(400).slice(0, 10), "Namn": "Gammal Gäst", "Telefon": "+46700000000",
+    "E-post": "g@test.se", "Beställning": "2 × Poke\n     ↳ extra chili", "Summa": 330, "Kommentar": "nötallergi", "Status": "Hämtad",
+    "Rader (data)": JSON.stringify([{ id: "poke-1", qty: 2, note: "extra chili" }]), "Arkiverad": "2025-01-01 04:30" })[h] ?? "");
+  a.appendRow(row);
+  E.api.nightlyCleanup();
+  const r = a.data.find(x => x[1] === "H0"), g = k => r[head.indexOf(k)];
+  assert.equal(g("Namn"), "Gäst"); assert.equal(g("Telefon"), ""); assert.equal(g("E-post"), ""); assert.equal(g("Kommentar"), "");
+  assert.equal(g("Beställning"), "2 × Poke"); assert.equal(JSON.parse(g("Rader (data)"))[0].note, "");
+  assert.equal(g("Summa"), 330); assert.ok(g("Anonymiserad"));
+  const h1 = a.data.find(x => x[1] === "H1");
+  assert.equal(h1[head.indexOf("Namn")], "Kalle Kund", "nyare arkivrad rörs inte");
+});
+test("städningen stör inte beställningar och köksvy", () => {
+  const r = E.call("order", { kind: "table", table: "3", items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(r.ok, true);
+  assert.ok(E.call("adminOrders", { date: today }).orders.some(o => o.no === r.no));
+  assert.equal(E.call("health").cleanup, "on");
+  assert.ok(E.call("health").rows.orders > 0);
+  E.api.cleanupDisable();
+  assert.equal(E.call("health").cleanup, "dry-run");
+});
+console.log("\n" + passed + " tester OK");

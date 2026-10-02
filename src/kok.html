@@ -27,6 +27,13 @@ header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
 .tabs .badge{display:inline-grid;place-items:center;min-width:22px;height:22px;margin-left:6px;border-radius:999px;background:var(--warn);color:var(--ink);font-size:12px;padding:0 6px}
 .tabs .badge:empty{display:none}
 main{padding:14px}
+.tools .lead{display:inline-flex;align-items:center;gap:.5rem;margin-left:auto}
+.tools .lead span{font-size:13px;color:#4C5B6B}
+.leadbtns{display:inline-flex;border:1px solid #C9D3DD;border-radius:6px;overflow:hidden}
+.leadbtns button{font:600 14px/1 inherit;padding:.6rem .75rem;border:0;border-left:1px solid #C9D3DD;background:#fff;color:#1D2A38;cursor:pointer;min-width:3.2rem}
+.leadbtns button:first-child{border-left:0}
+.leadbtns button[aria-pressed="true"]{background:#1D4E89;color:#fff}
+.tools .leadmsg{font-size:13px;color:#2F8F5B}
 .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .tools input,.tools select{padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;min-height:42px}
 .btn{padding:10px 16px;border-radius:999px;border:1.5px solid var(--ink);background:#fff;font-weight:600;min-height:42px}
@@ -48,6 +55,7 @@ main{padding:14px}
 .meta{font-size:14px;color:var(--ink-2)}
 ul{margin:2px 0;padding:0;list-style:none;font-size:18px;line-height:1.45}
 ul li b{display:inline-block;min-width:2.2ch}
+.paid{margin-left:.5rem;padding:2px 8px;border-radius:999px;background:#D6F5DD;color:#1F6B42;font-size:12px;font-weight:600}
 .note{background:#FFF3C4;padding:6px 10px;border-radius:8px}
 .inote{margin:2px 0 6px 2.2ch;padding:3px 8px;background:#FFF3C4;border-radius:6px;font-size:15px;color:#7A5E24}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
@@ -71,15 +79,6 @@ ul li b{display:inline-block;min-width:2.2ch}
 .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;max-width:640px}
 .panel h2{margin:0 0 6px;font-size:20px}
 .panel p{margin:0 0 14px;color:var(--ink-2)}
-.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px}
-.sum div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.sum b{display:block;font-size:26px;font-variant-numeric:tabular-nums;margin-top:4px}
-.sum span{color:var(--ink-2);font-size:13px}
-table.rep{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:14px}
-table.rep th,table.rep td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
-table.rep th{background:#F3F5F8;font-size:13px;color:var(--ink-2)}
-table.rep td:last-child,table.rep th:last-child{text-align:right}
-table.rep tr:last-child td{border-bottom:0}
 .qrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:14px}
 .qr{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center;break-inside:avoid}
 .qr .code{display:grid;place-items:center;margin:10px 0}
@@ -121,7 +120,6 @@ table.rep tr:last-child td{border-bottom:0}
     <button type="button" data-tab="orders" class="on">Beställningar<span class="badge" id="bOrders"></span></button>
     <button type="button" data-tab="bookings">Bokningar<span class="badge" id="bBookings"></span></button>
     <button type="button" data-tab="menu">Meny idag<span class="badge" id="bMenu"></span></button>
-    <button type="button" data-tab="report">Rapport</button>
     <button type="button" data-tab="qr">QR‑koder</button>
   </nav>
 </header>
@@ -137,7 +135,10 @@ table.rep tr:last-child td{border-bottom:0}
         <option value="table">Bara bord</option>
       </select>
       <button class="btn" type="button" id="oReload">Uppdatera</button>
-      <button class="btn" type="button" id="oArchive" hidden>Hämta ur arkivet</button>
+      <div class="lead" role="group" aria-label="Hämtning klar om"><span>Hämtning klar om</span>
+        <div class="leadbtns" id="oLead"></div>
+      </div>
+      <span class="leadmsg" id="oLeadMsg" role="status"></span>
     </div>
     <div class="grid" id="orders"></div>
     <div class="empty" id="oEmpty" hidden>Inga beställningar att visa.</div>
@@ -159,20 +160,6 @@ table.rep tr:last-child td{border-bottom:0}
       <span class="meta">Slut‑markering syns på webben inom en minut och nollställs automatiskt kl 04.</span>
     </div>
     <div id="menuList"></div>
-  </section>
-
-  <section data-panel="report" hidden>
-    <div class="panel noprint">
-      <h2>Månadsrapport</h2>
-      <p>Räknar ihop både driftarket och arkivet, så inga beställningar saknas i siffrorna.</p>
-      <div class="tools">
-        <label>Månad <input type="month" id="rMonth"></label>
-        <button class="btn p" type="button" id="rLoad">Visa</button>
-        <button class="btn" type="button" id="rCsv">Ladda ner CSV</button>
-      </div>
-    </div>
-    <div id="report"></div>
-    <div class="empty" id="rEmpty" hidden>Inga beställningar den månaden.</div>
   </section>
 
   <section data-panel="qr" hidden>
@@ -200,7 +187,7 @@ const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-$
 const today = () => iso(nowSE());
 const KEY_STORE = "hanami-kok-key";
 let key = localStorage.getItem(KEY_STORE) || "";
-let tab = "orders", seen = new Set(), firstLoad = true, archiveView = false, soundOn = localStorage.getItem("hanami-sound") !== "off";
+let tab = "orders", seen = new Set(), firstLoad = true, soundOn = localStorage.getItem("hanami-sound") !== "off";
 
 async function api(path, opts = {}) {
   const r = await fetch("/api/admin" + path, { ...opts, headers: { "x-admin-key": key, "Content-Type": "application/json", ...(opts.headers || {}) } });
@@ -228,7 +215,6 @@ $$(".tabs button").forEach(b => b.onclick = () => {
   $$("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab);
   if (tab === "qr" && !$("#qrs").children.length) makeQr();
   if (tab === "menu") loadMenu();
-  if (tab === "report" && !reportData) loadReport();
 });
 
 /* ---------- ljud ---------- */
@@ -252,30 +238,7 @@ function nextSteps(o){
   if (o.status === "Klar") return [o.kind === "table" ? "Serverad" : "Hämtad"];
   return [];
 }
-/** Arkivknappen dyker upp först när man bläddrar bakåt – driftarket håller bara de senaste veckorna. */
-function syncArchiveButton(){
-  const d = $("#oDate").value || today();
-  const limit = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
-  $("#oArchive").hidden = d >= limit;
-}
-async function loadArchive(){
-  const date = $("#oDate").value || today();
-  archiveView = true;                     // pausa den automatiska uppdateringen
-  $("#oArchive").disabled = true;
-  $("#oArchive").textContent = "Hämtar…";
-  try {
-    const d = await api(`?view=archive&date=${date}`);
-    $("#orders").innerHTML = d.orders.map(o => orderCard(o, false)).join("");
-    $("#oEmpty").hidden = d.orders.length > 0;
-    $("#oEmpty").textContent = d.orders.length ? "" : "Inga beställningar i arkivet den dagen.";
-    $("#upd").textContent = d.orders.length + (d.orders.length === 1 ? " rad" : " rader") + " ur arkivet";
-  } catch (e) { $("#upd").textContent = "Fel: " + e.message; }
-  $("#oArchive").disabled = false;
-  $("#oArchive").textContent = "Hämta ur arkivet";
-}
 async function loadOrders(){
-  archiveView = false;
-  syncArchiveButton();
   try {
     const d = await api(`?view=orders&date=${$("#oDate").value || today()}`);
     if (d.sheetUrl) { $("#sheetLink").href = d.sheetUrl; $("#sheetLink").hidden = false; }
@@ -291,25 +254,22 @@ async function loadOrders(){
     $("#orders").innerHTML = list.map(o => orderCard(o, !firstLoad && fresh.some(x => x.no === o.no))).join("");
     d.orders.forEach(o => seen.add(o.no)); firstLoad = false;
     $("#oEmpty").hidden = list.length > 0;
-    $("#oEmpty").textContent = $("#oArchive").hidden
-      ? "Inga beställningar att visa."
-      : "Inget i driftarket den dagen – prova Hämta ur arkivet.";
     $("#upd").textContent = "Uppdaterad " + new Date().toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Stockholm" });
   } catch (e) { if (e.message !== "401") $("#upd").textContent = "Fel: " + e.message; }
 }
 function orderCard(o, fresh){
-  const done = DONE.includes(o.status) || o.archived;
+  const done = DONE.includes(o.status);
   return `<article class="card ${esc(o.status)} ${done ? "done" : ""} ${fresh ? "fresh" : ""}">
     <div class="top"><span class="no">${esc(o.no)}</span><span class="big">${esc(o.kind === "table" ? o.receivedTime : o.pickupTime)}</span></div>
-    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span></div>
+    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span>${o.paid ? `<span class="paid">Betald</span>` : ""}</div>
     <ul>${o.items.map(i => `<li>${i.qty ? `<b>${i.qty}</b> × ` : ""}${esc(i.name)}${i.note ? `<div class="inote">↳ ${esc(i.note)}</div>` : ""}</li>`).join("")}</ul>
     ${o.message ? `<div class="note">${esc(o.message)}</div>` : ""}
     <div class="meta">${[o.name && esc(o.name), o.phone && `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`, esc(o.payment), `<b>${o.total} kr</b>`,
-      o.smsReady && "sms " + esc(o.smsReady), o.printed ? "🖨 " + esc(o.printed) : "🖨 väntar", o.kind === "pickup" ? "mottagen " + esc(o.receivedTime) : "",
-      o.archived && "arkiverad", o.anonymised && "avidentifierad"].filter(Boolean).join(" · ")}</div>
+      o.smsReady && "sms " + esc(o.smsReady), o.printed ? "🖨 " + esc(o.printed) : "🖨 väntar", o.kind === "pickup" ? "mottagen " + esc(o.receivedTime) : ""].filter(Boolean).join(" · ")}</div>
     ${done ? "" : `<div class="acts">
       ${nextSteps(o).map(s => `<button class="btn ${s === "Klar" ? "ok" : "p"}" type="button" data-o="${esc(o.no)}" data-s="${s}">${s === "Tillagas" ? "Börja tillaga" : s === "Klar" ? "Klar" : s}</button>`).join("")}
       <button class="btn" type="button" data-o="${esc(o.no)}" data-s="Avbokad" data-confirm="Avboka ${esc(o.no)}?">Avboka</button>
+      <button class="btn ${o.paid ? "ok" : ""}" type="button" data-paid="${esc(o.no)}" data-val="${o.paid ? "0" : "1"}">${o.paid ? "Betald ✓" : "Markera betald"}</button>
       <button class="btn" type="button" data-reprint="${esc(o.no)}" title="Skriv ut igen" aria-label="Skriv ut ${esc(o.no)} igen" style="flex:0 0 auto">🖨</button></div>`}
   </article>`;
 }
@@ -358,6 +318,15 @@ document.addEventListener("click", async e => {
   } catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
 });
 
+/* Betald: köket bockar av när pengarna kommit in (Swish-appen eller kassan).
+   Markeringen syns på kvittot – skriv ut igen med 🖨 om chefen vill ha det på papper. */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-paid]"); if (!b) return;
+  b.disabled = true;
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "paid", no: b.dataset.paid, paid: b.dataset.val === "1" }) }); loadOrders(); }
+  catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
+});
+
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-reprint]"); if (!b) return;
   b.disabled = true;
@@ -392,6 +361,26 @@ document.addEventListener("click", async e => {
   catch (err) { item.soldOut = !soldOut; renderMenu(); if (err.message !== "401") alert(err.message); }
 });
 
+/* ---------- förberedelsetid ---------- */
+/* Hur länge köket behöver innan en hämtning är klar. Gästen ser "klar ca kl …" = nu + denna tid.
+   Höj när det är fullt. Gästernas sida hämtar värdet varannan minut. */
+const LEAD_STEPS = [15, 20, 30, 45, 60, 75, 90, 120];
+let leadNow = 0;
+function fillLead() {
+  $("#oLead").innerHTML = LEAD_STEPS.map(m => `<button type="button" data-lead="${m}" aria-pressed="${m === leadNow}">${m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) : "")}</button>`).join("");
+}
+async function loadLead() {
+  try { const d = await api("?view=settings"); leadNow = d.leadMinutes || CFG.pickupLeadMinutes; } catch { leadNow = CFG.pickupLeadMinutes; }
+  fillLead();
+}
+async function saveLead(m) {
+  const msg = $("#oLeadMsg"), before = leadNow;
+  leadNow = m; fillLead(); msg.textContent = "Sparar …";
+  try { await api("", { method: "POST", body: JSON.stringify({ kind: "lead", minutes: m }) }); msg.textContent = `Sparat · nya beställningar klara om ${m} min`; }
+  catch (e) { leadNow = before; fillLead(); msg.textContent = e.message; }
+  setTimeout(() => { msg.textContent = ""; }, 6000);
+}
+
 /* ---------- QR ---------- */
 function makeQr(){
   const n = Math.min(60, Math.max(1, +$("#qCount").value || CFG.tableCount));
@@ -405,60 +394,14 @@ function makeQr(){
 }
 $("#qMake").onclick = makeQr;
 
-/* ---------- månadsrapport ---------- */
-let reportData = null;
-const kr = n => (n || 0).toLocaleString("sv-SE") + " kr";
-
-async function loadReport(){
-  const month = $("#rMonth").value || new Date().toISOString().slice(0, 7);
-  $("#report").innerHTML = `<div class="panel">Hämtar…</div>`;
-  try {
-    const d = await api(`?view=report&month=${month}`);
-    const r = reportData = d.report;
-    $("#rEmpty").hidden = r.total.orders > 0 || r.total.cancelled > 0;
-    const dayName = iso => new Date(iso + "T12:00:00").toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" });
-    $("#report").innerHTML = r.total.orders || r.total.cancelled ? `
-      <div class="sum">
-        <div><span>Beställningar</span><b>${r.total.orders}</b></div>
-        <div><span>Omsättning</span><b>${kr(r.total.revenue)}</b></div>
-        <div><span>Snitt per order</span><b>${kr(r.average)}</b></div>
-        <div><span>Hämtning / bord</span><b>${r.total.pickup} / ${r.total.table}</b></div>
-        <div><span>Avbokade</span><b>${r.total.cancelled}</b></div>
-        <div><span>Rätter</span><b>${r.total.items}</b></div>
-      </div>
-      <table class="rep"><thead><tr><th>Dag</th><th>Beställningar</th><th>Omsättning</th></tr></thead><tbody>
-        ${r.days.map(d => `<tr><td>${esc(dayName(d.date))}</td><td>${d.orders}</td><td>${kr(d.revenue)}</td></tr>`).join("")}
-      </tbody></table>
-      <p class="meta" style="margin-top:10px">${r.source.live} ur driftarket, ${r.source.archive} ur arkivet.</p>` : "";
-  } catch (e) { $("#report").innerHTML = `<div class="panel">Fel: ${esc(e.message)}</div>`; }
-}
-
-function reportCsv(){
-  if (!reportData) return;
-  const r = reportData;
-  const rows = [["Datum", "Beställningar", "Omsättning (kr)"]]
-    .concat(r.days.map(d => [d.date, d.orders, d.revenue]))
-    .concat([[], ["Summa", r.total.orders, r.total.revenue], ["Avbokade", r.total.cancelled, ""],
-             ["Hämtning", r.total.pickup, ""], ["Bord", r.total.table, ""]]);
-  const csv = "\uFEFF" + rows.map(x => x.join(";")).join("\n");          // BOM så att Excel läser å ä ö
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  a.download = `hanami-${r.month}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 /* ---------- start ---------- */
+fillLead(); $("#oLead").onclick = e => { const b = e.target.closest("[data-lead]"); if (b) saveLead(Number(b.dataset.lead)); };
 $("#oDate").value = $("#bFrom").value = today();
 $("#qCount").value = CFG.tableCount;
 $("#oDate").onchange = $("#oFilter").onchange = $("#oReload").onclick = loadOrders;
 $("#bFrom").onchange = $("#bReload").onclick = loadBookings;
-$("#oArchive").onclick = loadArchive;
-$("#rMonth").value = today().slice(0, 7);
-$("#rLoad").onclick = loadReport;
-$("#rCsv").onclick = reportCsv;
-if (key) showApp(); else logout();
-setInterval(() => { if (key && !document.hidden && !archiveView) { loadOrders(); if (tab === "bookings") loadBookings(); } }, 20000);
+if (key) { showApp(); loadLead(); } else logout();
+setInterval(() => { if (key && !document.hidden) { loadOrders(); if (tab === "bookings") loadBookings(); } }, 20000);
 setInterval(() => { if (key && !document.hidden) loadBookings(); }, 120000);
 </script>
 </body>
