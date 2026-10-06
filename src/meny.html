@@ -398,6 +398,10 @@ function syncHappy() {
   }
   return on;
 }
+// Meddelandet från köket utan rubriken (standardtexten börjar med samma mening som rubriken)
+function closedMsg() {
+  return String(ORDERING.message || "").replace(/^\s*Onlinebeställning är tillfälligt stängd[.!]?\s*/i, "") || `Ring oss på ${SETTINGS.phone}.`;
+}
 function add(id) {
   if (!ORDERING.open) { toast("Onlinebeställning är tillfälligt stängd"); return; }
   if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${pad(SETTINGS.happyHour.from)}:00–${pad(SETTINGS.happyHour.to)}:00`); return; }
@@ -618,7 +622,7 @@ function renderDrawer() {
        <div class="total"><span>Att betala</span><b>${payTotal()} kr</b></div>` : "");
 
   if (!ORDERING.open) {
-    body.innerHTML = lines + total + `<p class="err">Onlinebeställning är tillfälligt stängd. ${esc(ORDERING.message)}</p>`;
+    body.innerHTML = lines + total + `<p class="err"><b>Onlinebeställning är tillfälligt stängd.</b> ${esc(closedMsg())}</p>`;
     foot.innerHTML = `<a class="btn gold block" href="tel:${SETTINGS.phone.replace(/[^\d+]/g, "")}">Ring ${esc(SETTINGS.phone)}</a>`;
     stage = "cart";
     return;
@@ -753,7 +757,7 @@ function setOrdering(o) {
   let bar = $("#closedBar");
   if (!ORDERING.open) {
     if (!bar) { bar = document.createElement("div"); bar.id = "closedBar"; bar.className = "closedbar"; bar.setAttribute("role", "status"); $(".tools").before(bar); }
-    bar.innerHTML = `<b>Onlinebeställning är tillfälligt stängd.</b> ${esc(ORDERING.message)} <a href="tel:${SETTINGS.phone.replace(/[^\d+]/g, "")}">Ring ${esc(SETTINGS.phone)}</a>`;
+    bar.innerHTML = `<b>Onlinebeställning är tillfälligt stängd.</b> ${esc(closedMsg())} <a href="tel:${SETTINGS.phone.replace(/[^\d+]/g, "")}">Ring nu</a>`;
   } else if (bar) bar.remove();
   document.body.classList.toggle("ordering-closed", !ORDERING.open);
   $$("[data-add],[data-mixopen]").forEach(b => { b.disabled = !ORDERING.open || b.closest(".item").classList.contains("soldout"); });
