@@ -160,6 +160,7 @@
 .pickup .lbl{font:500 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
 .pickup b{font:500 1.15rem/1.3 var(--serif);color:var(--ink)}
 .pickup small{font-size:.86rem;color:var(--ink-2)}
+.choice.pay label{flex-wrap:wrap}.choice.pay .paymeth{display:block;width:100%;font-size:.78rem;color:var(--ink-2);margin:.15rem 0 0 1.6rem}
 .done .swish .sm{display:block;font-size:.88rem;color:var(--ink-2);margin-top:.35rem}
 .done .swish .btn{margin:.9rem 0 .2rem}
 .done .swish .qr{margin:.9rem auto 0;width:168px;line-height:0}
@@ -279,6 +280,7 @@
 <!--MIX_JS-->
 
 /* ================= menysidan ================= */
+const PAY_ONLINE = !!SETTINGS.payOnline && !!ENDPOINT;   // onlinebetalning slås på i data/settings.js (payOnline: true)
 const ITEMS = {};
 $$("[data-add]").forEach(b => { ITEMS[b.dataset.add] = { id: b.dataset.add, cat: b.dataset.cat, name: b.dataset.name, price: Number(b.dataset.price) }; });
 
@@ -631,16 +633,17 @@ function renderDrawer() {
           <label><input type="radio" name="tip" value="egen"${tipPct === "egen" ? " checked" : ""}>Egen summa</label></div>
         ${tipPct === "egen" ? `<input type="number" id="tipKr" min="0" max="2000" step="1" inputmode="numeric" placeholder="Belopp i kr" value="${tipCustom || ""}">` : ""}
         <small id="tipInfo">${tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Tack, men ingen dricks behövs – vi blir lika glada ändå."}</small></div>
-      <div class="field"><span class="lbl">Betalning</span><div class="choice">
-        <label><input type="radio" name="pay" value="swish" checked>Swish</label>
+      <div class="field"><span class="lbl">Betalning</span><div class="choice pay">
+        ${PAY_ONLINE ? `<label><input type="radio" name="pay" value="online" checked>Betala med kort nu <span class="paymeth">kort · Apple Pay · Google Pay</span></label>` : ""}
+        <label><input type="radio" name="pay" value="swish"${PAY_ONLINE ? "" : " checked"}>Swish till ${swishNo}</label>
         <label><input type="radio" name="pay" value="kort">Kort i kassan</label></div>
-        <small>Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Ange ditt ordernummer som meddelande.<br>Swisha gärna direkt – då kan vi fokusera på maten.</small></div>
+        <small id="payInfo">${PAY_ONLINE ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}` : `Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Ange ditt ordernummer som meddelande.`}</small></div>
       <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
         <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div id="orderErr" class="err" hidden></div>
     </form>`;
-  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr</button>
+  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${submitLabel(PAY_ONLINE ? "online" : "swish")}</button>
     <button class="btn ghost block" type="button" data-back>Tillbaka</button>`;
   if (pi && pi.closed) $("#orderSubmit").disabled = true;
 }
@@ -659,12 +662,19 @@ async function submitOrder(e) {
     items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
   try {
+    if (payload.payment === "online") {
+      btn.textContent = "Öppnar betalning …";
+      const r = await send(payload, "/api/pay");
+      if (r.demo) throw new Error("Demoläge – onlinebetalning kräver att sidan körs på servern.");
+      syncCart();                                  // korgen ligger kvar tills tacksidan bekräftar betalningen
+      location.href = r.url; return;
+    }
     const r = await send(payload);
     lastOrder = { no: r.no, total: r.total ?? payTotal(), phone, payment: f.pay.value, email: payload.email, demo: r.demo, when: r.when || "" };
     cart.clear(); tipPct = 0; tipCustom = 0; syncCart(); stage = "done"; renderDrawer();
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;
-    btn.disabled = false; btn.textContent = `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
+    btn.disabled = false; btn.textContent = submitLabel(f.pay.value);
     if (/slut idag|finns inte längre/.test(ex.message)) syncAvailability();
   }
 }
@@ -680,6 +690,23 @@ function closeDrawer() {
   $("#scrim").classList.remove("show"); $("#drawer").classList.remove("show");
   document.body.classList.remove("no-scroll");
   setTimeout(() => { $("#scrim").hidden = true; $("#drawer").hidden = true; if (stage === "done") stage = "cart"; }, 300);
+}
+
+/* ---------- betalsätt: knapptext och hjälptext ---------- */
+const submitLabel = pay => pay === "online" ? `Betala ${payTotal()} kr` : `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
+document.addEventListener("change", e => {
+  if (e.target.name !== "pay") return;
+  const btn = $("#orderSubmit"); if (btn) btn.textContent = submitLabel(e.target.value);
+  const info = $("#payInfo"); if (!info) return;
+  info.textContent = e.target.value === "online"
+    ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}`
+    : e.target.value === "swish" ? `Swish-nummer ${swishNo} (${SETTINGS.name}). Ange ditt ordernummer som meddelande.`
+    : TABLE ? "Betala med kort i kassan när ni går." : "Betala med kort i kassan när du hämtar.";
+});
+// Gästen avbröt i Stripe → tillbaka till korgen med allt kvar
+if (/[?&]avbruten=/.test(location.search)) {
+  history.replaceState(null, "", location.pathname + (TABLE ? `?bord=${encodeURIComponent(TABLE)}` : ""));
+  setTimeout(() => { toast("Betalningen avbröts – din beställning finns kvar i varukorgen."); if (cart.size) { stage = "checkout"; openDrawer(); } }, 400);
 }
 
 /* ---------- aktuella priser och "slut idag" ---------- */
@@ -727,7 +754,7 @@ document.addEventListener("input", e => {
   if (e.target.id === "tipKr") {                       // uppdatera utan att rita om, så fältet behåller fokus
     tipCustom = Number(e.target.value) || 0;
     $("#tipInfo").textContent = tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Ingen dricks.";
-    $("#orderSubmit").textContent = `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
+    $("#orderSubmit").textContent = submitLabel(($("#orderForm input[name=pay]:checked") || {}).value);
   }
 });
 document.addEventListener("change", e => {

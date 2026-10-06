@@ -91,8 +91,9 @@ function mailOrderConfirmation_(o) {
       '<tr><td style="padding:12px 0;border-top:2px solid #1B2A3A;font-size:17px"><b>Summa</b></td>' +
       '<td style="padding:12px 0;border-top:2px solid #1B2A3A;text-align:right;font-size:17px"><b>' + o.total + ' kr</b></td></tr></table>' +
     (o.message ? '<div style="margin-top:16px;background:#FBEEF2;border-radius:3px;padding:12px 14px;font-size:14px;color:#1B2A3A"><b>Meddelande till köket:</b><br>' + esc_(o.message) + '</div>' : '') +
-    '<p style="margin:18px 0 0;color:#4C5B6B;font-size:14px">Betalning: ' +
-      (o.payment === 'kort' ? 'kort i kassan' : 'Swish') + (isTable ? ' när ni går' : ' vid hämtning') + '.</p>' +
+    '<p style="margin:18px 0 0;color:#4C5B6B;font-size:14px">' +
+      (isPaidOnline_(o) ? '<b style="color:#1F6B42">Betald online</b> med ' + (o.payment === 'online-swish' ? 'Swish' : 'kort') + '. Kvitto skickas separat från vår betalpartner Stripe.'
+                        : 'Betalning: ' + (o.payment === 'kort' ? 'kort i kassan' : 'Swish') + (isTable ? ' när ni går' : ' vid hämtning') + '.') + '</p>' +
     '<p style="margin:10px 0 0;color:#7A8794;font-size:13px">Behöver du ändra eller avboka? Ring oss på ' + esc_(APP.PHONE) + ' så löser vi det.</p>';
   const text = [APP.NAME, 'Bestallning ' + o.no,
     isTable ? 'Bord ' + o.table : 'Hamtas ' + o.when].concat(

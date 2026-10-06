@@ -13,6 +13,8 @@
 //   /api/print                   skrivarbryggan (Raspberry Pi, reserv)
 //   /api/sdp/<SDP_KEY>           Epson Server Direct Print (TM-m30III i köket)
 //   /api/cloudprnt/<KEY>         Star CloudPRNT (reserv)
+//   /api/pay                     onlinebetalning via Stripe (Q89 Pay) – start + status
+//   /api/stripe/webhook          egen funktion api/stripe-webhook.js (rå kropp krävs för signaturen)
 
 import submit from "../lib/routes/submit.js";
 import admin from "../lib/routes/admin.js";
@@ -21,8 +23,9 @@ import health from "../lib/routes/health.js";
 import print from "../lib/routes/print.js";
 import sdp from "../lib/routes/sdp.js";
 import cloudprnt from "../lib/routes/cloudprnt.js";
+import pay from "../lib/routes/pay.js";
 
-const ROUTES = { submit, admin, availability, health, print };
+const ROUTES = { submit, admin, availability, health, print, pay };
 const KEYED = { sdp, cloudprnt };                 // slutpunkter där nyckeln är andra ledet i adressen
 
 /**

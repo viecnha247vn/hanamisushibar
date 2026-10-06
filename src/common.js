@@ -70,10 +70,10 @@ function toast(msg) {
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1800);
 }
 
-async function send(payload) {
+async function send(payload, endpoint = ENDPOINT) {
   if (!ENDPOINT) { await new Promise(r => setTimeout(r, 500)); return { ok: true, demo: true, no: "DEMO" }; }
   let res;
-  try { res = await fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); }
+  try { res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); }
   catch { throw new Error("Ingen anslutning. Kontrollera internet och försök igen."); }
   const data = await res.json().catch(() => null);
   if (!res.ok || !data || data.ok === false) throw new Error((data && data.error) || `Något gick fel (${res.status}).`);

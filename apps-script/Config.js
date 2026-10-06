@@ -15,6 +15,9 @@
  *   CLEANUP_ENABLED     "on" = nattlig städning på riktigt (annars provkörning) – se Cleanup.js
  *   ARCHIVE_ID          arkivarkets id, skapas automatiskt
  *   CLEANUP_EMAIL       dit städfel mejlas (annars NOTIFY_EMAIL)
+ *
+ * Onlinebetalning (Stripe via Q89 Pay) sköts av Vercel; arket får bara färdiga, betalda beställningar.
+ * Fliken "Betalningar" håller pågående betalningar i väntan på Stripes bekräftelse (se Pay.js).
  */
 
 const APP = {
@@ -28,12 +31,14 @@ const SHEET = {
   ORDERS: 'Beställningar',
   BOOKINGS: 'Bokningar',
   MENU: 'Meny',
-  LOG: 'Logg'
+  LOG: 'Logg',
+  PAY: 'Betalningar'          // pågående onlinebetalningar (Stripe) – ordern skapas först när pengarna är klara
 };
 
 const HEADERS = {
   ORDERS: ['Mottagen', 'Ordernr', 'Typ', 'Bord', 'Hämtas datum', 'Hämtas tid', 'Namn', 'Telefon', 'E-post', 'Betalning',
-           'Beställning', 'Dricks', 'Summa', 'Kommentar', 'Status', 'Sms klar', 'Bekräftelse', 'Utskriven', 'Betald', 'Rader (data)'],
+           'Beställning', 'Dricks', 'Summa', 'Kommentar', 'Status', 'Sms klar', 'Bekräftelse', 'Utskriven', 'Betald', 'Rader (data)', 'Stripe'],
+  PAY: ['Skapad', 'Ref', 'Status', 'Summa', 'Metod', 'Stripe session', 'Payment intent', 'Ordernr', 'Uppdaterad', 'Order (data)', 'Rader (data)'],
   BOOKINGS: ['Mottagen', 'Boknr', 'Datum', 'Tid', 'Gäster', 'Namn', 'Telefon', 'E-post', 'Meddelande', 'Status', 'Sms bekräftad', 'Bekräftelse'],
   MENU: ['Kategori-id', 'Kategori', 'Kategoritext', 'Id', 'Namn', 'Pris', 'Beskrivning', 'Visas på webben', 'Slut idag'],
   LOG: ['Tid', 'Nivå', 'Händelse', 'Detaljer']

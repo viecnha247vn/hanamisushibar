@@ -43,6 +43,12 @@ const ACTIONS = {
   applyMenuPatches: p => withLock_(() => applyMenuPatches_(p.patches)),
   adminPaid:     p => withLock_(() => setPaid_(p.no, !!p.paid)),
   adminSettings: () => ({ leadMinutes: lead_() }),
+  // onlinebetalning via Stripe (Pay.js) – anropas bara av Vercel
+  payPending:    p => withLock_(() => payPending_(p)),
+  paySession:    p => paySession_(p),
+  payConfirm:    p => withLock_(() => payConfirm_(p)),
+  payFail:       p => payFail_(p),
+  payStatus:     p => payStatus_(p),
   // skrivarbryggan (print-bridge/)
   printQueue:    () => ({ jobs: printQueue_() }),
   printJob:      p => ({ job: printJob_(p.no) }),

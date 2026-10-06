@@ -12,7 +12,7 @@ const today = E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "yyyy-M
 
 console.log("Apps Script");
 test("setup skapar flikar, triggers och nyckel", () => {
-  assert.deepEqual(Object.keys(E.sheets).sort(), ["Beställningar", "Bokningar", "Logg", "Meny"]);
+  assert.deepEqual(Object.keys(E.sheets).sort(), ["Beställningar", "Betalningar", "Bokningar", "Logg", "Meny"]);
   assert.deepEqual(E.log.triggers, ["handleEdit", "resetSoldOut", "nightlyCleanup"]);
   assert.equal(E.props.CLEANUP_ENABLED, "off");
   assert.ok(E.props.API_SECRET.length > 30);
@@ -271,4 +271,53 @@ test("städningen stör inte beställningar och köksvy", () => {
   E.api.cleanupDisable();
   assert.equal(E.call("health").cleanup, "dry-run");
 });
+
+/* ---------------- onlinebetalning (Pay.js) ---------------- */
+console.log("Onlinebetalning");
+let pend;
+test("payPending prissätter mot arket och skapar ingen order", () => {
+  const before = E.sheets["Beställningar"].getLastRow();
+  pend = E.call("payPending", { order: { kind: "pickup", name: "Bo", phone: "+46701112233", email: "bo@exempel.se", asap: true,
+    openFrom: 11 * 60, closeAt: 20 * 60, defaultLead: 30, tip: 10, payment: "online", items: [{ id: "maki-1", qty: 2 }] } });
+  assert.equal(pend.ok, true); assert.match(pend.ref, /^P[A-Z0-9]{12}$/);
+  assert.equal(pend.total, 2 * 145 + 10); assert.equal(pend.lines[0].price, 145);
+  assert.equal(E.sheets["Beställningar"].getLastRow(), before, "en order skapades före betalning");
+  assert.equal(E.call("paySession", { ref: pend.ref, sessionId: "cs_test_1" }).ok, true);
+});
+test("payConfirm med fel belopp nekas (409) och skapar ingen order", () => {
+  const r = E.call("payConfirm", { ref: pend.ref, sessionId: "cs_test_1", paymentIntent: "pi_1", method: "card", amount: 100 });
+  assert.equal(r.status, 409);
+  assert.equal(E.call("payStatus", { ref: pend.ref, sessionId: "cs_test_1" }).status, "väntar");
+});
+test("payConfirm skapar betald order, skriver ut, mejlar och sms:ar", () => {
+  const mails = E.log.mails.length, sms = E.log.sms.length;
+  const r = E.call("payConfirm", { ref: pend.ref, sessionId: "cs_test_1", paymentIntent: "pi_1", method: "swish", amount: pend.total * 100 });
+  assert.equal(r.ok, true); assert.match(r.no, /^H\d+$/); assert.equal(r.total, pend.total);
+  const sh = E.sheets["Beställningar"], head = sh.data[0], row = sh.data.find(x => x[head.indexOf("Ordernr")] === r.no);
+  assert.equal(row[head.indexOf("Betalning")], "Online Swish");
+  assert.match(String(row[head.indexOf("Betald")]), /^\d\d:\d\d$/, "Betald-kolumnen tom");
+  assert.equal(row[head.indexOf("Stripe")], "pi_1");
+  assert.ok(E.call("printQueue").jobs.some(j => j.no === r.no && j.paid === true), "saknas i utskriftskön eller ej markerad betald");
+  assert.ok(E.log.mails.length > mails && E.log.sms.length > sms, "mejl/sms skickades inte");
+  assert.ok(E.log.mails.at(-1).htmlBody.includes("Betald online"), "mejlet säger inte betald online");
+  const st = E.call("payStatus", { ref: pend.ref, sessionId: "cs_test_1" });
+  assert.equal(st.status, "betald"); assert.equal(st.no, r.no); assert.equal(st.method, "Swish");
+});
+test("payConfirm är idempotent – samma ref ger samma ordernummer, ingen ny order", () => {
+  const before = E.sheets["Beställningar"].getLastRow();
+  const r = E.call("payConfirm", { ref: pend.ref, sessionId: "cs_test_1", paymentIntent: "pi_1", method: "swish", amount: pend.total * 100 });
+  assert.equal(r.already, true); assert.equal(E.sheets["Beställningar"].getLastRow(), before);
+});
+test("payStatus kräver rätt session-id", () => {
+  assert.equal(E.call("payStatus", { ref: pend.ref, sessionId: "cs_fel" }).status, 404);
+});
+test("payFail markerar men skapar ingen order", () => {
+  const p2 = E.call("payPending", { order: { kind: "table", table: "4", items: [{ id: "poke-1", qty: 1 }] } });
+  E.call("paySession", { ref: p2.ref, sessionId: "cs_test_2" });
+  const before = E.sheets["Beställningar"].getLastRow();
+  assert.equal(E.call("payFail", { ref: p2.ref, status: "expired" }).ok, true);
+  assert.equal(E.call("payStatus", { ref: p2.ref, sessionId: "cs_test_2" }).status, "utgången");
+  assert.equal(E.sheets["Beställningar"].getLastRow(), before);
+});
+
 console.log("\n" + passed + " tester OK");

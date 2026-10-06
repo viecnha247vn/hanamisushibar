@@ -46,6 +46,7 @@ function setup_(force) {
   const bookings = ensureSheet_(SHEET.BOOKINGS, HEADERS.BOOKINGS, { 'Meddelande': 260 });
   const menu = ensureSheet_(SHEET.MENU, HEADERS.MENU, { 'Kategori': 170, 'Kategoritext': 220, 'Namn': 220, 'Beskrivning': 420 });
   ensureSheet_(SHEET.LOG, HEADERS.LOG, { 'Detaljer': 500 });
+  ensureSheet_(SHEET.PAY, HEADERS.PAY, { 'Order (data)': 80, 'Rader (data)': 80, 'Stripe session': 160, 'Payment intent': 160 });
 
   // Text-format så att datum, tider och +46-nummer inte tolkas om av Sheets – bara på nya flikar (eller setupRepair)
   if (force || FRESH_[SHEET.ORDERS]) {

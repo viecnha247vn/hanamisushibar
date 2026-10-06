@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tack för din beställning – Hanami Sushi Bar</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="canonical" href="https://hanamisushibar.se/tack">
+<!--HEAD-->
+<style>
+/* Tacksidan efter onlinebetalning (Stripe skickar gästen hit: /tack?ref=…&sid=…) */
+.tack{min-height:70svh;display:flex;align-items:center;padding:calc(var(--hdr) + 40px) 0 72px}
+.tack .wrap{max-width:34rem;text-align:center}
+.tack .big{font:italic 400 clamp(3rem,10vw,4.6rem)/1 var(--serif);margin:.6rem 0 .4rem;color:var(--koi-deep)}
+.tack p{color:var(--ink-2)}
+.tack .sum{color:var(--ink);font-weight:600}
+.tack .box{margin:1.4rem auto 0;padding:1rem 1.2rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3);color:var(--ink);line-height:1.6;text-align:left}
+.tack .box b{display:block;margin-bottom:.2rem}
+.tack .wait{display:inline-block;width:1.1em;height:1.1em;border:2px solid var(--gold-2);border-right-color:transparent;border-radius:50%;animation:spin 1s linear infinite;vertical-align:-.2em;margin-right:.5em}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tack .actions{display:flex;flex-wrap:wrap;gap:.8rem;justify-content:center;margin-top:1.8rem}
+.tack .sm{font-size:.88rem}
+</style>
+</head>
+<body data-solid="1">
+<!--SYMBOLS-->
+<!--HEADER-->
+
+<main>
+<section class="tack">
+  <div class="wrap" id="tack" aria-live="polite">
+    <span class="eyebrow" id="tEyebrow">Bekräftar betalningen</span>
+    <div class="big" id="tNo"><span class="wait" aria-hidden="true"></span></div>
+    <p id="tText">Det tar bara några sekunder. Stäng inte sidan.</p>
+    <div id="tBox" hidden></div>
+    <div class="actions" id="tActions"></div>
+  </div>
+</section>
+</main>
+
+<!--FOOTER-->
+
+<script>
+<!--COMMON_JS-->
+
+/* ================= tacksidan ================= */
+(function () {
+  const q = new URLSearchParams(location.search);
+  const ref = q.get("ref") || "", sid = q.get("sid") || "";
+  const el = id => document.getElementById(id);
+  const kr = n => `${Number(n) || 0} kr`;
+  if (!/^P[A-Z0-9]{12}$/.test(ref) || !sid) return fail("Vi hittar ingen betalning att bekräfta.");
+
+  let tries = 0;
+  async function poll() {
+    let r;
+    try { r = await fetch(`/api/pay?ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sid)}`, { cache: "no-store" }).then(x => x.json()); }
+    catch { r = null; }
+    if (r && r.ok && r.status === "betald") return paid(r);
+    if (r && r.ok && (r.status === "misslyckad" || r.status === "utgången")) return fail("Betalningen gick inte igenom. Inget har dragits från ditt kort.", true);
+    if (++tries < 15) return setTimeout(poll, tries < 5 ? 1500 : 3000);
+    fail("Vi har inte fått bekräftelse från banken ännu. Har du betalat syns beställningen hos oss inom någon minut – ring annars " + SETTINGS.phone + ".", true);
+  }
+
+  function paid(r) {
+    // korgen är klar – töm den (bord: bara det bordets korg)
+    try { localStorage.removeItem(r.kind === "table" && r.table ? `hanami-cart-bord-${r.table}` : "hanami-cart"); } catch {}
+    const isTable = r.kind === "table";
+    el("tEyebrow").textContent = isTable ? `Bord ${r.table} · betald` : "Ditt ordernummer";
+    el("tNo").textContent = r.no;
+    el("tText").innerHTML = `<span class="sum">Betalt ${esc(kr(r.total))}${r.method ? ` med ${esc(r.method.toLowerCase())}` : ""}.</span><br>` +
+      (isTable ? "Köket har fått beställningen och börjar direkt. Maten kommer till bordet."
+               : `Hämtas ${esc(r.when || "så snart maten är klar")} på Östergatan 53.${r.phone ? ` Vi sms:ar ${esc(r.phone)} när den är klar.` : ""}`);
+    const box = el("tBox");
+    box.innerHTML = `<div class="box"><b>Kvitto</b>${r.email ? `Kvitto och bekräftelse skickas till ${esc(r.email)}.` : "Vill du ha kvitto på mejl? Säg till i kassan så skriver vi ut ett."}
+      <span class="sm" style="display:block;margin-top:.4rem">Behöver du ändra något? Ring oss direkt på <a href="tel:${esc(SETTINGS.phone)}">${esc(SETTINGS.phone)}</a>.</span></div>`;
+    box.hidden = false;
+    el("tActions").innerHTML = isTable
+      ? `<a class="btn gold" href="/meny?bord=${encodeURIComponent(r.table)}">Beställ mer till bordet</a>`
+      : `<a class="btn gold" href="/meny">Tillbaka till menyn</a><a class="btn ghost" href="/">Startsidan</a>`;
+    document.title = `Beställning ${r.no} – Hanami Sushi Bar`;
+  }
+
+  function fail(msg, keepCart) {
+    el("tEyebrow").textContent = "Något gick fel";
+    el("tNo").textContent = "–";
+    el("tText").textContent = msg;
+    el("tActions").innerHTML = `<a class="btn gold" href="/meny${keepCart ? "" : ""}">Tillbaka till menyn</a><a class="btn ghost" href="tel:${esc(SETTINGS.phone)}">Ring ${esc(SETTINGS.phone)}</a>`;
+  }
+
+  poll();
+})();
+</script>
+</body>
+</html>

@@ -7,7 +7,12 @@
 /** Minuter efter midnatt → "HH:mm" */
 function hhmm_(m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); }
 
-function createOrder_(p) {
+/**
+ * Prissätter raderna mot fliken Meny. Används både av createOrder_ och av onlinebetalningen (Pay.js),
+ * så att gästen betalar exakt det belopp som sedan hamnar i arket.
+ * Returnerar { lines, sum, tip, total }.
+ */
+function priceLines_(p) {
   const menu = menuIndex_();
   if (!Array.isArray(p.items) || !p.items.length) throw new ApiError(400, 'Varukorgen är tom.');
 
@@ -30,7 +35,24 @@ function createOrder_(p) {
   // Dricks: gästen väljer procent eller egen summa. Räknas om här mot arkets priser.
   const tip = Math.round(Number(p.tip) || 0);
   if (!(tip >= 0 && tip <= 2000 && tip <= sum)) throw new ApiError(400, 'Ogiltig dricks.');
-  const total = sum + tip;
+  return { lines: lines, sum: sum, tip: tip, total: sum + tip };
+}
+
+/** Text i kolumnen Betalning. Onlinebetalningar är redan betalda när ordern skapas. */
+function paymentLabel_(payment) {
+  return payment === 'online-swish' ? 'Online Swish'
+       : payment === 'online-kort'  ? 'Online kort'
+       : payment === 'kort'         ? 'Kort i kassan' : 'Swish';
+}
+function isPaidOnline_(p) { return p.payment === 'online-swish' || p.payment === 'online-kort'; }
+
+/**
+ * Skapar beställningen i arket, skriver ut, mejlar och sms:ar.
+ * pre = färdigprissatta rader från en onlinebetalning (Pay.js) – då prissätts inte om, eftersom gästen redan betalat det beloppet.
+ */
+function createOrder_(p, pre) {
+  const priced = pre || priceLines_(p);
+  const lines = priced.lines, tip = priced.tip, total = priced.total;
   const isTable = p.kind === 'table';
 
   // Hämtningstid. Köket väljer förberedelsetiden i köksvyn (PICKUP_LEAD) – därför räknas tiden här, där värdet bor.
@@ -67,7 +89,7 @@ function createOrder_(p) {
     'Namn': p.name || '',
     'Telefon': p.phone || '',
     'E-post': p.email || '',
-    'Betalning': p.payment === 'kort' ? 'Kort i kassan' : 'Swish',
+    'Betalning': paymentLabel_(p.payment),
     'Beställning': lines.map(l => l.qty + ' × ' + l.name + (l.note ? '\n     ↳ ' + l.note : '')).join('\n'),
     'Dricks': tip || '',
     'Summa': total,
@@ -75,16 +97,17 @@ function createOrder_(p) {
     'Status': 'Ny',
     'Bekräftelse': '',
     'Utskriven': '',
-    'Betald': '',
+    'Betald': isPaidOnline_(p) ? now_('HH:mm') : '',
+    'Stripe': p.stripeRef || '',
     'Rader (data)': JSON.stringify(lines)
   });
 
   const when = isTable ? 'Bord ' + p.table : 'Hämtas ' + p.whenText;
   notifyRestaurant_({
-    subject: (isTable ? '🍽 Bord ' + p.table : '🛍 Hämtning ' + p.whenText) + ' · ' + no + ' · ' + total + ' kr',
+    subject: (isTable ? '🍽 Bord ' + p.table : '🛍 Hämtning ' + p.whenText) + ' · ' + no + ' · ' + total + ' kr' + (isPaidOnline_(p) ? ' · BETALD' : ''),
     title: 'Ny beställning ' + no,
     rows: [['Typ', when], ['Namn', p.name || '–'], ['Telefon', pretty_(p.phone) || '–'],
-           ['Betalning', p.payment === 'kort' ? 'Kort i kassan' : 'Swish'], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']]
+           ['Betalning', paymentLabel_(p.payment) + (isPaidOnline_(p) ? ' – BETALD' : '')], ['E-post', p.email || '–'], ['Kommentar', p.message || '–']]
            .concat(tip ? [['Dricks', tip + ' kr']] : []),
     items: lines, tip: tip, total: total
   });

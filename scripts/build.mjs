@@ -169,7 +169,7 @@ const jsonld = {
 const clientSettings = {
   phone: settings.phone, email: settings.email, swish: settings.swish, name: settings.name, allergens: settings.allergens, hours: settings.hours, closedDates: settings.closedDates, lunch: settings.lunch, happyHour: settings.happyHour,
   pickupLeadMinutes: settings.pickupLeadMinutes, pickupDaysAhead: settings.pickupDaysAhead, bookingDaysAhead: settings.bookingDaysAhead,
-  maxBookingGuests: settings.maxBookingGuests
+  maxBookingGuests: settings.maxBookingGuests, payOnline: !!settings.payOnline
 };
 
 rmSync("dist", { recursive: true, force: true });
@@ -242,7 +242,9 @@ writeFileSync("dist/meny.html", page("src/meny.html", {
   headerExtra: `<button class="btn gold" type="button" data-cart aria-label="Öppna varukorg">Varukorg <span class="cartn" id="cartCount"></span></button>`
 }));
 
+writeFileSync("dist/tack.html", page("src/tack.html", { path: "/tack" }));
+
 const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes }));
 writeFileSync("dist/kok.html", kok);
 
-console.log(`Byggt från ${source}: ${menu.length} kategorier, ${ids.length} rätter → dist/ (index, meny, kok)`);
+console.log(`Byggt från ${source}: ${menu.length} kategorier, ${ids.length} rätter → dist/ (index, meny, tack, kok)`);
