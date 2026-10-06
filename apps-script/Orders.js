@@ -51,6 +51,10 @@ function isPaidOnline_(p) { return p.payment === 'online-swish' || p.payment ===
  * pre = färdigprissatta rader från en onlinebetalning (Pay.js) – då prissätts inte om, eftersom gästen redan betalat det beloppet.
  */
 function createOrder_(p, pre) {
+  // Köket kan ha stängt onlinebeställning (köksvyn). En redan betald onlinebeställning (pre) skapas ändå –
+  // pengarna är tagna – och interna testbeställningar likaså.
+  const ord = ordering_();
+  if (!ord.open && !pre && !p.internal) throw new ApiError(423, ord.message);   // 423 Locked
   const priced = pre || priceLines_(p);
   const lines = priced.lines, tip = priced.tip, total = priced.total;
   const isTable = p.kind === 'table';

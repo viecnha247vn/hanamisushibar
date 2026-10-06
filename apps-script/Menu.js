@@ -77,6 +77,24 @@ function setLead_(minutes) {
   return { leadMinutes: v };
 }
 
+/**
+ * Onlinebeställning PÅ/AV. Köket slår av den i köksvyn (eller i arkets meny) när webben inte ska ta emot
+ * beställningar – t.ex. i väntan på Swish Handel, vid extremt tryck eller fel på skrivaren.
+ * Bordsbokning påverkas inte. Kontrolleras både i webbläsaren (knapparna låses) och här (servern nekar).
+ */
+const ORDERING_DEFAULT_MESSAGE = 'Onlinebeställning är tillfälligt stängd. Ring oss på ' + APP.PHONE + ' så hjälper vi dig.';
+function ordering_() {
+  return { open: prop_('ORDERING_OPEN', 'on') !== 'off', message: prop_('ORDERING_MESSAGE') || ORDERING_DEFAULT_MESSAGE };
+}
+function setOrdering_(open, message) {
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty('ORDERING_OPEN', open ? 'on' : 'off');
+  const msg = String(message || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 200);
+  if (msg) props.setProperty('ORDERING_MESSAGE', msg); else props.deleteProperty('ORDERING_MESSAGE');
+  log_('INFO', 'Onlinebeställning', (open ? 'PÅ' : 'AV') + (msg ? ' · "' + msg + '"' : ''));
+  return ordering_();
+}
+
 /** Aktuella priser och slut-status – hämtas av webbsidan vid varje besök (cachas 60 s hos Vercel). */
 function availability_() {
   const out = {};

@@ -29,6 +29,15 @@ header{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
 main{padding:14px}
 .tools .lead{display:inline-flex;align-items:center;gap:.5rem;margin-left:auto}
 .tools .lead span{font-size:13px;color:#4C5B6B}
+.ordering{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:.75rem 0 0;padding:.7rem 1rem;border:1px solid #C9D3DD;border-radius:8px;background:#fff}
+.ordering-state{display:flex;align-items:center;gap:.6rem;font-size:14px}
+.ordering-state .dot{width:10px;height:10px;border-radius:50%;background:#2F8F5B;box-shadow:0 0 0 3px rgba(47,143,91,.18)}
+.ordering.off .ordering-state .dot{background:#B6493E;box-shadow:0 0 0 3px rgba(182,73,62,.18)}
+.ordering-state .sub{color:#4C5B6B;font-size:13px}
+.ordering .btn{min-width:9rem}
+.ordering.off .btn{background:#2F8F5B;color:#fff;border-color:#2F8F5B}
+.ordering:not(.off) .btn{background:#fff;color:#B6493E;border-color:#B6493E}
+.banner.warn{margin:.5rem 0 0;padding:.6rem 1rem;border-radius:8px;background:#FBE9E7;color:#7A2E27;font-size:14px}
 .leadbtns{display:inline-flex;border:1px solid #C9D3DD;border-radius:6px;overflow:hidden}
 .leadbtns button{font:600 14px/1 inherit;padding:.6rem .75rem;border:0;border-left:1px solid #C9D3DD;background:#fff;color:#1D2A38;cursor:pointer;min-width:3.2rem}
 .leadbtns button:first-child{border-left:0}
@@ -140,6 +149,11 @@ ul li b{display:inline-block;min-width:2.2ch}
       </div>
       <span class="leadmsg" id="oLeadMsg" role="status"></span>
     </div>
+    <div class="ordering" id="ordering" hidden>
+      <div class="ordering-state"><span class="dot"></span><b id="ordState">Onlinebeställning</b><span class="sub" id="ordSub"></span></div>
+      <button class="btn" type="button" id="ordToggle">…</button>
+    </div>
+    <div class="banner warn" id="ordBanner" hidden>Onlinebeställning är <b>AV</b> – gäster kan se menyn men inte beställa. Bordsbokning fungerar som vanligt.</div>
     <div class="grid" id="orders"></div>
     <div class="empty" id="oEmpty" hidden>Inga beställningar att visa.</div>
   </section>
@@ -370,9 +384,29 @@ function fillLead() {
   $("#oLead").innerHTML = LEAD_STEPS.map(m => `<button type="button" data-lead="${m}" aria-pressed="${m === leadNow}">${m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) : "")}</button>`).join("");
 }
 async function loadLead() {
-  try { const d = await api("?view=settings"); leadNow = d.leadMinutes || CFG.pickupLeadMinutes; } catch { leadNow = CFG.pickupLeadMinutes; }
+  try { const d = await api("?view=settings"); leadNow = d.leadMinutes || CFG.pickupLeadMinutes; renderOrdering(d.ordering); } catch { leadNow = CFG.pickupLeadMinutes; }
   fillLead();
 }
+
+/* ---------- onlinebeställning PÅ/AV ---------- */
+/* Ett knapptryck stänger webbens beställningar (menyn syns, + låses, servern nekar). Bordsbokning påverkas inte. */
+let ordering = { open: true, message: "" };
+function renderOrdering(o) {
+  if (o) ordering = o;
+  const box = $("#ordering"); box.hidden = false; box.classList.toggle("off", !ordering.open);
+  $("#ordState").textContent = ordering.open ? "Onlinebeställning PÅ" : "Onlinebeställning AV";
+  $("#ordSub").textContent = ordering.open ? "Webben tar emot beställningar" : ordering.message;
+  $("#ordToggle").textContent = ordering.open ? "Stäng beställning" : "Öppna beställning";
+  $("#ordBanner").hidden = ordering.open;
+}
+async function toggleOrdering() {
+  if (ordering.open && !confirm("Stänga onlinebeställning?\n\nGäster kan fortfarande se menyn och boka bord, men inte beställa mat via webben. Du kan öppna igen när som helst.")) return;
+  const btn = $("#ordToggle"); btn.disabled = true;
+  try { renderOrdering(await api("", { method: "POST", body: JSON.stringify({ kind: "ordering", open: !ordering.open }) })); }
+  catch (e) { alert(e.message); }
+  btn.disabled = false;
+}
+$("#ordToggle").onclick = toggleOrdering;
 async function saveLead(m) {
   const msg = $("#oLeadMsg"), before = leadNow;
   leadNow = m; fillLead(); msg.textContent = "Sparar …";

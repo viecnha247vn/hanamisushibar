@@ -58,7 +58,7 @@ function makeEnv() {
     SpreadsheetApp: { CopyPasteType: { PASTE_FORMAT: 1, PASTE_DATA_VALIDATION: 2 }, getActive: () => ss, getUi: () => ui, newDataValidation: chain, newConditionalFormatRule: chain,
       create: name => { const id = "ARK" + Object.keys(files).length; return (files[id] = makeSS(name, id)); },
       openById: id => { if (!files[id]) throw new Error("Hittar inte " + id); return files[id]; } },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); } }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); }, deleteProperty: k => { delete props[k]; } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     Utilities: { formatDate: tzFmt, getUuid: () => crypto.randomUUID(), base64Encode: x => Buffer.from(Array.isArray(x) ? Buffer.from(x) : String(x)).toString("base64"),
@@ -72,7 +72,7 @@ function makeEnv() {
   const dir = process.env.GAS_DIR || require("path").join(__dirname, "..", "apps-script");
   const code = fs.readdirSync(dir).filter(f => f.endsWith(".js")).sort((a, b) => (a === "Config.js" ? -1 : b === "Config.js" ? 1 : a.localeCompare(b)))
     .map(f => fs.readFileSync(dir + "/" + f, "utf8")).join("\n;\n");
-  vm.runInContext(code + "\n;this.__api={doPost,setup,setupRepair,handleEdit,resetSoldOut,publishSite,testOrder,showSecret,onOpen,nightlyCleanup,cleanupDryRun,cleanupNow,cleanupEnable,cleanupDisable,runCleanup_};", ctx);
+  vm.runInContext(code + "\n;this.__api={doPost,setup,setupRepair,setupCheck,formatMenuOnly,handleEdit,resetSoldOut,publishSite,testOrder,showSecret,onOpen,nightlyCleanup,cleanupDryRun,cleanupNow,cleanupEnable,cleanupDisable,runCleanup_};", ctx);
   const call = (action, payload, secret = props.API_SECRET) => JSON.parse(ctx.__api.doPost({ postData: { contents: JSON.stringify({ secret, action, payload }) } }).text);
   return { ctx, api: ctx.__api, call, sheets, props, log, files };
 }

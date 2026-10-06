@@ -29,9 +29,9 @@ function doGet() {
 const ACTIONS = {
   health:        () => ({ sheet: SpreadsheetApp.getActive().getName(), time: now_(), sms: !!prop_('ELKS_USER'), email: !!prop_('NOTIFY_EMAIL'),
                           rows: { orders: Math.max(0, sheet_(SHEET.ORDERS).getLastRow() - 1), bookings: Math.max(0, sheet_(SHEET.BOOKINGS).getLastRow() - 1), log: Math.max(0, sheet_(SHEET.LOG).getLastRow() - 1) },
-                          cleanup: cleanupEnabled_() ? 'on' : 'dry-run' }),
+                          cleanup: cleanupEnabled_() ? 'on' : 'dry-run', ordering: ordering_().open ? 'open' : 'closed' }),
   menu:          () => ({ menu: menuForWeb_() }),
-  availability:  () => ({ items: availability_(), leadMinutes: lead_() }),
+  availability:  () => ({ items: availability_(), leadMinutes: lead_(), ordering: ordering_() }),
   order:         p => withLock_(() => createOrder_(p)),
   booking:       p => withLock_(() => createBooking_(p)),
   adminOrders:   p => ({ orders: listOrders_(p.date), sheetUrl: SpreadsheetApp.getActive().getUrl() }),
@@ -42,7 +42,8 @@ const ACTIONS = {
   adminLead:     p => withLock_(() => setLead_(p.minutes)),
   applyMenuPatches: p => withLock_(() => applyMenuPatches_(p.patches)),
   adminPaid:     p => withLock_(() => setPaid_(p.no, !!p.paid)),
-  adminSettings: () => ({ leadMinutes: lead_() }),
+  adminSettings: () => ({ leadMinutes: lead_(), ordering: ordering_() }),
+  adminOrdering: p => withLock_(() => setOrdering_(!!p.open, p.message)),
   // onlinebetalning via Stripe (Pay.js) – anropas bara av Vercel
   payPending:    p => withLock_(() => payPending_(p)),
   paySession:    p => paySession_(p),
@@ -76,10 +77,14 @@ function json_(o) {
 
 function now_(fmt) { return Utilities.formatDate(new Date(), APP.TZ, fmt || 'yyyy-MM-dd HH:mm'); }
 
+/** Skriver en rad i fliken Logg. Loggen hålls under 3000 rader: blir den större kapas den till 1000 i ETT anrop
+ *  (den nattliga städningen tar annars bort gamla rader). Får aldrig stoppa det som anropade. */
 function log_(level, event, details) {
+  const line = [now_('yyyy-MM-dd HH:mm:ss'), level, event, String(details || '').slice(0, 5000)];
+  console.log(line.join(' · '));
   try {
-    const sh = sheet_(SHEET.LOG);
-    sh.appendRow([now_('yyyy-MM-dd HH:mm:ss'), level, event, String(details || '').slice(0, 5000)]);
-    if (sh.getLastRow() > 3000) sh.deleteRows(2, 500);
-  } catch (e) { console.error(e); }
+    const sh = sheet_(SHEET.LOG), last = sh.getLastRow();
+    if (last > 3000) sh.deleteRows(2, last - 1000);
+    sh.appendRow(line);
+  } catch (e) { console.error('log_: ' + e.message); }
 }

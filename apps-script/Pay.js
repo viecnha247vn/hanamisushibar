@@ -19,6 +19,8 @@ const PAY_KEEP_DAYS = 2;   // ofullbordade betalningar städas efter två dagar
 function payPending_(p) {
   const order = p && p.order;
   if (!order || !Array.isArray(order.items)) throw new ApiError(400, 'Ogiltig beställning.');
+  const ord = ordering_();
+  if (!ord.open) throw new ApiError(423, ord.message);   // köket har stängt onlinebeställning – ta inte betalt
   const priced = priceLines_(order);              // kastar 400/409 om något är fel – gästen får felet innan betalning
   if (!(priced.total >= 3)) throw new ApiError(400, 'Beloppet är för litet för onlinebetalning.');
   const ref = 'P' + Utilities.getUuid().replace(/-/g, '').slice(0, 12).toUpperCase();

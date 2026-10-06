@@ -156,6 +156,10 @@
 .allergi{display:block;text-align:left;margin-top:.45rem;padding:.5rem .7rem;border-left:3px solid #C8463A;border-radius:2px;background:#FBE9E7;color:#8A2E27;font-size:.8rem;line-height:1.5}
 .allergi b{font-weight:600}
 .field .allergi{font-size:.85rem;margin-top:.5rem}
+.closedbar{margin:0 var(--pad) 1rem;max-width:calc(var(--max) - 2 * var(--pad));border-radius:4px;padding:.85rem 1.1rem;border:1px solid rgba(182,73,62,.35);border-radius:2px;background:#FBE9E7;color:#7A2E27;font-size:.95rem;line-height:1.5}
+@media (min-width:72rem){.closedbar{margin-inline:auto}}
+.closedbar a{color:inherit;font-weight:600;white-space:nowrap}
+.ordering-closed [data-add]:disabled{opacity:.35}
 .pickup{display:grid;gap:.35rem;margin-bottom:1.05rem;padding:.85rem 1rem;border:1px solid rgba(184,146,63,.5);border-radius:2px;background:var(--sakura-3)}
 .pickup .lbl{font:500 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
 .pickup b{font:500 1.15rem/1.3 var(--serif);color:var(--ink)}
@@ -395,6 +399,7 @@ function syncHappy() {
   return on;
 }
 function add(id) {
+  if (!ORDERING.open) { toast("Onlinebeställning är tillfälligt stängd"); return; }
   if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${pad(SETTINGS.happyHour.from)}:00–${pad(SETTINGS.happyHour.to)}:00`); return; }
   if (MIX.items[id] && !mixHasDefault(id)) return openMix(id);   // måste välja (boba, fyllning, bitar …)
   addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}${MIX.items[id] ? " · ändra i varukorgen" : ""}`);
@@ -612,6 +617,12 @@ function renderDrawer() {
     (stage === "checkout" && tipValue() ? `<div class="total sub"><span>Dricks</span><b>${tipValue()} kr</b></div>
        <div class="total"><span>Att betala</span><b>${payTotal()} kr</b></div>` : "");
 
+  if (!ORDERING.open) {
+    body.innerHTML = lines + total + `<p class="err">Onlinebeställning är tillfälligt stängd. ${esc(ORDERING.message)}</p>`;
+    foot.innerHTML = `<a class="btn gold block" href="tel:${SETTINGS.phone.replace(/[^\d+]/g, "")}">Ring ${esc(SETTINGS.phone)}</a>`;
+    stage = "cart";
+    return;
+  }
   if (stage === "cart") {
     body.innerHTML = lines + total;
     foot.innerHTML = `<button class="btn gold block" type="button" data-checkout>Gå vidare</button>`;
@@ -675,7 +686,7 @@ async function submitOrder(e) {
   } catch (ex) {
     err.textContent = ex.message; err.hidden = false;
     btn.disabled = false; btn.textContent = submitLabel(f.pay.value);
-    if (/slut idag|finns inte längre/.test(ex.message)) syncAvailability();
+    if (/slut idag|finns inte längre|tillfälligt stängd/.test(ex.message)) syncAvailability();
   }
 }
 
@@ -714,8 +725,9 @@ async function syncAvailability() {
   if (!ENDPOINT) return;
   try {
     const r = await fetch("/api/availability"); if (!r.ok) return;
-    const { items, leadMinutes } = await r.json();
+    const { items, leadMinutes, ordering } = await r.json();
     if (leadMinutes) SETTINGS.pickupLeadMinutes = leadMinutes;   // köket kan höja tiden när det är fullt
+    setOrdering(ordering);
     $$("[data-add]").forEach(b => {
       const id = b.dataset.add, info = items[id], row = b.closest(".item");
       const ok = !!(info && info.available);
@@ -730,6 +742,22 @@ async function syncAvailability() {
     syncCart();
     if (!$("#drawer").hidden) renderDrawer();
   } catch {}
+}
+
+/* ---------- onlinebeställning avstängd av köket ---------- */
+let ORDERING = { open: true, message: "" };
+function setOrdering(o) {
+  const next = o && typeof o.open === "boolean" ? o : { open: true, message: "" };
+  const changed = next.open !== ORDERING.open;
+  ORDERING = next;
+  let bar = $("#closedBar");
+  if (!ORDERING.open) {
+    if (!bar) { bar = document.createElement("div"); bar.id = "closedBar"; bar.className = "closedbar"; bar.setAttribute("role", "status"); $(".tools").before(bar); }
+    bar.innerHTML = `<b>Onlinebeställning är tillfälligt stängd.</b> ${esc(ORDERING.message)} <a href="tel:${SETTINGS.phone.replace(/[^\d+]/g, "")}">Ring ${esc(SETTINGS.phone)}</a>`;
+  } else if (bar) bar.remove();
+  document.body.classList.toggle("ordering-closed", !ORDERING.open);
+  $$("[data-add],[data-mixopen]").forEach(b => { b.disabled = !ORDERING.open || b.closest(".item").classList.contains("soldout"); });
+  if (changed && !$("#drawer").hidden) renderDrawer();
 }
 
 /* ---------- händelser ---------- */

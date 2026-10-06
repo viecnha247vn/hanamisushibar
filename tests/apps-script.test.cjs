@@ -17,6 +17,17 @@ test("setup skapar flikar, triggers och nyckel", () => {
   assert.equal(E.props.CLEANUP_ENABLED, "off");
   assert.ok(E.props.API_SECRET.length > 30);
 });
+test("setupCheck rapporterar utan att ändra", () => {
+  const n = E.log.alerts.length; E.api.setupCheck();
+  assert.match(E.log.alerts[n], /Beställningar: \d+ rader/); assert.match(E.log.alerts[n], /Triggers: /);   // mocken har inga riktiga triggers
+});
+test("loggen kapas i ett anrop när den blir stor", () => {
+  const sh = E.sheets["Logg"]; for (let i = 0; i < 3100; i++) sh.appendRow(["2026-01-01 00:00:00", "INFO", "x", ""]);
+  E.ctx.log_("INFO", "test", "efter kapning");
+  assert.ok(sh.getLastRow() - 1 <= 1001, "max ~1000 rader kvar: " + (sh.getLastRow() - 1));
+  assert.equal(sh.data[sh.getLastRow() - 1][2], "test");
+  sh.deleteRows(2, sh.getLastRow() - 1);                   // städa efter testet
+});
 test("setup kan köras igen utan att dubblera menyn", () => {
   const n = E.sheets["Meny"].getLastRow(); E.api.setup(); assert.equal(E.sheets["Meny"].getLastRow(), n);
 });
@@ -146,8 +157,9 @@ test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelse
   const row = E.sheets["Beställningar"].data.find(x => x[1] === r.no);
   assert.ok(row.includes(want), "arket får den räknade tiden, inte klientens");
   // före öppning: räknas från öppningstiden
-  r = E.call("order", { ...base, openFrom: Math.min(nowMin + 60, 1300), closeAt: 1440 });
-  assert.equal(r.pickupTime, hhmm(Math.ceil((Math.min(nowMin + 60, 1300) + 45) / 5) * 5));
+  const open = Math.min(nowMin + 60, 1300);
+  r = E.call("order", { ...base, openFrom: open, closeAt: 1440 });
+  assert.equal(r.pickupTime, hhmm(Math.ceil((Math.max(nowMin, open) + 45) / 5) * 5));
   // köket hinner inte före stängning
   r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin + 20 });
   assert.equal(r.status, 400); assert.match(r.error, /hinner tyvärr inte/);
@@ -191,6 +203,24 @@ test("dricks läggs på summan och syns på kvittot", () => {
   assert.equal(Number(row[11]), 20);
   assert.equal(E.call("order", { kind: "table", table: "7", tip: 5000, items: [{ id: "maki-1", qty: 1 }] }).status, 400);
   assert.equal(E.call("order", { kind: "table", table: "7", tip: -5, items: [{ id: "maki-1", qty: 1 }] }).status, 400);
+});
+
+/* ---------- onlinebeställning på/av ---------- */
+test("köket kan stänga onlinebeställning: servern nekar, menyn syns, bokning fungerar", () => {
+  assert.equal(E.call("availability").ordering.open, true);
+  const r1 = E.call("adminOrdering", { open: false, message: "Stängt för Swish-byte, ring oss!" });
+  assert.equal(r1.open, false); assert.equal(r1.message, "Stängt för Swish-byte, ring oss!");
+  assert.equal(E.call("availability").ordering.open, false);
+  assert.equal(E.call("adminSettings").ordering.message, "Stängt för Swish-byte, ring oss!");
+  const o = E.call("order", { kind: "table", table: "1", items: [{ id: "maki-1", qty: 1 }] });
+  assert.equal(o.status, 423); assert.match(o.error, /Swish-byte/);
+  const b = E.call("booking", { date: today, time: "19:00", guests: 2, name: "Anna", phone: "+46701234567", whenText: "idag kl 19:00" });
+  assert.equal(b.ok, true, "bordsbokning påverkas inte");
+  assert.equal(E.call("health").ordering, "closed");
+  E.api.testOrder();                                        // intern testbeställning går igenom ändå
+  const r2 = E.call("adminOrdering", { open: true });
+  assert.equal(r2.open, true); assert.match(r2.message, /tillfälligt stängd/);   // standardtext tillbaka
+  assert.equal(E.call("order", { kind: "table", table: "1", items: [{ id: "maki-1", qty: 1 }] }).ok, true);
 });
 
 /* ---------- städning ---------- */
@@ -318,6 +348,19 @@ test("payFail markerar men skapar ingen order", () => {
   assert.equal(E.call("payFail", { ref: p2.ref, status: "expired" }).ok, true);
   assert.equal(E.call("payStatus", { ref: p2.ref, sessionId: "cs_test_2" }).status, "utgången");
   assert.equal(E.sheets["Beställningar"].getLastRow(), before);
+});
+test("stängd onlinebeställning stoppar ny betalning men inte en redan betald", () => {
+  // Betalning startad medan öppet …
+  const p3 = E.call("payPending", { order: { kind: "table", table: "6", items: [{ id: "poke-1", qty: 1 }] } });
+  E.call("paySession", { ref: p3.ref, sessionId: "cs_test_3" });
+  E.call("adminOrdering", { open: false });
+  // … ny betalning nekas med 423 (inga pengar tas)
+  const blocked = E.call("payPending", { order: { kind: "table", table: "6", items: [{ id: "poke-1", qty: 1 }] } });
+  assert.equal(blocked.status, 423);
+  // … men den som redan betalat får sin order (pengarna är tagna)
+  const ok = E.call("payConfirm", { ref: p3.ref, sessionId: "cs_test_3", paymentIntent: "pi_3", method: "card", amount: Math.round(p3.total * 100) });
+  assert.match(ok.no, /^H\d+$/);
+  E.call("adminOrdering", { open: true });
 });
 
 console.log("\n" + passed + " tester OK");

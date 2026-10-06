@@ -390,7 +390,18 @@ File `data/menu-andringar.js` chứa danh sách thay đổi menu: đổi tên, g
 - Kết quả ghi trong fliken Logg (dòng "Menyändringar") và trong build log trên Vercel.
 - Cần Apps Script bản mới (có `applyMenuPatches`). Nếu Apps Script cũ, build vẫn chạy bình thường, chỉ báo cảnh báo và bỏ qua bước này.
 
-### 7.6 Dọn dẹp tự động: Sheet luôn nhẹ (`apps-script/Cleanup.js`)
+### 7.6 Tắt / mở đặt món online (một chạm)
+
+Khi quán không muốn nhận đơn qua web (chờ Swish Handel, quá đông, máy in hỏng…):
+
+- **Màn hình bếp `/kok`**, ngay dưới thanh công cụ: ô **Onlinebeställning PÅ/AV** với nút **Stäng beställning / Öppna beställning**. Tắt có hộp xác nhận; mở lại không hỏi.
+- Hoặc trong Sheet: menu **Hanami → Onlinebeställning PÅ / AV**.
+- Trạng thái lưu trong Skriptegenskaper `ORDERING_OPEN` (`on`/`off`), lời nhắn tuỳ chọn trong `ORDERING_MESSAGE` (mặc định: "Onlinebeställning är tillfälligt stängd. Ring oss på 0431-472999 så hjälper vi dig.").
+- **Khi tắt:** trang menu vẫn xem được nhưng hiện băng thông báo đỏ nhạt với nút gọi điện, nút **+** bị khoá, giỏ hàng cũ vẫn còn nhưng không gửi được. Server (Apps Script) từ chối mọi đơn với mã 423, nên không lách được. Đơn tại bàn (QR) cũng bị chặn. **Đặt bàn vẫn hoạt động bình thường.**
+- Trang khách cập nhật trong tối đa 3 phút (cache 60 s + hỏi lại mỗi 2 phút); server chặn ngay lập tức.
+- `/api/health` hiện `ordering: open | closed`. Testbeställning từ menu Sheet vẫn chạy khi đang tắt (dùng để thử máy in).
+
+### 7.7 Dọn dẹp tự động: Sheet luôn nhẹ (`apps-script/Cleanup.js`)
 
 Mỗi đêm **04:30** Apps Script tự dọn tab Beställningar, Bokningar và Logg để web, màn hình bếp và máy in luôn nhanh:
 
@@ -413,7 +424,7 @@ Mỗi đêm **04:30** Apps Script tự dọn tab Beställningar, Bokningar và L
 
 Thay đổi quy tắc: sửa số ngày trong `CLEAN` đầu file `Cleanup.js`. `/api/health` hiện số dòng từng tab (`rows`) và trạng thái dọn dẹp (`cleanup: on | dry-run`).
 
-**`setup()` nhanh hơn:** định dạng toàn bảng (kiểu chữ, màu trạng thái…) chỉ làm khi tab mới tạo. Sheet lớn chạy `setup` vẫn vài giây. Cần làm lại định dạng thì chọn **Lägg om formatering (långsamt)**.
+**`setup()` nhanh:** chỉ làm phần bắt buộc (tiêu đề cột, trigger, khoá), vài giây, và ghi thời gian từng bước vào Logg/nhật ký thực thi. Định dạng (kiểu chữ, màu trạng thái, checkbox) chỉ làm cho tab mới tạo. Thêm món mới vào tab Meny thì chọn **Formatera menyfliken**; cần làm lại toàn bộ định dạng thì **Lägg om all formatering (långsamt)**, giới hạn ở số dòng đang có + 500 nên không còn quét cả bảng trống.
 
 ## 8. Khi có sự cố
 
@@ -428,13 +439,13 @@ Thay đổi quy tắc: sửa số ngày trong `CLEAN` đầu file `Cleanup.js`. 
 | Máy in không in | Mở `https://…/api/sdp/<SDP_KEY>` trong trình duyệt: `"ok": true` → web ổn, lỗi ở máy in (in TM-i Status Sheet xem Access Test); `Not found` → key sai/chưa Redeploy; trang 404 Vercel → thiếu `rewrites`. Máy in: đèn lỗi, giấy, `ID` = `SDP_ID`, giờ máy in (Time Server), router cho phép HTTPS. Vercel → Logs lọc `[sdp]` |
 | In 2 lần cùng một đơn | Mạng chập chờn làm máy in không gửi được SetResponse; đơn đã in vẫn đúng, chỉ cần bỏ bản thừa |
 | Chữ åäö sai | Đổi `lang` trong thẻ `<text lang=…>` ở `receipt-epos.js` (xem ePOS-Print XML manual) |
-| Web/köksvy chậm dần | `/api/health` → `rows.orders` lớn (vài nghìn)? Bật dọn dẹp (7.6) hoặc **Städa nu**. Mail "städningen misslyckades" → xem tab Logg, dòng ERROR Städning |
+| Web/köksvy chậm dần | `/api/health` → `rows.orders` lớn (vài nghìn)? Bật dọn dẹp (7.7) hoặc **Städa nu**. Mail "städningen misslyckades" → xem tab Logg, dòng ERROR Städning |
 | Dọn dẹp báo lỗi quyền | Lần đầu `SpreadsheetApp.create` cần cấp quyền: chạy **Provkör** từ menu rồi chấp nhận hộp thoại quyền |
 
 ## 9. Trước khi bàn giao
 
 - **Chủ sở hữu dữ liệu**: Sheet và Apps Script nên nằm trong tài khoản của quán (hoặc Workspace của bạn với quyền chia sẻ rõ ràng). Webbapp chạy dưới quyền người deploy.
-- **GDPR**: Sheet chứa tên và số điện thoại khách. Dọn dẹp tự động (7.6) ẩn danh dữ liệu cũ hơn 12 tháng; ghi điều này trong chính sách bảo mật trên web.
+- **GDPR**: Sheet chứa tên và số điện thoại khách. Dọn dẹp tự động (7.7) ẩn danh dữ liệu cũ hơn 12 tháng; ghi điều này trong chính sách bảo mật trên web.
 - **Vercel Hobby** chỉ cho mục đích phi thương mại; web nhà hàng nên chạy trên **Pro**.
 - Apps Script mất khoảng 1–3 giây mỗi yêu cầu; đủ cho một quán, và lock bảo đảm hai đơn cùng lúc không bị trùng số.
 - Không có thanh toán online; khách trả Swish/thẻ tại quán.
@@ -513,6 +524,8 @@ journalctl -u hanami-print -f                              # xem log
 ---
 
 ## Thanh toán online (Q89 Pay · Stripe Connect) — thêm ngày 2026-10-06
+
+> Gộp ngày 6/10 với công tắc **Onlinebeställning PÅ/AV** (7.6): khi quán tắt đơn, `/api/pay` cũng bị chặn (423) nên không thu tiền; một thanh toán đã hoàn tất trước khi tắt vẫn tạo đơn vì tiền đã vào. Bật `payOnline` chỉ khi Stripe đã cấu hình xong (xem bên dưới); trong lúc chờ Swish Handel/Stripe, dùng công tắc 7.6 để đóng đặt món.
 
 Khách trả **ngay trong giỏ hàng** bằng kort, Apple Pay hoặc Google Pay qua Stripe. **Swish không đi qua Stripe**: khách swish thẳng tới số của quán như trước (không mất 4 % + 2 kr), nhân viên bấm "Markera betald" trong köksvyn. Hanami là người bán
 (tên Hanami hiện trên sao kê và trong app Swish của khách); Queenie89 AB là nền tảng, thu 4 % + 2 kr mỗi đơn tự động.
