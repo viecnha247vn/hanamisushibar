@@ -1,6 +1,8 @@
 // Öppettider och regler. Används av både webbplatsen (vid bygget) och servern.
 export default {
   name: "Hanami Sushi Bar",
+  company: "Hanami Family Sushi AB",   // juridiskt företag – visas i köpvillkor och sidfot
+  orgnr: "559471-3587",
   phone: "0431-472999",
   address: "Östergatan 53, 262 31 Ängelholm",
   siteHost: "hanamisushibar.se",

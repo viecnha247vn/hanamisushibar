@@ -192,7 +192,8 @@ const happyItems = (menu.find(c => c.id === "happy")?.items || []).map(i => i.pr
 const vars = {
   STREET: street, STREET_UP: street.toUpperCase(), POSTAL: postal, CITY: city, CITY_UP: city.toUpperCase(),
   PHONE: settings.phone, TEL: tel, EMAIL: settings.email, MAPQ: mapq, YEAR: String(new Date().getFullYear()), MAXG: String(settings.maxBookingGuests),
-  COUNT: String(ids.length),
+  COUNT: String(ids.length), COMPANY: settings.company, ORGNR: settings.orgnr,
+  ALLERGENS: settings.allergens.join(", "),
   LUNCH_FROM: String(lunchItems.length ? Math.min(...lunchItems) : ""), LUNCH_TIME: `${two(settings.lunch.from)}–${two(settings.lunch.to)}`,
   HAPPY_FROM: String(happyItems.length ? Math.min(...happyItems) : ""), HAPPY_TIME: `${two(settings.happyHour.from)}–${two(settings.happyHour.to)}`,
   HOURS_ROWS: hourRows.map(([k, label, h]) => `<div data-day="${k}"><span>${label}</span><span class="num">${range(h)}</span></div>`).join(""),
@@ -243,8 +244,9 @@ writeFileSync("dist/meny.html", page("src/meny.html", {
 }));
 
 writeFileSync("dist/tack.html", page("src/tack.html", { path: "/tack" }));
+writeFileSync("dist/villkor.html", page("src/villkor.html", { path: "/villkor" }));
 
 const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes }));
 writeFileSync("dist/kok.html", kok);
 
-console.log(`Byggt från ${source}: ${menu.length} kategorier, ${ids.length} rätter → dist/ (index, meny, tack, kok)`);
+console.log(`Byggt från ${source}: ${menu.length} kategorier, ${ids.length} rätter → dist/ (index, meny, tack, villkor, kok)`);

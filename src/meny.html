@@ -139,6 +139,8 @@
 .drawer header h2{font-size:1.7rem}
 .drawer header .x{position:static}
 .drawer .body{flex:1;overflow-y:auto;padding:.6rem var(--pad) 2rem}
+.drawer .foot .terms-note{color:var(--ink-3);font-size:.8rem;text-align:center}
+.drawer .foot .terms-note a{color:inherit}
 .drawer .foot{padding:1rem var(--pad) calc(1rem + env(safe-area-inset-bottom));border-top:1px solid rgba(228,143,168,.3);background:#fff;display:grid;gap:.5rem}
 .line{display:grid;grid-template-columns:1fr auto;gap:.3rem 1rem;padding:1rem 0;border-bottom:1px solid var(--line-2);align-items:center}
 .line .nm{font-weight:400}
@@ -659,7 +661,8 @@ function renderDrawer() {
       <div id="orderErr" class="err" hidden></div>
     </form>`;
   foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${submitLabel(PAY_ONLINE ? "online" : "swish")}</button>
-    <button class="btn ghost block" type="button" data-back>Tillbaka</button>`;
+    <button class="btn ghost block" type="button" data-back>Tillbaka</button>
+    <small class="terms-note">Genom att beställa godkänner du våra <a href="/villkor" target="_blank" rel="noopener">köpvillkor</a>.</small>`;
   if (pi && pi.closed) $("#orderSubmit").disabled = true;
 }
 
