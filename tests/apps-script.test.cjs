@@ -162,10 +162,31 @@ test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelse
   assert.equal(r.pickupTime, hhmm(Math.ceil((Math.max(nowMin, open) + 45) / 5) * 5));
   // köket hinner inte före stängning
   r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin + 20 });
-  assert.equal(r.status, 400); assert.match(r.error, /hinner tyvärr inte/);
+  assert.equal(r.status, 400); assert.match(r.error, /hinner inte/);
   // stängt
   r = E.call("order", { ...base, openFrom: 0, closeAt: Math.max(1, nowMin) });
   assert.equal(r.status, 400);
+  E.call("adminLead", { minutes: 15 });
+});
+test("beställning när det är stängt: hämtas nästa öppna dag, 'slut idag' gäller inte", () => {
+  const d = new Date(Date.now() + 36e5 * 24), tomorrow = E.ctx.Utilities.formatDate(d, "Europe/Stockholm", "yyyy-MM-dd");
+  E.call("adminLead", { minutes: 30 });
+  E.call("adminSoldOut", { id: "maki-1", soldOut: true });
+  const base = { kind: "pickup", name: "Natt", phone: "+46701234567", asap: true, defaultLead: 30, openFrom: 660, closeAt: 1200,
+    pickupTime: "11:30", whenText: "x", items: [{ id: "maki-1", qty: 1 }] };
+  let r = E.call("order", { ...base, pickupDate: tomorrow });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.pickupTime, "11:30"); assert.equal(r.whenText, "imorgon kl 11:30");
+  const row = E.sheets["Beställningar"].data.find(x => x[1] === r.no), head = E.sheets["Beställningar"].data[0];
+  assert.equal(row[head.indexOf("Hämtas datum")], tomorrow);
+  assert.ok(E.call("printQueue").jobs.some(j => j.no === r.no && j.pickupDate === tomorrow), "skrivs ut med morgondagens datum");
+  // samma rätt för idag: fortfarande slut
+  r = E.call("order", { ...base, pickupDate: today, openFrom: 0, closeAt: 1440 });
+  assert.equal(r.status, 409);
+  // datum långt fram nekas
+  r = E.call("order", { ...base, pickupDate: "2099-01-01" });
+  assert.equal(r.status, 400);
+  E.call("adminSoldOut", { id: "maki-1", soldOut: false });
   E.call("adminLead", { minutes: 15 });
 });
 test("menyändringar från koden förs in i arket en gång", () => {

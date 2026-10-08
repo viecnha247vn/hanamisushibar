@@ -4,6 +4,18 @@
  * Här kontrolleras rätter och priser mot fliken Meny (enda sanningen).
  */
 
+/** "yyyy-MM-dd" + n dagar */
+function addDays_(date, n) {
+  const d = new Date(date + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+/** "idag kl 18:15", "imorgon kl 11:30", "lör 11/10 kl 12:30" – samma som lib/when.js */
+function whenText_(date, time) {
+  const today = nowParts_().date, d = new Date(date + 'T12:00:00Z');
+  const label = date === today ? 'idag' : date === addDays_(today, 1) ? 'imorgon'
+    : ['sön', 'mån', 'tis', 'ons', 'tors', 'fre', 'lör'][d.getUTCDay()] + ' ' + d.getUTCDate() + '/' + (d.getUTCMonth() + 1);
+  return label + ' kl ' + time;
+}
 /** Minuter efter midnatt → "HH:mm" */
 function hhmm_(m) { return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2); }
 
@@ -20,7 +32,8 @@ function priceLines_(p) {
     const it = menu[String(r.id)];
     const qty = Math.floor(Number(r.qty));
     if (!it || !it.visible) throw new ApiError(400, 'En rätt finns inte längre på menyn. Ladda om sidan.');
-    if (it.soldOut) throw new ApiError(409, it.name + ' är tyvärr slut idag. Ta bort den och försök igen.');
+    // "Slut idag" gäller bara idag – beställningar för en senare dag (dygnet runt) påverkas inte
+    if (it.soldOut && !(p.pickupDate && p.pickupDate > nowParts_().date)) throw new ApiError(409, it.name + ' är tyvärr slut idag. Ta bort den och försök igen.');
     if (!(it.price > 0)) throw new ApiError(400, it.name + ' kan inte beställas separat.');
     if (!(qty >= 1 && qty <= 50)) throw new ApiError(400, 'Ogiltigt antal.');
     const note = String(r.note == null ? '' : r.note).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
@@ -61,7 +74,8 @@ function createOrder_(p, pre) {
 
   // Hämtningstid. Köket väljer förberedelsetiden i köksvyn (PICKUP_LEAD) – därför räknas tiden här, där värdet bor.
   //   asap: tidigast möjligt = max(nu, öppning) + förberedelsetid, avrundat uppåt till 5 min, senast vid stängning.
-  //         Vercel skickar öppning/stängning för idag (openFrom/closeAt, minuter) och standardtiden (defaultLead).
+  //         Vercel skickar dagen (pickupDate), öppning/stängning den dagen (openFrom/closeAt, minuter) och standardtiden.
+  //         Beställning när det är stängt (dygnet runt): pickupDate är en senare dag → öppning + förberedelsetid.
   //   annars (äldre klient): gästens valda tid kontrolleras mot förberedelsetiden.
   if (!isTable) {
     const nowP = nowParts_();
@@ -69,12 +83,18 @@ function createOrder_(p, pre) {
       const lead = lead_() || Math.round(Number(p.defaultLead)) || 30;
       const open = Number(p.openFrom), close = Number(p.closeAt);
       if (!(open >= 0 && close > open && close <= 1440)) throw new ApiError(400, 'Ogiltiga öppettider.');
-      if (nowP.minutes >= close) throw new ApiError(400, 'Vi har stängt för idag. Välkommen åter!');
-      const m = Math.ceil((Math.max(nowP.minutes, open) + lead) / 5) * 5;
-      if (m > close) throw new ApiError(400, 'Köket hinner tyvärr inte före stängning kl ' + hhmm_(close) + ' idag.');
-      p.pickupDate = nowP.date;
-      p.pickupTime = hhmm_(m);
-      p.whenText = 'idag kl ' + p.pickupTime;
+      const later = /^\d{4}-\d{2}-\d{2}$/.test(String(p.pickupDate || '')) && p.pickupDate > nowP.date;
+      if (later) {
+        if (p.pickupDate > addDays_(nowP.date, 14)) throw new ApiError(400, 'Ogiltigt hämtningsdatum.');
+        p.pickupTime = hhmm_(Math.min(Math.ceil((open + lead) / 5) * 5, close));
+      } else {
+        if (nowP.minutes >= close) throw new ApiError(400, 'Vi har precis stängt. Ladda om sidan så beställer du till nästa öppna dag.');
+        const m = Math.ceil((Math.max(nowP.minutes, open) + lead) / 5) * 5;
+        if (m > close) throw new ApiError(400, 'Köket hinner inte före stängning kl ' + hhmm_(close) + '. Ladda om sidan så beställer du till nästa öppna dag.');
+        p.pickupDate = nowP.date;
+        p.pickupTime = hhmm_(m);
+      }
+      p.whenText = whenText_(p.pickupDate, p.pickupTime);
     } else {
       const lead = lead_(), m = toMin_(p.pickupTime);
       if (lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)

@@ -358,8 +358,10 @@ Khách **không tự chọn giờ lấy** nữa. Giờ lấy = **bây giờ (ho�
 - Giá trị lưu trong Skriptegenskaper `PICKUP_LEAD` của Apps Script. Apps Script tính giờ lấy cuối cùng khi nhận đơn, nên đơn luôn dùng giá trị mới nhất. Trang khách hiện giờ dự kiến; giá trị trên trang cập nhật chậm nhất khoảng 3 phút.
 - Chưa bấm gì thì dùng mặc định `pickupLeadMinutes` trong `data/settings.js` (30 phút).
 - Khách muốn lấy muộn hơn ghi vào ô **"Vill du hämta senare?"**. Nội dung vào phần ghi chú, in dưới **KOMMENTAR** dạng `Önskar hämta: kl 18.30`.
-- Ngày đóng cửa, sau giờ đóng cửa, hoặc khi giờ lấy vượt quá giờ đóng cửa: trang khách báo và không cho gửi đơn.
-- Chỉ nhận đơn lấy trong ngày. `pickupDaysAhead` không còn dùng cho đơn mang về.
+- **Đặt đơn 24/7:** ngày đóng cửa, sau giờ đóng cửa, hoặc khi bếp không kịp trước giờ đóng → đơn tự chuyển sang **ngày mở cửa kế tiếp**, giờ lấy = giờ mở cửa + thời gian chủ quán chọn (VD 11:00 + 30 phút = 11:30). Bỏ qua Chủ nhật và các ngày trong `closedDates`. Quy tắc nằm ở `lib/pickup.js` (Vercel), `pickupInfo()` trong `src/meny.html` (trang khách) và `createOrder_` trong `apps-script/Orders.js`.
+- Đơn đặt ban đêm: máy in in ngay nếu đang bật (đầu đơn ghi `IMORGON` / `KL 11:30`), nếu tắt thì in khi bật máy sáng hôm sau (lúc đó ghi `IDAG`). Trong `/kok` đơn nằm ở **ngày lấy hàng**.
+- "Slut idag" chỉ áp dụng cho đơn lấy trong ngày; đơn cho ngày mai vẫn đặt được món đó.
+- Món happy hour chỉ đặt được trong giờ happy hour và lấy trong ngày; món lunch chỉ khi ngày lấy là thứ 2–6.
 
 ### 7.3 Betald: đánh dấu đơn đã trả tiền
 

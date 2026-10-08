@@ -570,13 +570,18 @@ function syncCart() {
 /* Hämtning "så snart som möjligt": max(nu, öppning) + förberedelsetid från köksvyn, avrundat till 5 min.
    Samma regel som på servern (Apps Script räknar den slutliga tiden). */
 function pickupInfo() {
+  // Beställning dygnet runt: öppet och köket hinner → idag. Annars nästa öppna dag vid öppning + förberedelsetid.
   const now = nowSE(), hrs = hoursOn(now), nowMin = now.getHours() * 60 + now.getMinutes();
-  const lead = SETTINGS.pickupLeadMinutes;
-  const nextOpen = () => { const n = nextOpening(now); return n ? `${n.i === 1 ? "imorgon" : dayNames[n.d.getDay()]} kl ${pad(n.hrs[0])}.00` : ""; };
-  if (!hrs || nowMin >= hrs[1] * 60) return { closed: `Vi har stängt för idag. Du kan beställa igen ${nextOpen()}.` };
-  const base = Math.max(nowMin, hrs[0] * 60), m = Math.ceil((base + lead) / 5) * 5;
-  if (m > hrs[1] * 60) return { closed: `Köket hinner tyvärr inte före stängning kl ${pad(hrs[1])}.00. Ring ${SETTINGS.phone}.` };
-  return { time: `${pad(Math.floor(m / 60))}:${pad(m % 60)}`, lead, early: nowMin < hrs[0] * 60, opens: `${pad(hrs[0])}.00` };
+  const lead = SETTINGS.pickupLeadMinutes, hm = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+  if (hrs && nowMin < hrs[1] * 60) {
+    const m = Math.ceil((Math.max(nowMin, hrs[0] * 60) + lead) / 5) * 5;
+    if (m <= hrs[1] * 60) return { time: hm(m), day: "idag", lead, early: nowMin < hrs[0] * 60, opens: `${pad(hrs[0])}.00` };
+  }
+  const n = nextOpening(now);
+  if (!n) return { closed: `Vi tar inte emot beställningar just nu. Ring ${SETTINGS.phone}.` };
+  const m = Math.min(Math.ceil((n.hrs[0] * 60 + lead) / 5) * 5, n.hrs[1] * 60);
+  const day = n.i === 1 ? "imorgon" : `${dayNames[n.d.getDay()]} ${n.d.getDate()}/${n.d.getMonth() + 1}`;
+  return { time: hm(m), day, later: true, lead, opens: `${pad(n.hrs[0])}.00` };
 }
 
 function renderDrawer() {
@@ -639,8 +644,9 @@ function renderDrawer() {
     <form id="orderForm" novalidate>
       ${TABLE ? "" : pi.closed ? `<p class="err">${esc(pi.closed)}</p>` : `<div class="pickup">
         <span class="lbl">Hämtning</span>
-        <b>Klar att hämta idag ca kl ${pi.time}</b>
-        <small>${pi.early ? `Vi öppnar kl ${pi.opens} och börjar laga maten då.` : `Köket behöver ca ${pi.lead} minuter just nu.`}</small></div>
+        <b>Klar att hämta ${pi.day} ca kl ${pi.time}</b>
+        <small>${pi.later ? `Vi har stängt just nu. Köket lagar din beställning när vi öppnar ${pi.day} kl ${pi.opens}.`
+          : pi.early ? `Vi öppnar kl ${pi.opens} och börjar laga maten då.` : `Köket behöver ca ${pi.lead} minuter just nu.`}</small></div>
       <div class="field"><label for="oWish">Vill du hämta senare? (valfritt)</label><input id="oWish" name="wish" maxlength="40" placeholder="t.ex. kl 18.30" autocomplete="off"><small>Skriv önskad tid så lagar köket maten till dess.</small></div>`}
       <div class="field"><label for="oName">Namn${TABLE ? " (valfritt)" : ""}</label><input id="oName" name="name" autocomplete="name"></div>
       <div class="field"><label for="oPhone">Mobilnummer${TABLE ? " (valfritt)" : ""}</label><input id="oPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel">${TABLE ? "" : "<small>Vi sms:ar när maten är klar.</small>"}</div>
@@ -735,9 +741,11 @@ async function syncAvailability() {
     const { items, leadMinutes, ordering } = await r.json();
     if (leadMinutes) SETTINGS.pickupLeadMinutes = leadMinutes;   // köket kan höja tiden när det är fullt
     setOrdering(ordering);
+    // "Slut idag" gäller inte beställningar som hämtas en senare dag (beställning när det är stängt)
+    const later = !TABLE && !!(pickupInfo() || {}).later;
     $$("[data-add]").forEach(b => {
       const id = b.dataset.add, info = items[id], row = b.closest(".item");
-      const ok = !!(info && info.available);
+      const ok = !!(info && (later && "visible" in info ? info.visible : info.available));
       row.classList.toggle("soldout", !ok);
       const mo = row.querySelector("[data-mixopen]"); if (mo) mo.disabled = !ok;
       let tag = row.querySelector(".out");

@@ -98,7 +98,7 @@ function setOrdering_(open, message) {
 /** Aktuella priser och slut-status – hämtas av webbsidan vid varje besök (cachas 60 s hos Vercel). */
 function availability_() {
   const out = {};
-  readMenuRows_().forEach(i => { out[i.id] = { price: i.price, available: i.visible && !i.soldOut }; });
+  readMenuRows_().forEach(i => { out[i.id] = { price: i.price, available: i.visible && !i.soldOut, visible: i.visible }; });
   return out;
 }
 
