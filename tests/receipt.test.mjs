@@ -18,7 +18,7 @@ const cases = [
 for (const [inp, want] of cases) assert.equal(phonePretty(inp), want, `phonePretty(${JSON.stringify(inp)})`);
 console.log(`  ✓ phonePretty: ${cases.length} fall`);
 
-for (const W of [35, 48]) {
+for (const W of [32, 35, 48]) {
 settings.receiptWidth = W;
 const text = xml => [...xml.matchAll(/>([^<]*)&#10;</g)].map(m => m[1].replace(/&amp;/g, "&").replace(/&gt;/g, ">"));
 const base = { no: "H1011", kind: "pickup", received: "2026-10-01 09:45", pickupDate: "2026-10-01", pickupTime: "11:00",
@@ -53,7 +53,7 @@ console.log("  ✓ huvud vänster/höger, ej betald i fetstil, betald stort");
 
 
 // Kort betalsätt får plats i dubbel bredd även på 58 mm
-if (W === 35) assert.match(eposReceipt({ ...base, paid: true, payment: "Swish" }), /dw="true" dh="true" em="true">BETALD · SWISH/);
+if (W <= 35) assert.match(eposReceipt({ ...base, paid: true, payment: "Swish" }), /dw="true" dh="true" em="true">BETALD · SWISH/);
 // Lång rad och långa önskemål bryts inom bredden
 lines = text(eposReceipt({ ...base, message: "Önskar hämta: kl 18.30\nInga sesamfrön, tack! Allergi mot jordnötter i familjen.",
   items: [{ qty: 12, name: "Sushi mix 50 bitar med extra lax och avokado", price: 1290, note: "Byt ut alla räkor mot lax, ingen wasabi" }] }));
