@@ -26,7 +26,8 @@ export default {
   tableCount: 12,          // antal bord (för QR-koder i köksvyn)
   // Allergener som kan förekomma i köket – visas vid önskemål och i meddelandet till köket
   allergens: ["fisk", "skaldjur (räka, krabba)", "blötdjur", "ägg", "mjölk", "soja", "vete/gluten", "sesam", "senap", "sulfit"],
-  // Tecken per rad på kvittoskrivaren, font A. Epson TM-m30III med 80 mm papper: 48 (58 mm papper: 35).
-  // TM-T88VII: 42. Kan tillfälligt styras med miljövariabeln RECEIPT_WIDTH på Vercel utan kodändring.
-  receiptWidth: Number(process.env.RECEIPT_WIDTH) || 48
+  // Tecken per rad på kvittoskrivaren, font A. Epson TM-m30III med 58 mm papper: 35 (80 mm papper: 48).
+  // Skrivaren måste också vara inställd på 58 mm (pappersbreddsinställningen + distansen i pappersfacket).
+  // Kan tillfälligt styras med miljövariabeln RECEIPT_WIDTH på Vercel utan kodändring.
+  receiptWidth: Number(process.env.RECEIPT_WIDTH) || 35
 };

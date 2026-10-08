@@ -285,7 +285,7 @@ Không in? Xem mục 8. Thường gặp nhất: 404 (sai key hoặc chưa Redepl
 
 ### 5.3 Kvitto
 
-Định dạng **ePOS-Print XML**, 48 ký tự mỗi dòng cho TM-m30III giấy 80 mm (`data/settings.js` → `receiptWidth`, có thể ghi đè tạm bằng biến môi trường `RECEIPT_WIDTH`), bố cục trong `lib/receipt-epos.js`. Ví dụ dưới minh hoạ bố cục (vẽ ở 42 cột):
+Định dạng **ePOS-Print XML**, 35 ký tự mỗi dòng cho TM-m30III giấy **58 mm** (giấy 80 mm: 48) (`data/settings.js` → `receiptWidth`, có thể ghi đè tạm bằng biến môi trường `RECEIPT_WIDTH`), bố cục trong `lib/receipt-epos.js`. Ví dụ dưới minh hoạ bố cục (vẽ ở 42 cột):
 
 ```
               HANAMI SUSHI BAR             ← đậm, cao gấp đôi

@@ -308,7 +308,7 @@ let pend;
 test("payPending prissätter mot arket och skapar ingen order", () => {
   const before = E.sheets["Beställningar"].getLastRow();
   pend = E.call("payPending", { order: { kind: "pickup", name: "Bo", phone: "+46701112233", email: "bo@exempel.se", asap: true,
-    openFrom: 11 * 60, closeAt: 20 * 60, defaultLead: 30, tip: 10, payment: "online", items: [{ id: "maki-1", qty: 2 }] } });
+    openFrom: 0, closeAt: 24 * 60, defaultLead: 30, tip: 10, payment: "online", items: [{ id: "maki-1", qty: 2 }] } });
   assert.equal(pend.ok, true); assert.match(pend.ref, /^P[A-Z0-9]{12}$/);
   assert.equal(pend.total, 2 * 145 + 10); assert.equal(pend.lines[0].price, 145);
   assert.equal(E.sheets["Beställningar"].getLastRow(), before, "en order skapades före betalning");
