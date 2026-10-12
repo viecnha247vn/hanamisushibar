@@ -104,6 +104,19 @@ assert.equal(sub.status, 400); assert.match(sub.json.error, /api\/pay/);
 ok("/api/submit avvisar payment=online");
 
 // --- webhook ---
+// Som i produktion: Vercel-request är en ström, req.body är en getter som tolkar JSON, Stripe skickar INDENTERAD JSON
+{
+  const { Readable } = await import("node:stream");
+  const { rawBody } = await import("../api/stripe-webhook.js");
+  const pretty = JSON.stringify({ id: "evt_p", type: "checkout.session.expired", data: { object: { id: "cs_p", metadata: { ref: "PX" } } } }, null, 2);
+  const req = Readable.from([Buffer.from(pretty)]);
+  let touched = false;
+  Object.defineProperty(req, "body", { get() { touched = true; return JSON.parse(pretty); } });
+  const raw = await rawBody(req);
+  assert.equal(raw, pretty); assert.equal(touched, false);
+  assert.equal(verifyWebhook(raw, signWebhook(pretty, "whsec_test")).id, "evt_p");
+  ok("webhook läser rå ström före req.body (indenterad JSON, Vercel-getter rörs inte)");
+}
 const ref = open ? payRes.json.ref : (() => { const r = "PTEST0000000X"; pending.set(r, { status: "väntar", total: 210, sid: "cs_test_abc", order: { kind: "table", table: "4" } }); return r; })();
 async function hook(event, { secret = "whsec_test", method = "POST" } = {}) {
   const raw = JSON.stringify(event); const res = fakeRes();

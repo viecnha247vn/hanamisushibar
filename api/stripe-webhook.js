@@ -65,18 +65,24 @@ export async function handleEvent(event) {
   }
 }
 
-/** Läser hela kroppen som sträng, oavsett om Vercel redan tolkat den eller inte. */
+/**
+ * Läser hela kroppen som sträng, EXAKT som Stripe skickade den (signaturen räknas på råa byte).
+ * Strömmen läses FÖRST: hos Vercel (@vercel/node) är req.body en getter som tolkar JSON när den rörs – och
+ * `config.api.bodyParser` gäller bara Next.js. Stripe skickar indenterad JSON, så JSON.stringify(req.body)
+ * ger andra byte och signaturen underkänns (400). req.body används bara om strömmen redan är förbrukad.
+ */
 export function rawBody(req) {
-  if (typeof req.body === "string") return Promise.resolve(req.body);
-  if (Buffer.isBuffer(req.body)) return Promise.resolve(req.body.toString("utf8"));
-  if (req.body && typeof req.body === "object") {
-    // Body-parsern var inte avstängd – sista utväg (fungerar bara om Stripe skickat kompakt JSON, vilket de gör)
-    return Promise.resolve(JSON.stringify(req.body));
+  if (typeof req.on === "function" && !req.readableEnded) {
+    return new Promise((resolve, reject) => {
+      const chunks = [];
+      req.on("data", c => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+      req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      req.on("error", reject);
+    });
   }
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on("data", c => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
+  const b = req.body;
+  if (typeof b === "string") return Promise.resolve(b);
+  if (Buffer.isBuffer(b)) return Promise.resolve(b.toString("utf8"));
+  if (b && typeof b === "object") return Promise.resolve(JSON.stringify(b)); // sista utväg, matchar bara kompakt JSON
+  return Promise.resolve("");
 }
