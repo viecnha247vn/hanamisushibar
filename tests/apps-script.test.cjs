@@ -384,4 +384,35 @@ test("stängd onlinebeställning stoppar ny betalning men inte en redan betald",
   E.call("adminOrdering", { open: true });
 });
 
+/* ---------------- återbetalning (Refund.js) ---------------- */
+test("återbetalning: refundInfo, delbelopp, hela, idempotent, via webhook (payment intent), mejl till gästen", () => {
+  const sh = E.sheets["Beställningar"], head = sh.data[0];
+  const row = sh.data.find(x => x[head.indexOf("Stripe")] === "pi_1"), no = row[head.indexOf("Ordernr")];
+  const info = E.call("refundInfo", { no });
+  assert.equal(info.stripe, "pi_1"); assert.equal(info.total, 300); assert.equal(info.refunded, 0);
+  assert.equal(E.call("refundInfo", { no: "H0" }).status, 404);
+
+  const mails = E.log.mails.length;
+  const r1 = E.call("refunded", { no, refundedOre: 5000, capturedOre: 30000, source: "köksvyn" });
+  assert.equal(r1.refunded, 50); assert.equal(r1.full, false);
+  assert.match(String(row[head.indexOf("Återbetald")]), /^50 kr \d{4}-\d\d-\d\d \d\d:\d\d$/);
+  assert.equal(E.log.mails.length, mails + 1); assert.equal(E.log.mails.at(-1).to, "bo@exempel.se");
+  assert.ok(E.log.mails.at(-1).htmlBody.includes("50 kr"), "mejlet saknar beloppet");
+
+  // samma totalsumma igen (t.ex. webhooken efter köksvyn) → ingen ny anteckning, inget nytt mejl
+  assert.equal(E.call("refunded", { stripe: "pi_1", refundedOre: 5000, capturedOre: 30000 }).already, true);
+  assert.equal(E.log.mails.length, mails + 1);
+
+  // resten via Stripe Dashboard → webhook hittar ordern på payment intent
+  const r2 = E.call("refunded", { stripe: "pi_1", refundedOre: 30000, capturedOre: 30000, source: "Stripe" });
+  assert.equal(r2.no, no); assert.equal(r2.refunded, 300); assert.equal(r2.full, true);
+  assert.match(String(row[head.indexOf("Återbetald")]), /^300 kr .*\(hela\)$/);
+  assert.ok(E.log.mails.at(-1).htmlBody.includes("250 kr"), "andra mejlet ska gälla mellanskillnaden");
+
+  const listed = E.call("adminOrders", {}).orders.find(o => o.no === no);
+  assert.equal(listed.online, true); assert.equal(listed.refunded, 300);
+  assert.equal(E.call("refunded", { stripe: "pi_okand", refundedOre: 100 }).status, 404);
+  assert.equal(E.call("refunded", { no, refundedOre: 0 }).status, 400);
+});
+
 console.log("\n" + passed + " tester OK");

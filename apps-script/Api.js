@@ -50,6 +50,9 @@ const ACTIONS = {
   payConfirm:    p => withLock_(() => payConfirm_(p)),
   payFail:       p => payFail_(p),
   payStatus:     p => payStatus_(p),
+  // återbetalning (Refund.js) – pengarna flyttas av Vercel/Stripe, här antecknas resultatet
+  refundInfo:    p => orderForRefund_(p.no),
+  refunded:      p => withLock_(() => setRefunded_(p)),
   // skrivarbryggan (print-bridge/)
   printQueue:    () => ({ jobs: printQueue_() }),
   printJob:      p => ({ job: printJob_(p.no) }),

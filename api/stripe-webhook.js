@@ -3,7 +3,8 @@
 //
 //   Stripe Dashboard → Utvecklare → Webhooks → https://hanamisushibar.se/api/stripe/webhook
 //   Händelser: checkout.session.completed, checkout.session.async_payment_succeeded,
-//              checkout.session.async_payment_failed, checkout.session.expired
+//              checkout.session.async_payment_failed, checkout.session.expired,
+//              charge.refunded (återbetalning i köksvyn eller direkt i Stripe Dashboard → kolumnen Återbetald)
 //   vercel.json skriver om /api/stripe/webhook → /api/stripe-webhook (före den generella /api/:route*-regeln).
 //
 // Svarar alltid snabbt. Arbetet (skapa ordern, skriva ut, sms, mejl) görs av Apps Script via payConfirm.
@@ -59,6 +60,16 @@ export async function handleEvent(event) {
       if (!ref) return { ignored: "no ref" };
       await gas("payFail", { ref, status: event.type.endsWith("expired") ? "expired" : "failed" }, { timeout: 12000 });
       return { ref, failed: true };
+    }
+    case "charge.refunded": {
+      if (!s.payment_intent || !(s.amount_refunded > 0)) return { ignored: "no refund" };
+      try {
+        const r = await gas("refunded", { stripe: s.payment_intent, refundedOre: s.amount_refunded, capturedOre: s.amount_captured, source: "Stripe" }, { timeout: 15000 });
+        return { refunded: r.no, already: !!r.already };
+      } catch (e) {
+        if (e.status === 404) return { ignored: "no order for " + s.payment_intent };   // t.ex. betalning utan order – inget att anteckna
+        throw e;
+      }
     }
     default:
       return { ignored: event.type };

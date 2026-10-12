@@ -533,7 +533,7 @@ journalctl -u hanami-print -f                              # xem log
 |---|---|
 | Tài khoản nền tảng | **Queenie89 AB** `acct_1UJeoU2FsxVNpiEw` (live) |
 | Tài khoản Hanami | **Hanami Family Sushi AB** `acct_1UPgjnCHMrAi25Sw` — Express, Aktiebolag, Sverige, MCC 5812. Nhận thẻ + chuyển khoản: active. Rút về Nordea (IBAN …2797), **mỗi ngày, trễ 7 ngày** (tài khoản mới, Stripe tự rút ngắn sau này) |
-| Webhook | `we_1UPgSe2FsxVNpiEwtZbKENLO` → `https://www.hanamisushibar.se/api/stripe/webhook`, API-version `2025-08-27.basil`, 4 händelser |
+| Webhook | `we_1UPgSe2FsxVNpiEwtZbKENLO` → `https://www.hanamisushibar.se/api/stripe/webhook`, API-version `2025-08-27.basil`, 5 händelser (gồm `charge.refunded`) |
 | Khoá API | Hemlig nyckel `hanamisushibar-vercel`, **Fullständig åtkomst** (khoá "förutom känsliga åtgärder" chặn överföringar/Connect → destination charge lỗi) |
 | Vercel (Production) | `STRIPE_SECRET_KEY` (Secret), `STRIPE_WEBHOOK_SECRET` (Secret), `STRIPE_ACCOUNT`, `STRIPE_VAT_PCT=6`, `SITE_URL=https://www.hanamisushibar.se` |
 | Moms | **6 %** inkluderad (thuế thực phẩm tạm giảm). Code tự tạo thuế suất "Moms 6 %" trong Stripe; không tính moms trên dricks |
@@ -569,6 +569,8 @@ Bếp **không bao giờ** thấy đơn online chưa trả. Giá khoá tại lú
 | `apps-script/Orders.js` | tách `priceLines_()` khỏi `createOrder_()`; `createOrder_(p, pre)` nhận dòng đã tính giá; nhãn Betalning "Online kort/Swish"; cột **Stripe** (payment intent) |
 | `apps-script/Config.js`, `Setup.js`, `Api.js` | tab mới **Betalningar**, cột **Stripe** trong Beställningar, 5 action mới |
 | `apps-script/Notify.js` | mejl khách ghi "Betald online" |
+| `apps-script/Refund.js` | (2026-10-12) ghi cột **Återbetald**, mejl hoàn tiền cho khách; action `refundInfo`, `refunded` |
+| `lib/routes/admin.js`, `src/kok.html` | (2026-10-12) nút **↩ Återbetala** trong köksvyn → `POST /api/admin {kind:"refund"}` → Stripe `/v1/refunds` |
 | `lib/stripe.js` | mới: gọi Stripe REST bằng fetch (không thêm npm), ký/kiểm chữ ký webhook, tính phí, tự tạo/tìm thuế suất (`STRIPE_VAT_PCT`) |
 | `lib/routes/pay.js` | mới: POST tạo Checkout, GET trạng thái |
 | `lib/routes/submit.js` | tách `buildOrder()` dùng chung; từ chối `payment: online` (phải qua /api/pay) |
@@ -602,22 +604,35 @@ Bếp **không bao giờ** thấy đơn online chưa trả. Giá khoá tại lú
 5. Đặt `payOnline: true` trong `data/settings.js` → commit → deploy. Lựa chọn "Betala nu" xuất hiện trong giỏ hàng.
 6. **Thử thật một lần**: tự đặt món rẻ nhất, trả bằng thẻ của chị (báo bếp trước – đơn sẽ in ra). Kiểm tra: in ra bếp với dòng **BETALD · ONLINE KORT**, tab Beställningar có cột Stripe, tab Betalningar ghi "betald", Dashboard Stripe hiện charge với *Överföring* sang Hanami và *Plattformsavgift* = 4 % + 2 kr. Rồi hoàn tiền theo mục **Hoàn tiền** bên dưới (đơn thử: tick cả hai ô).
 
-Webhook händelser: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`.
+Webhook händelser: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded` (thêm 2026-10-12 cho hoàn tiền).
 
 ### Test mode trước khi live
 Dùng `sk_test_…`, tạo Express account test, thẻ `4242 4242 4242 4242` (3DS: `4000 0025 0000 3155`, từ chối: `4000 0000 0000 9995`). `stripe listen --forward-to localhost:3000/api/stripe/webhook` với `vercel dev` để nhận webhook ở máy.
 
-### Hoàn tiền
-Luôn làm trong **Stripe Dashboard** (tài khoản Queenie89 AB → Transaktioner → chọn đơn → **Återbetalning**):
+### Hoàn tiền — chủ quán tự làm trong köksvyn (từ 2026-10-12)
 
-| Ô | Chọn |
+Chủ quán **không cần vào Stripe**. Trong köksvyn (`/kok`, mật khẩu `ADMIN_KEY`), mỗi đơn trả online (có mã `pi_…` trong cột Stripe) có nút **↩ Återbetala**, kể cả đơn đã Klar/Avbokad:
+
+1. Bấm **↩ Återbetala** → nhập số tiền (mặc định = toàn bộ phần còn lại; hoàn một phần thì gõ số nhỏ hơn, ví dụ món bị thiếu).
+2. Xác nhận → xong. Thẻ trên đơn hiện **"Återbetald X kr"**, cột **Återbetald** trong Beställningar ghi số tiền + giờ, tab Logg ghi lại, khách nhận **mejl** (nếu có e-post).
+3. Đơn chưa làm mà khách huỷ: hoàn tiền rồi bấm **Avboka** như thường.
+
+Hệ thống tự lo:
+
+| | |
 |---|---|
-| Belopp | toàn bộ, hoặc một phần |
-| **Upphäv tillhörande överföring** | **LUÔN tick** – kéo tiền ngược từ Hanami. Không tick = Queenie89 AB tự trả tiền hoàn, Hanami vẫn giữ tiền |
-| Återbetala ansökningsavgiften | bỏ trống = giữ hoa hồng (Villkor för företagskunder §4); tick = hoàn cả 4 % + 2 kr (đơn thử, lỗi của quán…) |
-| Orsak / Anmärkning | *Begärd av kund*; ghi số đơn (H…) để tra lại |
+| Kéo tiền lại | luôn từ **tài khoản Stripe của Hanami** (`reverse_transfer`), Queenie89 AB không phải trả thay |
+| Phí nền tảng 4 % + 2 kr | **giữ lại** (Villkor för företagskunder §4). Muốn hoàn cả phí: đặt `STRIPE_REFUND_FEE=1` trên Vercel |
+| Chặn sai | không hoàn quá số tiền còn lại (Stripe là facit), không dưới 1 kr, không cho đơn Swish/kontant, bấm hai lần không hoàn hai lần (idempotency) |
+| Hoàn trong Stripe Dashboard | vẫn được (tick **Upphäv tillhörande överföring**!) — webhook `charge.refunded` tự ghi vào cột Återbetald và gửi mejl |
 
-Phí Stripe của giao dịch gốc không được hoàn (Queenie89 AB chịu). Thẻ hoàn về tài khoản khách sau 5–10 ngày ngân hàng. Đơn trong Sheet/köksvyn không tự huỷ – huỷ tay nếu cần.
+**Swish / kontant**: như trước, quán trả lại trực tiếp cho khách (Swish app), không qua hệ thống.
+
+Thẻ hoàn về tài khoản khách sau 5–10 ngày ngân hàng. Phí Stripe của giao dịch gốc không được hoàn. Nếu số dư Stripe của Hanami không đủ (tiền đã rút về ngân hàng), Stripe trừ vào lần chuyển tiếp theo; lâu dài âm thì Queenie89 AB chịu trước (đã cam kết khi bật Connect) → đòi lại Hanami theo hợp đồng.
+
+**Cài đặt một lần** (đã làm 2026-10-12 trừ bước 1): (1) `npm run gas:deploy` để đưa `apps-script/Refund.js` lên — chưa deploy thì nút báo lỗi "Okänd action" và **không có tiền nào bị hoàn**; cột Återbetald tự tạo, không cần chạy setup. (2) Webhook thêm sự kiện `charge.refunded`.
+
+Hoàn tay trong Dashboard (dự phòng): Queenie89 AB → Transaktioner → chọn đơn → **Återbetalning** → tick **Upphäv tillhörande överföring** (luôn luôn); *Återbetala ansökningsavgiften* chỉ khi muốn trả cả phí; Orsak *Begärd av kund*; ghi số đơn ở Anmärkning.
 
 ### Nếu có lỗi
 | Triệu chứng | Xem |
@@ -625,6 +640,8 @@ Phí Stripe của giao dịch gốc không được hoàn (Queenie89 AB chịu).
 | Nút "Betala nu" không hiện | `payOnline` trong settings.js; build lại |
 | Bấm Betala → "Onlinebetalning är inte aktiverad" | thiếu `STRIPE_SECRET_KEY` hoặc `STRIPE_ACCOUNT` trên Vercel |
 | Trả xong nhưng /tack báo "Något gick fel / Vi har inte fått bekräftelse" | Stripe → Utvecklare → Webhooks → endpoint → **Händelseleveranser** → bấm lần gửi lỗi: **400 "Bad signature"** = `STRIPE_WEBHOOK_SECRET` không khớp endpoint (hoặc code đọc sai raw body – đã sửa 2026-10-12); **500 "handler error"** = lỗi Apps Script, xem tab Logg; **404/308** = URL thiếu `www`. Sửa xong bấm **Skicka igen** → 200 OK → đơn được tạo, in bếp. Stripe cũng tự gửi lại trong 3 ngày |
+| Bấm ↩ Återbetala → "Okänd action: refundInfo" | Apps Script chưa có `Refund.js` → `npm run gas:deploy`. Không có tiền nào bị hoàn |
+| Bấm ↩ Återbetala → "Stripe nekade återbetalningen: …" | đọc lý do; thường là số dư Hanami không đủ hoặc thẻ khách đã đóng → hoàn tay trong Dashboard hoặc chuyển Swish cho khách |
 | Tab Betalningar có dòng "väntar" mãi | khách mở Stripe nhưng không trả; sau 30 phút thành "utgången", tự xoá sau 2 ngày. Không cần làm gì |
 | Dashboard Hanami hiện "Betalningar pausade" / "Åtgärder krävs" ngay sau onboarding | trang cũ chưa tải lại (⌘R). Đừng bấm "Be om information" nếu API/Översikt đã báo active |
 | Onboarding báo "Vissa personuppgifter saknas – Registrerat namn" | điền họ tên đầy đủ của người đại diện như trong folkbokföring/Bolagsverket |

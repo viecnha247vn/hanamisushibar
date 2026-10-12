@@ -29,6 +29,8 @@ ok("webhook-signatur: rätt, fel hemlighet, för gammal, ändrad kropp");
 
 // --- simulerat Stripe + Apps Script via global fetch ---
 const calls = { gas: [], stripe: [] };
+const orders = new Map([["H9001", { no: "H9001", stripe: "pi_1", total: 210 }], ["H9002", { no: "H9002", stripe: "", total: 99 }]]);
+let refundedOre = 0;   // vad Stripe redan återbetalat på pi_1
 const pending = new Map();
 globalThis.fetch = async (url, init) => {
   const u = String(url);
@@ -45,6 +47,11 @@ globalThis.fetch = async (url, init) => {
     if (action === "payFail") { const p = pending.get(payload.ref); if (p && p.status === "väntar") p.status = payload.status === "expired" ? "utgången" : "misslyckad"; return reply({}); }
     if (action === "payStatus") { const p = pending.get(payload.ref); if (!p || p.sid !== payload.sessionId) return new Response(JSON.stringify({ ok: false, status: 404, error: "Okänd betalning." }), { status: 200 });
       return reply({ status: p.status, no: p.no || "", total: p.total, method: p.method || "", kind: p.order.kind, table: p.order.table || "", whenText: "" }); }
+    if (action === "refundInfo") { const o = orders.get(payload.no); if (!o) return new Response(JSON.stringify({ ok: false, status: 404, error: "Hittar inte" }), { status: 200 });
+      return reply({ no: payload.no, stripe: o.stripe, total: o.total, refunded: 0 }); }
+    if (action === "refunded") { const o = payload.no ? orders.get(payload.no) : [...orders.values()].find(x => x.stripe === payload.stripe);
+      if (!o) return new Response(JSON.stringify({ ok: false, status: 404, error: "Hittar ingen" }), { status: 200 });
+      o.noted = payload.refundedOre; return reply({ no: o.no, refunded: payload.refundedOre / 100 }); }
     return new Response(JSON.stringify({ ok: false, status: 400, error: "okänd action " + action }), { status: 200 });
   }
   if (u.startsWith("https://api.stripe.com/v1/tax_rates")) {
@@ -59,7 +66,12 @@ globalThis.fetch = async (url, init) => {
     return new Response(JSON.stringify({ id: "cs_test_abc", url: "https://checkout.stripe.com/c/pay/cs_test_abc" }), { status: 200 });
   }
   if (u.startsWith("https://api.stripe.com/v1/payment_intents/")) {
-    return new Response(JSON.stringify({ id: "pi_1", latest_charge: { payment_method_details: { type: "card" } } }), { status: 200 });
+    return new Response(JSON.stringify({ id: "pi_1", latest_charge: { id: "ch_1", status: "succeeded", amount_captured: 21000, amount_refunded: refundedOre, payment_method_details: { type: "card" } } }), { status: 200 });
+  }
+  if (u.startsWith("https://api.stripe.com/v1/refunds")) {
+    const form = Object.fromEntries(new URLSearchParams(init.body)); calls.stripe.push({ refund: form, idem: init.headers["Idempotency-Key"] });
+    refundedOre += Number(form.amount);
+    return new Response(JSON.stringify({ id: "re_" + refundedOre, status: "succeeded", amount: Number(form.amount) }), { status: 200 });
   }
   throw new Error("oväntad fetch " + u);
 };
@@ -152,5 +164,39 @@ r = await hook({ id: "evt_e", type: "checkout.session.expired", data: { object: 
 assert.equal(r.json.failed, true); assert.equal(pending.get(ref2).status, "utgången"); ok("expired → payFail");
 
 r = await hook(completed, { method: "GET" }); assert.equal(r.status, 405); ok("GET på webhooken → 405");
+
+// --- återbetalning från köksvyn (/api/admin kind: refund) + webhook charge.refunded ---
+{
+  const adm = b => call({ url: "/api/admin", method: "POST", query: { route: "admin" }, headers: { "x-admin-key": "admin" }, body: JSON.stringify(b) });
+  let a = await adm({ kind: "refund", no: "H9001", amount: 50 });
+  assert.equal(a.status, 200); assert.equal(a.json.amount, 50); assert.equal(a.json.remaining, 160); assert.equal(a.json.noted, true);
+  const f = calls.stripe.at(-1);
+  assert.equal(f.refund.payment_intent, "pi_1"); assert.equal(f.refund.amount, "5000");
+  assert.equal(f.refund.reverse_transfer, "true"); assert.equal(f.refund.refund_application_fee, "false");
+  assert.equal(f.refund["metadata[order]"], "H9001"); assert.equal(f.idem, "refund-pi_1-0-5000");
+  assert.equal(orders.get("H9001").noted, 5000);
+  ok("köksvyn: delåterbetalning 50 kr → Stripe (reverse_transfer, avgiften behålls) + arket");
+
+  a = await adm({ kind: "refund", no: "H9001", amount: 200 });
+  assert.equal(a.status, 400); assert.match(a.json.error, /mellan 1 och 160 kr/);
+  a = await adm({ kind: "refund", no: "H9001", amount: 0.5 }); assert.equal(a.status, 400);
+  a = await adm({ kind: "refund", no: "H9002" }); assert.equal(a.status, 400); assert.match(a.json.error, /inte betald online/);
+  a = await adm({ kind: "refund", no: "H0000" }); assert.equal(a.status, 404);
+  const noKey = await call({ url: "/api/admin", method: "POST", query: { route: "admin" }, headers: { "x-admin-key": "fel" }, body: JSON.stringify({ kind: "refund", no: "H9001" }) });
+  assert.equal(noKey.status, 401);
+  ok("köksvyn: för stort belopp, under 1 kr, Swish-order, okänd order och fel lösenord nekas");
+
+  a = await adm({ kind: "refund", no: "H9001" });
+  assert.equal(a.status, 200); assert.equal(a.json.amount, 160); assert.equal(a.json.remaining, 0); assert.equal(orders.get("H9001").noted, 21000);
+  a = await adm({ kind: "refund", no: "H9001" }); assert.equal(a.status, 409); assert.match(a.json.error, /redan helt/);
+  ok("köksvyn: utan belopp → resten; därefter 'redan helt återbetald'");
+
+  r = await hook({ id: "evt_r", type: "charge.refunded", data: { object: { id: "ch_1", payment_intent: "pi_1", amount_captured: 21000, amount_refunded: 21000 } } });
+  assert.equal(r.status, 200); assert.equal(r.json.refunded, "H9001");
+  assert.equal(calls.gas.at(-1).action, "refunded"); assert.equal(calls.gas.at(-1).payload.stripe, "pi_1");
+  r = await hook({ id: "evt_r2", type: "charge.refunded", data: { object: { id: "ch_x", payment_intent: "pi_utan_order", amount_captured: 100, amount_refunded: 100 } } });
+  assert.equal(r.status, 200); assert.match(r.json.ignored, /no order/);
+  ok("webhook charge.refunded → arket via payment intent; okänd betalning ignoreras (200, ingen retry)");
+}
 
 console.log(`\n${n} tester OK`);

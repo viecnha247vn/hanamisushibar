@@ -177,7 +177,8 @@ function listOrders_(date) {
       items: safeJson_(r['Rader (data)']) || r['Beställning'].split('\n').map(t => ({ name: t, qty: '' })),
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
       message: r['Kommentar'], status: r['Status'], smsReady: r['Sms klar'], printed: r['Utskriven'], paid: !!r['Betald'],
-      tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0
+      tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0,
+      online: /^pi_/.test(r['Stripe'] || ''), refunded: refundedKr_(r['Återbetald'])
     }))
     .reverse();
 }

@@ -65,6 +65,7 @@ main{padding:14px}
 ul{margin:2px 0;padding:0;list-style:none;font-size:18px;line-height:1.45}
 ul li b{display:inline-block;min-width:2.2ch}
 .paid{margin-left:.5rem;padding:2px 8px;border-radius:999px;background:#D6F5DD;color:#1F6B42;font-size:12px;font-weight:600}
+.paid.ref{background:#FBE1E1;color:#9B2C2C}
 .note{background:#FFF3C4;padding:6px 10px;border-radius:8px}
 .inote{margin:2px 0 6px 2.2ch;padding:3px 8px;background:#FFF3C4;border-radius:6px;font-size:15px;color:#7A5E24}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
@@ -275,7 +276,7 @@ function orderCard(o, fresh){
   const done = DONE.includes(o.status);
   return `<article class="card ${esc(o.status)} ${done ? "done" : ""} ${fresh ? "fresh" : ""}">
     <div class="top"><span class="no">${esc(o.no)}</span><span class="big">${esc(o.kind === "table" ? o.receivedTime : o.pickupTime)}</span></div>
-    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span>${o.paid ? `<span class="paid">Betald</span>` : ""}</div>
+    <div class="kind">${o.kind === "table" ? "🍽 Bord " + esc(o.table) : "🛍 Hämtning"} <span class="status">${esc(o.status)}</span>${o.paid ? `<span class="paid">Betald</span>` : ""}${o.refunded ? `<span class="paid ref">Återbetald ${o.refunded} kr</span>` : ""}</div>
     <ul>${o.items.map(i => `<li>${i.qty ? `<b>${i.qty}</b> × ` : ""}${esc(i.name)}${i.note ? `<div class="inote">↳ ${esc(i.note)}</div>` : ""}</li>`).join("")}</ul>
     ${o.message ? `<div class="note">${esc(o.message)}</div>` : ""}
     <div class="meta">${[o.name && esc(o.name), o.phone && `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`, esc(o.payment), `<b>${o.total} kr</b>`,
@@ -285,6 +286,7 @@ function orderCard(o, fresh){
       <button class="btn" type="button" data-o="${esc(o.no)}" data-s="Avbokad" data-confirm="Avboka ${esc(o.no)}?">Avboka</button>
       <button class="btn ${o.paid ? "ok" : ""}" type="button" data-paid="${esc(o.no)}" data-val="${o.paid ? "0" : "1"}">${o.paid ? "Betald ✓" : "Markera betald"}</button>
       <button class="btn" type="button" data-reprint="${esc(o.no)}" title="Skriv ut igen" aria-label="Skriv ut ${esc(o.no)} igen" style="flex:0 0 auto">🖨</button></div>`}
+    ${o.online && o.refunded < o.total ? `<div class="acts"><button class="btn" type="button" data-refund="${esc(o.no)}" data-max="${o.total - o.refunded}">↩ Återbetala</button></div>` : ""}
   </article>`;
 }
 
@@ -339,6 +341,24 @@ document.addEventListener("click", async e => {
   b.disabled = true;
   try { await api("", { method: "POST", body: JSON.stringify({ kind: "paid", no: b.dataset.paid, paid: b.dataset.val === "1" }) }); loadOrders(); }
   catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
+});
+
+/* Återbetala (bara onlinebetalda): pengarna går tillbaka till gästens kort och dras från Hanamis Stripe-saldo.
+   Swish/kontant återbetalas som förut direkt till gästen. Servern kontrollerar beloppet mot Stripe. */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-refund]"); if (!b) return;
+  const no = b.dataset.refund, max = Number(b.dataset.max);
+  const val = prompt(`Återbetala ${no} till gästens kort.\nBelopp i kr (högst ${max}):`, String(max));
+  if (val === null) return;
+  const amount = Number(String(val).replace(",", ".").replace(/[^\d.]/g, ""));
+  if (!(amount >= 1 && amount <= max)) return alert(`Ange ett belopp mellan 1 och ${max} kr.`);
+  if (!confirm(`Återbetala ${amount} kr för ${no}?\n\nPengarna går tillbaka till gästens kort (5–10 bankdagar) och dras från Hanamis Stripe-saldo. Det går inte att ångra.`)) return;
+  b.disabled = true;
+  try {
+    const r = await api("", { method: "POST", body: JSON.stringify({ kind: "refund", no, amount }) });
+    alert(`Klart – ${r.amount} kr återbetalas för ${no}.` + (r.remaining > 0 ? ` Kvar att återbetala: ${r.remaining} kr.` : "") + (r.noted ? " Gästen får ett mejl om e-post finns." : ""));
+    loadOrders();
+  } catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
 });
 
 document.addEventListener("click", async e => {
