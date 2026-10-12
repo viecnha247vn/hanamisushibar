@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 process.env.ADMIN_KEY = "admin"; process.env.SDP_KEY = "k"; process.env.SITE_URL = "https://hanamisushibar.se";
 process.env.STRIPE_SECRET_KEY = "sk_test_x"; process.env.STRIPE_ACCOUNT = "acct_hanami"; process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+process.env.STRIPE_VAT_PCT = "6";
 process.env.GAS_URL = "https://script.google.com/macros/s/x/exec"; process.env.GAS_SECRET = "s";
 
 const { encodeForm, applicationFeeOre, verifyWebhook, signWebhook } = await import("../lib/stripe.js");
@@ -46,6 +47,13 @@ globalThis.fetch = async (url, init) => {
       return reply({ status: p.status, no: p.no || "", total: p.total, method: p.method || "", kind: p.order.kind, table: p.order.table || "", whenText: "" }); }
     return new Response(JSON.stringify({ ok: false, status: 400, error: "okänd action " + action }), { status: 200 });
   }
+  if (u.startsWith("https://api.stripe.com/v1/tax_rates")) {
+    calls.stripe.push({ taxRates: init.method });
+    if (init.method === "GET") return new Response(JSON.stringify({ data: [{ id: "txr_12", percentage: 12, country: "SE", inclusive: true, metadata: { q89: "moms" } }] }), { status: 200 });
+    const form = Object.fromEntries(new URLSearchParams(init.body));
+    assert.deepEqual([form.percentage, form.inclusive, form.country], ["6", "true", "SE"]);
+    return new Response(JSON.stringify({ id: "txr_6", percentage: 6 }), { status: 200 });
+  }
   if (u.startsWith("https://api.stripe.com/v1/checkout/sessions")) {
     const form = Object.fromEntries(new URLSearchParams(init.body)); calls.stripe.push(form);
     return new Response(JSON.stringify({ id: "cs_test_abc", url: "https://checkout.stripe.com/c/pay/cs_test_abc" }), { status: 200 });
@@ -78,6 +86,8 @@ if (open) {
   assert.equal(f["payment_intent_data[application_fee_amount]"], String(Math.round(21000 * 0.04) + 200));   // 2×100 kr + 10 kr dricks = 210 kr
   assert.equal(f["line_items[0][price_data][unit_amount]"], "10000");
   assert.equal(f["line_items[1][price_data][product_data][name]"], "Dricks till köket");
+  assert.equal(f["line_items[0][tax_rates][0]"], "txr_6");             // STRIPE_VAT_PCT=6 → momssats skapas (12 % ignoreras)
+  assert.equal(f["line_items[1][tax_rates][0]"], undefined);           // ingen moms på dricks
   assert.equal(f["client_reference_id"], payRes.json.ref);
   assert.equal(f["payment_method_types[0]"], "card"); assert.equal(f["payment_method_types[1]"], undefined);
   assert.match(f["success_url"], /\/tack\?ref=PTEST.*sid=\{CHECKOUT_SESSION_ID\}/);

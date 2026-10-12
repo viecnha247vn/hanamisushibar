@@ -8,8 +8,8 @@ export default {
   siteHost: "hanamisushibar.se",
   email: "kontakt@hanamisushibar.se",
   swish: "1231874809",                 // Swish-nummer (företag) som gästen betalar till (manuell Swish i kassan)
-  // Onlinebetalning via Stripe (Q89 Pay): kort, Apple/Google Pay och Swish direkt i beställningen.
-  // false tills Hanamis Stripe-konto är verifierat och STRIPE_* finns på Vercel. Byt till true och deploya.
+  // Onlinebetalning via Stripe (Q89 Pay): kort, Apple Pay och Google Pay direkt i beställningen.
+  // false tills Hanamis Stripe-konto (STRIPE_ACCOUNT) och STRIPE_SECRET_KEY finns på Vercel. Byt till true och deploya.
   payOnline: false,
   instagram: "hanamisushi99999",
   timezone: "Europe/Stockholm",

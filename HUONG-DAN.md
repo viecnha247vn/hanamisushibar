@@ -568,7 +568,7 @@ Bếp **không bao giờ** thấy đơn online chưa trả. Giá khoá tại lú
 1. **Apps Script**: `npm run gas:push` rồi trong Sheet chạy **Hanami → setup** một lần (tạo tab Betalningar, thêm cột Stripe). Deploy webapp phiên bản mới (`gas:deploy`).
 2. **Stripe – tài khoản Hanami**: Dashboard → tài khoản nền tảng **Queenie89 AB** → Connect → Anslutna konton → **Skapa** → Express, Sverige → nhập e-post chủ quán → Stripe gửi link onboarding. Chủ quán điền BankID, org.nr, IBAN (10–15 phút). Chép `acct_…` vào Vercel.
    Ô "Business website" của Hanami: `https://hanamisushibar.se`. Trước đó web Hanami phải có trang **Integritetspolicy** (mẫu `mall-integritetspolicy/integritetspolicy-sv.html` từ Q89, đã điền) link ở chân trang.
-3. **Stripe – nền tảng**: Betalningsmetoder bật Kort, Apple/Google Pay (code khoá `payment_method_types: ["card"]`, nên Swish/Klarna không hiện dù có bật). Skattesatser: "Moms 12 %", inkluderad → `txr_…`. Webhook endpoint `https://hanamisushibar.se/api/stripe/webhook` với 4 händelser (xem bảng dưới) → `whsec_…`.
+3. **Stripe – nền tảng**: Betalningsmetoder bật Kort, Apple/Google Pay (code khoá `payment_method_types: ["card"]`, nên Swish/Klarna không hiện dù có bật). Moms: **6 %** (`STRIPE_VAT_PCT=6`) – code tự tạo thuế suất "Moms 6 %, inkluderad" trong Stripe ở lần thanh toán đầu, không cần làm tay. Webhook endpoint **`https://www.hanamisushibar.se/api/stripe/webhook`** (phải có `www` – tên miền gốc chuyển hướng 308 sang www và Stripe không theo chuyển hướng) với 4 händelser (xem bảng dưới) → `whsec_…`. *Đã tạo ngày 2026-10-12: `we_1UPgSe2FsxVNpiEwtZbKENLO`.*
 4. **Vercel → Environment Variables** (Production):
 
    | Biến | Giá trị |
@@ -576,9 +576,9 @@ Bếp **không bao giờ** thấy đơn online chưa trả. Giá khoá tại lú
    | `STRIPE_SECRET_KEY` | `sk_live_…` của **Queenie89 AB** (nền tảng). Test: `sk_test_…` |
    | `STRIPE_WEBHOOK_SECRET` | `whsec_…` |
    | `STRIPE_ACCOUNT` | `acct_…` của Hanami |
-   | `STRIPE_TAX_RATE_12` | `txr_…` (12 % inkluderad) |
+   | `STRIPE_VAT_PCT` | `6` (moms %, inkluderad). Hoặc `STRIPE_TAX_RATE` = `txr_…` có sẵn |
    | `STRIPE_FEE_PCT` / `STRIPE_FEE_FIXED` | `4` / `2` (mặc định, có thể bỏ trống) |
-   | `SITE_URL` | `https://hanamisushibar.se` (đã có từ trước nếu dùng cho Apps Script thì để nguyên) |
+   | `SITE_URL` | `https://www.hanamisushibar.se` |
 
 5. Đặt `payOnline: true` trong `data/settings.js` → commit → deploy. Lựa chọn "Betala nu" xuất hiện trong giỏ hàng.
 6. **Thử thật một lần**: tự đặt món rẻ nhất tại bàn 1, trả bằng thẻ của chị. Kiểm tra: in ra bếp với dòng **BETALD · ONLINE KORT**, tab Beställningar có cột Stripe, tab Betalningar ghi "betald", Dashboard Stripe hiện charge với *Överföring* sang Hanami và *Plattformsavgift* = 4 % + 2 kr. Rồi **Återbetala** từ Dashboard (tick *Återbetala plattformsavgift* nếu muốn trả cả phí cho lần thử này).
