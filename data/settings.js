@@ -27,7 +27,7 @@ export default {
   pickupDaysAhead: 3,      // hur många dagar framåt man kan beställa
   bookingDaysAhead: 60,
   maxBookingGuests: 8,
-  tableCount: 12,          // antal bord (för QR-koder i köksvyn)
+  tableCount: 16,          // antal bord (för QR-koder i köksvyn)
   // Allergener som kan förekomma i köket – visas vid önskemål och i meddelandet till köket
   allergens: ["fisk", "skaldjur (räka, krabba)", "blötdjur", "ägg", "mjölk", "soja", "vete/gluten", "sesam", "senap", "sulfit"],
   // Tecken per rad på kvittoskrivaren, font A. Epson TM-m30III med 58 mm papper: 32 (uppmätt på kvitto, 384 punkter);
