@@ -510,4 +510,22 @@ test("dagsrapport som PDF: grupper per kategori med rätter, bifogas dagsmejlet"
   delete E.props.REPORT_FROM;
 });
 
+test("Q89 plattformsrapport: bara till PLATFORM_EMAIL, aldrig till restaurangens adresser, inget belopp i Logg", () => {
+  const orig = E.ctx.platformData_;
+  E.ctx.platformData_ = () => ({ ok: true, date: "2026-10-13", charges: 501, chargeCount: 2, stripeFees: 11.12, refunds: 12, refundCount: 1, toRestaurants: 501,
+    fromRestaurants: 12, appFees: 24.04, appFeeCount: 2, appFeeRefunds: 0, otherFees: 0, payouts: 0, other: 0, net: 12.92, profit: 12.92, marginPct: 2.58,
+    balance: { available: 0, pending: 26.54 }, orders: [{ time: 1791901465, desc: "Hanami Sushi Bar – hämtning – P8A", amount: 489, refunded: 0, appFee: 21.56, stripeFee: 9.14, margin: 12.42 }] });
+  delete E.props.PLATFORM_EMAIL;
+  assert.throws(() => E.ctx.platformMail_("2026-10-13"), /PLATFORM_EMAIL/);
+  E.props.PLATFORM_EMAIL = "ekonomi@q89.se";
+  const n = E.log.mails.length;
+  E.ctx.platformMail_("2026-10-13");
+  const m = E.log.mails[n];
+  assert.equal(m.to, "ekonomi@q89.se"); assert.match(m.subject, /Q89 Pay 2026-10-13/);
+  assert.match(m.htmlBody, /12,92 kr/); assert.match(m.htmlBody, /21,56 kr/); assert.match(m.htmlBody, /9,14 kr/);
+  const logg = E.sheets["Logg"].data.map(r => r.join(" ")).join("\n");
+  assert.doesNotMatch(logg, /12,92|24,04/);
+  E.ctx.platformData_ = orig;
+});
+
 console.log("\n" + passed + " tester OK");
