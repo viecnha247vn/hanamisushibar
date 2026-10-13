@@ -205,12 +205,12 @@ ul li b{display:inline-block;min-width:2.2ch}
   <section data-panel="report" hidden>
     <div class="tools">
       <div class="leadbtns" id="rModes" role="group" aria-label="Visa">
-        <button type="button" data-rmode="day">Dag</button><button type="button" data-rmode="week">Vecka</button><button type="button" data-rmode="month" aria-pressed="true">Månad</button><button type="button" data-rmode="year">År</button>
+        <button type="button" data-rmode="day" aria-pressed="true">Dag</button><button type="button" data-rmode="week">Vecka</button><button type="button" data-rmode="month">Månad</button><button type="button" data-rmode="year">År</button>
       </div>
       <div class="rnav">
       <button class="btn" type="button" id="rPrev" aria-label="Föregående">‹</button>
-      <input type="date" id="rDate" aria-label="Dag" hidden>
-      <input type="month" id="rMonth" aria-label="Månad">
+      <input type="date" id="rDate" aria-label="Dag">
+      <input type="month" id="rMonth" aria-label="Månad" hidden>
       <input type="number" id="rYear" min="2024" max="2100" style="width:100px" aria-label="År" hidden>
       <button class="btn" type="button" id="rNext" aria-label="Nästa">›</button>
       <button class="btn" type="button" id="rToday">Idag</button>
@@ -418,7 +418,7 @@ document.addEventListener("click", async e => {
 /* ---------- rapport (omsättning per dag / månad) ---------- */
 const krf = n => (Number(n) || 0).toLocaleString("sv-SE", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " kr";
 const MONTHS = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
-let rMode = "month";
+let rMode = "day";   // standard: dagens omsättning
 const pad2 = n => String(n).padStart(2, "0");
 const isoD = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 const parseD = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d, 12); };
