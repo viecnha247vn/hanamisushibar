@@ -1,6 +1,9 @@
 /**
- * Avstämningsrapport per vecka (mån–sön, måndag ~06) och per månad (den 1:a ~06, hela förra månaden)
- * till restaurangen – som PDF, samma uppställning.
+ * Avstämningsrapport till restaurangen – som PDF, samma uppställning för vecka och månad:
+ *   • vecka söndag–lördag, skickas lördag kl 20.30 (restaurangen har stängt på söndagar, men beställningar
+ *     för senare dagar kan läggas på söndagen – därför räknas söndagen in i veckan som slutar på lördagen)
+ *   • månad 1:a–sista, skickas sista dagen kl 20.30
+ * Schemaläggs av scheduleReportMail (ReportMail.js) med en engångstrigger på exakt 20.30.
  * Visar försäljning per momssats och betalsätt, transaktionsavgifter för kortbetalning online och
  * vad som betalas ut via Stripe för veckans försäljning. Swish går direkt till restaurangen utan avgift.
  *
@@ -48,9 +51,9 @@ function weeklyData_(from, to) {
   const methods = ['online', 'swish'].map(k => ({ key: k, label: k === 'online' ? 'Kort online (kort, Apple Pay, Google Pay)' : 'Swish', n: m[k].n, ...split(m[k].gross, m[k].tips) }));
   const fee = m.online.fee, feeEx = r2(fee / (1 + feeVat / 100));
   return {
-    from: from, to: to, week: isoWeek_(from),
+    from: from, to: to, week: isoWeek_(to),
     label: from.slice(8) === '01' && to === addDays_(addDays_(to, 1).slice(0, 8) + '01', -1) && from.slice(0, 7) === to.slice(0, 7)
-      ? MONTHS_SV[Number(from.slice(5, 7)) - 1] + ' ' + from.slice(0, 4) : 'vecka ' + isoWeek_(from),
+      ? MONTHS_SV[Number(from.slice(5, 7)) - 1] + ' ' + from.slice(0, 4) : 'vecka ' + isoWeek_(to),
     vatPct: vat, feeVatPct: feeVat, cancelled: cancelled, archive: data.archive,
     sales: sales, refunds: ref, orders: m.online.n + m.swish.n, methods: methods,
     fee: { n: m.online.n, total: r2(fee), ex: feeEx, vat: r2(fee - feeEx) },
@@ -133,16 +136,16 @@ function avstamningMail_(from, to) {
   return w;
 }
 
-/** Daglig trigger ~06: måndag → förra veckan, den 1:a → förra månaden (var och en högst en gång). */
-function weeklyReportTick() {
+/** Engångstrigger kl 20.30 (lördag och/eller månadens sista dag). Var rapport skickas högst en gång. */
+function sendPeriodReports() {
   const today = now_('yyyy-MM-dd'), props = PropertiesService.getScriptProperties();
-  if (new Date(today + 'T12:00:00Z').getUTCDay() === 1) {
-    const last = weekRange_(addDays_(today, -1));
-    if (props.getProperty('WEEKLY_SENT') !== last.from) { avstamningMail_(last.from, last.to); props.setProperty('WEEKLY_SENT', last.from); }
+  if (new Date(today + 'T12:00:00Z').getUTCDay() === 6) {
+    const from = addDays_(today, -6);                                           // söndag–lördag
+    if (props.getProperty('WEEKLY_SENT') !== from) { avstamningMail_(from, today); props.setProperty('WEEKLY_SENT', from); }
   }
-  if (today.slice(8) === '01') {
-    const to = addDays_(today, -1), from = to.slice(0, 8) + '01';
-    if (props.getProperty('MONTHLY_SENT') !== from) { avstamningMail_(from, to); props.setProperty('MONTHLY_SENT', from); }
+  if (addDays_(today, 1).slice(0, 7) !== today.slice(0, 7)) {
+    const from = today.slice(0, 8) + '01';
+    if (props.getProperty('MONTHLY_SENT') !== from) { avstamningMail_(from, today); props.setProperty('MONTHLY_SENT', from); }
   }
 }
 function monthlyReportTest() {
@@ -150,7 +153,7 @@ function monthlyReportTest() {
   say_('Månadsrapport för ' + w.label + ' (hittills) skickad till ' + reportRecipients_() + '.');
 }
 function weeklyReportTest() {
-  const last = weekRange_(addDays_(now_('yyyy-MM-dd'), -7)), cur = weekRange_(now_('yyyy-MM-dd'));
-  const w = weeklyMail_(cur.from, now_('yyyy-MM-dd'));
-  say_('Veckorapport för vecka ' + w.week + ' (hittills) skickad till ' + reportRecipients_() + '.\nFörra veckan: ' + last.from + '–' + last.to + ' skickas automatiskt på måndag.');
+  const today = now_('yyyy-MM-dd'), dow = new Date(today + 'T12:00:00Z').getUTCDay();   // 0 = söndag
+  const w = avstamningMail_(addDays_(today, -dow), today);                                 // från söndag denna vecka
+  say_('Veckorapport för ' + w.label + ' (hittills) skickad till ' + reportRecipients_() + '.\nDen riktiga kommer lördag kl 20.30.');
 }

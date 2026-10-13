@@ -1,7 +1,7 @@
 /**
  * Omsättningsrapport per e-post till ägaren.
  *   • Dagsrapport varje dag kl 20.05 (efter stängning 20.00).
- *   • Månadsrapport: avstämningsrapport (PDF) den 1:a för hela förra månaden – se WeeklyReport.js.
+ *   • Avstämningsrapport (PDF): vecka sön–lör varje lördag kl 20.30, månad sista dagen kl 20.30 – se WeeklyReport.js.
  *
  * Exakt klockslag: Apps Scripts dagliga triggers går bara "ungefär" (±15 min). Därför körs scheduleReportMail
  * en gång mitt på dagen och lägger en ENGÅNGS-trigger på exakt 20.05 samma dag (sendReportMail).
@@ -10,6 +10,7 @@
  * Plattformsavgiften (Q89) ingår inte – den följs upp i Stripe.
  */
 const REPORT_AT = { h: 20, m: 5 };
+const PERIOD_AT = { h: 20, m: 30 };   // vecko- (lördag) och månadsrapport (sista dagen)
 const REPORT_FROM_DEFAULT = '2026-10-13';   // allt före var test (samma som reportFrom i data/settings.js); skriptegenskap REPORT_FROM går före
 
 /* ---------------- summering (samma regler som lib/report.js) ---------------- */
@@ -114,31 +115,38 @@ function sendReportMail() {
   } catch (e) { log_('ERROR', 'Rapport-mejl', e.stack || e.message); props.deleteProperty('REPORT_SENT'); throw e; }
 }
 
-/** Daglig trigger (~kl 12): lägger engångstriggern på exakt 20.05 idag. */
-function scheduleReportMail() {
-  ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === 'sendReportMail') ScriptApp.deleteTrigger(t); });
-  const nowP = nowParts_(), target = REPORT_AT.h * 60 + REPORT_AT.m;
+/** Engångstrigger på exakt klockslag idag (Stockholm). false om tiden redan passerat. */
+function oneShotToday_(fn, at) {
+  ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === fn) ScriptApp.deleteTrigger(t); });
+  const nowP = nowParts_(), target = at.h * 60 + at.m;
   if (nowP.minutes >= target) return false;
-  const at = new Date(Math.floor(Date.now() / 60000) * 60000 + (target - nowP.minutes) * 60000);
-  ScriptApp.newTrigger('sendReportMail').timeBased().at(at).create();
+  ScriptApp.newTrigger(fn).timeBased().at(new Date(Math.floor(Date.now() / 60000) * 60000 + (target - nowP.minutes) * 60000)).create();
   return true;
+}
+
+/** Daglig trigger (~kl 12): dagsrapport exakt 20.05; lördag och månadens sista dag även avstämningsrapport exakt 20.30. */
+function scheduleReportMail() {
+  const today = now_('yyyy-MM-dd'), sat = new Date(today + 'T12:00:00Z').getUTCDay() === 6;
+  const lastDay = addDays_(today, 1).slice(0, 7) !== today.slice(0, 7);
+  if (sat || lastDay) oneShotToday_('sendPeriodReports', PERIOD_AT);
+  else ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === 'sendPeriodReports') ScriptApp.deleteTrigger(t); });
+  return oneShotToday_('sendReportMail', REPORT_AT);
 }
 
 /* ---------------- meny: Hanami → Rapporter ---------------- */
 
 function reportMailEnable() {
   ScriptApp.getProjectTriggers().forEach(t => {
-    if (['scheduleReportMail', 'sendReportMail', 'weeklyReportTick'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+    if (['scheduleReportMail', 'sendReportMail', 'weeklyReportTick', 'sendPeriodReports'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('weeklyReportTick').timeBased().atHour(6).everyDays(1).inTimezone(APP.TZ).create();   // måndagar: veckorapport
   ScriptApp.newTrigger('scheduleReportMail').timeBased().atHour(12).everyDays(1).inTimezone(APP.TZ).create();
   const today = scheduleReportMail();
-  say_('E-postrapporter är PÅ ✅\n\nDagsrapport varje dag kl 20.05. Avstämningsrapport (PDF): varje måndag ca kl 06 för förra veckan och den 1:a ca kl 06 för förra månaden.\nMottagare: ' +
+  say_('E-postrapporter är PÅ ✅\n\nDagsrapport varje dag kl 20.05. Avstämningsrapport (PDF): veckan (sön–lör) varje lördag kl 20.30 och månaden den sista dagen kl 20.30.\nMottagare: ' +
     (reportRecipients_() || '(saknas – fyll i REPORT_EMAIL eller NOTIFY_EMAIL)') + (today ? '\n\nFörsta rapporten kommer idag kl 20.05.' : '\n\nFörsta rapporten kommer imorgon kl 20.05.'));
 }
 function reportMailDisable() {
   ScriptApp.getProjectTriggers().forEach(t => {
-    if (['scheduleReportMail', 'sendReportMail', 'weeklyReportTick'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+    if (['scheduleReportMail', 'sendReportMail', 'weeklyReportTick', 'sendPeriodReports'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
   say_('E-postrapporter är AV.');
 }

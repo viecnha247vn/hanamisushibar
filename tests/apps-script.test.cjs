@@ -14,7 +14,8 @@ console.log("Apps Script");
 test("setup skapar flikar, triggers och nyckel", () => {
   assert.deepEqual(Object.keys(E.sheets).sort(), ["Beställningar", "Betalningar", "Bokningar", "Logg", "Meny"]);
   // sendReportMail (engång kl 20.05) läggs bara om setup körs före 20.05 – beror på klockan
-  assert.deepEqual(E.log.triggers.filter(t => t !== "sendReportMail"), ["handleEdit", "resetSoldOut", "nightlyCleanup", "scheduleReportMail", "weeklyReportTick"]);
+  // engångstriggers (sendReportMail 20.05, sendPeriodReports 20.30) läggs bara om setup körs före klockslaget – beror på klockan
+  assert.deepEqual(E.log.triggers.filter(t => t !== "sendReportMail" && t !== "sendPeriodReports"), ["handleEdit", "resetSoldOut", "nightlyCleanup", "scheduleReportMail"]);
   assert.equal(E.props.CLEANUP_ENABLED, "off");
   assert.ok(E.props.API_SECRET.length > 30);
 });
@@ -537,8 +538,8 @@ test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift,
     { d: "2026-10-16", online: false, payment: "Kort i kassan", status: "Klar", paid: true, total: 999, tip: 0, refunded: 0 },
     { d: "2026-10-16", online: false, payment: "Swish", status: "Avbokad", paid: false, total: 150, tip: 0, refunded: 0 }
   ] });
-  const w = E.ctx.weeklyData_("2026-10-12", "2026-10-18");
-  assert.equal(w.week, 42); assert.equal(w.orders, 4); assert.equal(w.cancelled, 1);
+  const w = E.ctx.weeklyData_("2026-10-11", "2026-10-17");   // söndag–lördag
+  assert.equal(w.week, 42); assert.equal(w.label, "vecka 42"); assert.equal(w.orders, 4); assert.equal(w.cancelled, 1);
   assert.equal(w.sales.total, 1011); assert.equal(w.sales.tips, 10); assert.equal(w.refunds.total, 12);
   // avgift: 489 → 21,56; 12 → 2,48; 310 → 14,40  = 38,44 (inkl. 25 % moms: 30,75 + 7,69)
   assert.equal(w.fee.total, 38.44); assert.equal(w.fee.ex, 30.75); assert.equal(w.fee.vat, 7.69); assert.equal(w.fee.n, 3);
@@ -549,10 +550,10 @@ test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift,
     .forEach(t => assert.ok(html.includes(t), "saknar " + t));
   assert.doesNotMatch(html, /Q89|plattform|application/i);
   E.props.REPORT_EMAIL = "agare@exempel.se";
-  const n = E.log.mails.length; E.ctx.weeklyMail_("2026-10-12", "2026-10-18");
+  const n = E.log.mails.length; E.ctx.weeklyMail_("2026-10-11", "2026-10-17");
   const m = E.log.mails[n];
   assert.equal(m.to, "agare@exempel.se"); assert.match(m.subject, /Avstämningsrapport vecka 42/);
-  assert.equal(m.attachments[0].name, "Hanami_avstamning_v42_2026-10-12.pdf");
+  assert.equal(m.attachments[0].name, "Hanami_avstamning_v42_2026-10-11.pdf");
   // månad: samma uppställning, etikett "oktober 2026", filnamn per månad
   const mo = E.ctx.weeklyData_("2026-10-01", "2026-10-31");
   assert.equal(mo.label, "oktober 2026"); assert.equal(mo.fee.total, 38.44);
@@ -560,7 +561,7 @@ test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift,
   const k = E.log.mails.length; E.ctx.avstamningMail_("2026-10-01", "2026-10-31");
   assert.match(E.log.mails[k].subject, /Avstämningsrapport oktober 2026/);
   assert.equal(E.log.mails[k].attachments[0].name, "Hanami_avstamning_2026-10.pdf");
-  assert.equal(E.ctx.weeklyData_("2026-10-12", "2026-10-31").label, "vecka 42", "delmånad är ingen månad");
+  assert.equal(E.ctx.weeklyData_("2026-10-12", "2026-10-31").label, "vecka 44", "delmånad är ingen månad");
   E.ctx.reportOrders_ = orig;
 });
 
