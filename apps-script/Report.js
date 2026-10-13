@@ -6,7 +6,7 @@
  * (Cleanup.js, ARCHIVE_ID). Utan arkivet skulle äldre månader se tomma ut. Inga personuppgifter lämnas ut.
  * Datum = dagen beställningen togs emot (Mottagen), i restaurangens tidszon.
  */
-function reportOrders_(from, to) {
+function reportOrders_(from, to, withLines) {
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   if (!iso.test(from || '') || !iso.test(to || '') || from > to) throw new ApiError(400, 'Ogiltigt datumintervall.');
   const pick = sh => rows_(sh)
@@ -16,7 +16,8 @@ function reportOrders_(from, to) {
       payment: r['Betalning'], status: r['Status'], paid: !!r['Betald'],
       total: Number(String(r['Summa']).replace(/\D/g, '')) || 0,
       tip: Number(String(r['Dricks']).replace(/\D/g, '')) || 0,
-      online: /^pi_/.test(r['Stripe'] || ''), refunded: refundedKr_(r['Återbetald'])
+      online: /^pi_/.test(r['Stripe'] || ''), refunded: refundedKr_(r['Återbetald']),
+      lines: withLines ? (safeJson_(r['Rader (data)']) || []) : undefined
     }));
 
   const orders = pick(sheet_(SHEET.ORDERS));

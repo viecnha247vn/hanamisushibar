@@ -490,4 +490,24 @@ test("rapport-mejl: summering = lib/report.js, dagsrapport skickas en gång, må
   assert.match(E.log.mails[m0].htmlBody, /Per dag/);
 });
 
+test("dagsrapport som PDF: grupper per kategori med rätter, bifogas dagsmejlet", () => {
+  const today = E.call("health").time.slice(0, 10);
+  E.props.REPORT_FROM = "2000-01-01";
+  E.call("order", { kind: "pickup", name: "Pdf", phone: "+46701112233", asap: false, pickupDate: today, pickupTime: "18:00", whenText: "idag",
+    payment: "swish", tip: 0, items: [{ id: "maki-1", qty: 2 }, { id: "happy-1", qty: 1 }] });
+  const d = E.ctx.dailyDetail_(today);
+  const maki = d.groups.find(g => g.id === "maki"), happy = d.groups.find(g => g.id === "happy");
+  assert.ok(maki && maki.qty >= 2 && maki.items.some(i => /California/.test(i.name)), "maki-gruppen saknas");
+  assert.ok(happy && happy.items.some(i => / HH$/.test(i.name)), "happy hour-gruppen saknas eller saknar HH");
+  assert.equal(d.items, d.groups.reduce((s, g) => s + g.qty, 0));
+  const html = E.ctx.dailyPdfHtml_(d);
+  assert.match(html, /Dagsrapport/); assert.match(html, /559471-3587/); assert.match(html, /Grand total netto/);
+  assert.doesNotMatch(html, /Q89|avgift/i);
+  const n = E.log.mails.length;
+  E.ctx.mailReport_("dag", today, today, "test");
+  const att = E.log.mails[n].attachments;
+  assert.ok(att && att[0].name === "Hanami_dagsrapport_" + today + ".pdf" && att[0].type === "application/pdf", "PDF bifogas inte");
+  delete E.props.REPORT_FROM;
+});
+
 console.log("\n" + passed + " tester OK");

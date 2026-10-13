@@ -676,6 +676,7 @@ Cài đặt: đưa `Report.js` (mới) và `Api.js` lên Apps Script → Triển
 
 - **Hằng ngày 20:05**: e-mail "📊 Dagsrapport …" — netto, số đơn, theo cách trả, dricks, hoàn tiền, moms, cảnh báo *Ej markerad betald*.
 - **Hoa hồng Q89 (4 % + 2 kr) KHÔNG hiện** trong Rapport, CSV hay e-mail của quán (bỏ 2026-10-13). Theo dõi trong Stripe Dashboard của Queenie89 AB → Connect → *Plattformsavgifter* (Application fees).
+- E-mail ngày **kèm file PDF `Hanami_dagsrapport_ÅÅÅÅ-MM-DD.pdf`** kiểu báo cáo ngày của máy tính tiền (thêm 2026-10-13): thông tin công ty/org.nr, ngày bán, giờ xuất; Total försäljning, moms 6 %, theo cách trả, dricks, sålda varor, returer; rồi **từng nhóm món** (theo thứ tự tab Meny) với số lượng và tiền từng món; cuối là Grand total försäljning / retur / netto. Không có hoa hồng Q89. Code: `dailyDetail_`, `dailyPdfHtml_` trong `ReportMail.js`.
 - **Ngày cuối tháng 20:05**: thêm e-mail "📅 Månadsrapport …" với bảng từng ngày.
 - Cùng quy tắc tính như tab Rapport (đọc cả Arkiv). Gửi tối đa 1 lần/ngày.
 - Người nhận: thuộc tính `REPORT_EMAIL` (nhiều địa chỉ cách nhau dấu phẩy), không có thì `NOTIFY_EMAIL`. Đặt ở Apps Script → ⚙️ Cài đặt dự án → Thuộc tính tập lệnh.

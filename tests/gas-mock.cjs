@@ -62,6 +62,7 @@ function makeEnv() {
     CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; }, remove: k => { delete cache[k]; } }) },
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
     Utilities: { formatDate: tzFmt, getUuid: () => crypto.randomUUID(), base64Encode: x => Buffer.from(Array.isArray(x) ? Buffer.from(x) : String(x)).toString("base64"),
+      newBlob: (data, type, name) => ({ data, type, name, getAs(t) { return { data, type: t, name: this.name, setName(n) { this.name = n; return this; }, getName() { return this.name; } }; }, setName(n) { this.name = n; return this; } }),
       computeDigest: (alg, s) => [...crypto.createHash("sha256").update(s).digest()], DigestAlgorithm: { SHA_256: 1 } },
     MailApp: { sendEmail: o => log.mails.push(o) },
     UrlFetchApp: { fetch: (url, o) => { (url.includes("46elks") ? log.sms : log.hooks).push({ url, ...o }); return { getResponseCode: () => 200, getContentText: () => "{}" }; } },

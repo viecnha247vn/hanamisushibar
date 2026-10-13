@@ -90,7 +90,12 @@ function mailReport_(kind, from, to, title) {
     'Swish: ' + krR_(t.swish), 'Dricks: ' + krR_(t.tips), 'Återbetalt: ' + krR_(t.refunded),
     'Moms ' + vat + ' %: ' + krR_(t.vat),
     t.unpaid ? 'Ej markerad betald: ' + krR_(t.unpaid) : ''].filter(Boolean).join('\n');
-  MailApp.sendEmail({ to: to_, subject: (kind === 'dag' ? '📊 Dagsrapport ' : '📅 Månadsrapport ') + title + ' · ' + krR_(t.net), htmlBody: html, body: text, name: APP.NAME + ' rapport' });
+  const mail = { to: to_, subject: (kind === 'dag' ? '📊 Dagsrapport ' : '📅 Månadsrapport ') + title + ' · ' + krR_(t.net), htmlBody: html, body: text, name: APP.NAME + ' rapport' };
+  if (kind === 'dag') {
+    try { mail.attachments = [dailyPdf_(from).blob]; }                     // PDF i kassastil (Dagsrapport_ÅÅÅÅ-MM-DD.pdf)
+    catch (e) { log_('WARN', 'Rapport-PDF', e.message); }                  // mejlet går iväg ändå
+  }
+  MailApp.sendEmail(mail);
   log_('INFO', 'Rapport-mejl', kind + ' ' + from + '–' + to + ' → ' + to_ + ' · netto ' + t.net);
   return r;
 }
@@ -144,4 +149,95 @@ function reportMailTestDay() {
 function reportMailTestMonth() {
   const today = now_('yyyy-MM-dd'); mailReport_('månad', today.slice(0, 8) + '01', today, 'hittills denna månad (test)');
   say_('Månadsrapport skickad till ' + reportRecipients_());
+}
+
+/* ---------------- Dagsrapport som PDF (som en Z-rapport från kassan) ---------------- */
+
+const ORG = { company: 'Hanami Family Sushi AB', orgnr: '559471-3587', street: 'Östergatan 53', city: '262 31 Ängelholm' };
+const kr2_ = n => (Math.round((Number(n) || 0) * 100) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ').replace('.', ',') + ' SEK';
+
+/** Räknar dagens försäljning per varugrupp och rätt. Samma urval som rapporten (från REPORT_FROM, ej kort i kassan, ej avbokat utom online). */
+function dailyDetail_(date) {
+  const from = prop_('REPORT_FROM', REPORT_FROM_DEFAULT);
+  const data = reportOrders_(date, date, true);
+  const counted = data.orders.filter(o => !(from && o.d < from) && (o.online || /swish/i.test(o.payment || '')) && !(o.status === 'Avbokad' && !o.online));
+  const menu = readMenuRows_(), catName = {}, catOrder = {}, itemOrder = {};
+  menu.forEach((m, i) => { catName[m.categoryId] = m.category; if (!(m.categoryId in catOrder)) catOrder[m.categoryId] = i; itemOrder[m.id] = i; });
+  const groups = {};
+  let items = 0, goods = 0;
+  counted.forEach(o => (o.lines || []).forEach(l => {
+    const qty = Number(l.qty) || 0, sum = qty * (Number(l.price) || 0);
+    const cid = l.categoryId || String(l.id || '').split('-')[0] || 'ovrigt';
+    const g = groups[cid] || (groups[cid] = { id: cid, name: catName[cid] || cid, qty: 0, sum: 0, items: {} });
+    const key = l.name + '|' + (l.price || 0);
+    const it = g.items[key] || (g.items[key] = { id: l.id, name: l.name, qty: 0, sum: 0 });
+    g.qty += qty; g.sum += sum; it.qty += qty; it.sum += sum; items += qty; goods += sum;
+  }));
+  const list = Object.keys(groups).map(k => groups[k]).sort((a, b) => (catOrder[a.id] ?? 999) - (catOrder[b.id] ?? 999));
+  list.forEach(g => { g.items = Object.keys(g.items).map(k => g.items[k]).sort((a, b) => (itemOrder[a.id] ?? 999) - (itemOrder[b.id] ?? 999)); });
+  const vat = Number(prop_('STRIPE_VAT_PCT', 6)) || 6;
+  return { date: date, sum: summarizeReport_(data.orders, vat).total, groups: list, items: items, goods: goods, vatPct: vat, archive: data.archive };
+}
+
+function dailyPdfHtml_(d) {
+  const t = d.sum;
+  const row = (k, v, n, cls) => '<tr class="' + (cls || '') + '"><td>' + esc_(k) + '</td><td class="n">' + (n == null ? '' : n) + '</td><td class="n">' + v + '</td></tr>';
+  const grp = d.groups.map(g => row(g.name, kr2_(g.sum), g.qty, 'grp') +
+    g.items.map(i => row(i.name, kr2_(i.sum), i.qty, 'it')).join('')).join('');
+  const logo = reportLogo_();
+  return '<html><head><meta charset="utf-8"><style>' +
+    '@page{size:A4;margin:16mm 14mm}' +
+    'body{font-family:Helvetica,Arial,sans-serif;color:#1B2A3A;font-size:10.5pt}' +
+    '.head{width:100%;border-collapse:collapse;margin-bottom:8mm}.head td{vertical-align:top}' +
+    'h1{font-size:22pt;font-weight:normal;color:#1873BC;margin:0 0 2pt}' +
+    '.sub{font-weight:bold;font-size:11pt;margin-bottom:10pt}.meta{line-height:1.7;color:#4B5261}.meta b{color:#1B2A3A}' +
+    '.right{text-align:right;line-height:1.7;color:#4B5261}.right b{color:#1B2A3A}' +
+    'table.r{width:100%;border-collapse:collapse}table.r th{background:#ECEEF1;text-align:left;font-weight:normal;color:#4B5261;padding:6pt}' +
+    'table.r th.n,table.r td.n{text-align:right}table.r td{padding:6pt;border-bottom:1px solid #D8DAD3}' +
+    'tr.grp td{background:#F3F4F6;font-weight:bold;border-bottom:1px solid #E5E7EB}tr.it td{color:#4B5261;border-bottom:1px solid #EEF0F2}tr.it td:first-child{padding-left:18pt}' +
+    'tr.tot td{border-top:1.5px solid #1B2A3A;font-weight:bold}tr.warn td{background:#FFF8DB}' +
+    '.foot{margin-top:10mm;font-size:8.5pt;color:#7A8794}' +
+    '</style></head><body>' +
+    '<table class="head"><tr><td>' +
+      '<h1>Dagsrapport</h1><div class="sub">' + esc_(APP.NAME) + '</div>' +
+      '<div class="meta">' + esc_(ORG.company) + '<br>Org.nr: ' + ORG.orgnr + '<br><b>Försäljningsdag:</b> ' + d.date + '<br><b>Framtagen:</b> ' + now_('yyyy-MM-dd HH:mm') + '</div>' +
+    '</td><td class="right">' + (logo ? '<img src="' + logo + '" width="70" height="70"><br>' : '') +
+      '<b>' + esc_(APP.NAME) + '</b><br>' + esc_(ORG.street) + '<br>' + esc_(ORG.city) + '<br>' + esc_(APP.PHONE) + '</td></tr></table>' +
+    '<table class="r"><tr><th>Grupp</th><th class="n">Antal</th><th class="n">Summa</th></tr>' +
+      row('Total försäljning', kr2_(t.gross), t.orders + ' order') +
+      row('Total moms ' + d.vatPct + '% (ingår, netto utan dricks)', kr2_(t.vat)) +
+      row('Försäljning med kort online (kort, Apple Pay, Google Pay)', kr2_(t.online)) +
+      row('Försäljning med Swish', kr2_(t.swish)) +
+      row('Dricks', kr2_(t.tips)) +
+      row('Sålda varor', kr2_(d.goods), d.items) +
+      row('Returer (återbetalt)', kr2_(t.refunded)) +
+      (t.cancelled ? row('Avbokade (ej räknade)', '', t.cancelled) : '') +
+      (t.unpaid ? row('Swish ej markerad betald – stäm av', kr2_(t.unpaid), null, 'warn') : '') +
+      grp +
+      row('Grand total försäljning', kr2_(t.gross), null, 'tot') +
+      row('Grand total retur', kr2_(t.refunded), null, 'tot') +
+      row('Grand total netto', kr2_(t.net), null, 'tot') +
+    '</table>' +
+    (d.archive === 'error' ? '<p style="color:#9B2C2C">Arkivet kunde inte läsas – siffrorna kan vara ofullständiga.</p>' : '') +
+    '<div class="foot">Datum = när beställningen togs emot. Beställningar via ' + esc_(prop_('SITE_URL') || 'webbplatsen').replace(/^https?:\/\//, '') + '. Priser inkl. moms.</div>' +
+    '</body></html>';
+}
+
+/** Logotypen som data-URI (hämtas från webbplatsen en gång och cachas). */
+function reportLogo_() {
+  try {
+    const cache = CacheService.getScriptCache(), hit = cache.get('REPORT_LOGO');
+    if (hit) return hit;
+    const site = prop_('SITE_URL'); if (!site) return '';
+    const res = UrlFetchApp.fetch(site.replace(/\/$/, '') + '/logo.png', { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200 || !res.getBlob) return '';
+    const uri = 'data:image/png;base64,' + Utilities.base64Encode(res.getBlob().getBytes());
+    if (uri.length < 90000) cache.put('REPORT_LOGO', uri, 21600);
+    return uri;
+  } catch (e) { return ''; }
+}
+
+function dailyPdf_(date) {
+  const d = dailyDetail_(date);
+  return { detail: d, blob: Utilities.newBlob(dailyPdfHtml_(d), 'text/html', 'rapport.html').getAs('application/pdf').setName('Hanami_dagsrapport_' + date + '.pdf') };
 }
