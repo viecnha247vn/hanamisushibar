@@ -35,7 +35,7 @@ function platformMail_(date) {
       '<div style="font-size:13px;opacity:.85">Queenie89 AB · Q89 Pay · plattformsrapport</div>' +
       '<div style="font-size:21px;font-weight:600;margin-top:2px">' + date + '</div>' +
       '<div style="font-size:30px;font-weight:700;margin-top:10px">' + k(d.profit) + '</div>' +
-      '<div style="font-size:13px;opacity:.85">resultat · ' + d.appFeeCount + ' avgifter · ' + d.marginPct + ' % av ' + k(d.charges) + '</div></div>' +
+      '<div style="font-size:13px;opacity:.85">resultat · ' + d.appFeeCount + ' avgifter · ' + String(d.marginPct).replace('.', ',') + ' % av ' + k(d.charges) + '</div></div>' +
     '<div style="border:1px solid #e5e7eb;border-top:0;padding:14px 22px 20px;border-radius:0 0 12px 12px">' +
     '<h3 style="margin:6px 0;font-size:15px">Resultat</h3><table style="border-collapse:collapse;width:100%;font-size:15px">' +
       tr('Q89-avgifter (4 % + 2 kr)', '+' + k(d.appFees)) +

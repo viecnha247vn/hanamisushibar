@@ -684,6 +684,18 @@ Cài đặt: đưa `Report.js` (mới) và `Api.js` lên Apps Script → Triển
 - **Bật**: Google Sheet → **Hanami → Rapporter per e-post → Slå på**. Thử ngay: *Skicka dagsrapport nu (test)* / *Skicka månadsrapport nu (test)*. Tắt: *Stäng av*.
 - Code: `apps-script/ReportMail.js`, menu trong `Setup.js`. Phí/moms lấy từ thuộc tính `STRIPE_FEE_PCT`, `STRIPE_FEE_FIXED`, `STRIPE_VAT_PCT` (mặc định 4 / 2 / 6).
 
+### Báo cáo lợi nhuận Q89 (cho Queenie89 AB, KHÔNG gửi quán) — thêm 2026-10-13
+
+- **Mỗi sáng ~07:00** e-mail "💼 Q89 Pay ÅÅÅÅ-MM-DD · resultat …" cho **cả ngày hôm qua** (00:00–24:00), lấy thẳng từ sổ Stripe của tài khoản nền tảng (balance transactions):
+  - **Resultat** = Q89-avgifter (4 % + 2 kr) − hoa hồng đã hoàn − phí thẻ Stripe − phí Stripe khác (Connect …)
+  - **Pengar som passerar**: tiền khách trả, hoàn cho khách, chuyển cho quán, quán trả lại khi hoàn tiền, rút về ngân hàng Q89, thay đổi số dư, số dư hiện tại
+  - **Từng đơn**: giờ, đơn, tiền, Q89 (+), Stripe (−), còn lại
+- Ví dụ thật 13/10: đơn 489 kr → +21,56 − 9,14 = **12,42 kr**.
+- Người nhận: thuộc tính **`PLATFORM_EMAIL`** (bắt buộc; không bao giờ gửi tới `NOTIFY_EMAIL`/`REPORT_EMAIL` của quán). Tab Logg chỉ ghi "đã gửi", không ghi số tiền.
+- Bật: **Hanami → Q89 plattformsrapport → Slå på**. Thử: *Skicka för idag (hittills)* / *Skicka för igår*.
+- Bảo mật: số liệu do Vercel tính tại `/api/platform` (`lib/platform.js`), chỉ mở bằng khoá `GAS_SECRET` = API_SECRET của Apps Script; mật khẩu köksvyn không mở được.
+- ⚠️ Ai có quyền **sửa** Apps Script/Google Sheet này thì xem được code và thuộc tính. Nếu chủ quán có quyền sửa Sheet, nên chuyển phần này sang một Apps Script riêng của Q89.
+
 ### Dữ liệu cá nhân
 Tab Betalningar chứa bản sao đơn (tên, điện thoại) **chỉ trong lúc chờ thanh toán**. Khi trả xong, `payConfirm` xoá bản sao đó (chỉ giữ loại đơn + số bàn); dữ liệu khách nằm duy nhất ở Beställningar và theo Cleanup như trước. Dòng chưa trả xoá sau 2 ngày. Không cần sửa `Cleanup.js`.
 
