@@ -169,7 +169,7 @@ const jsonld = {
 const clientSettings = {
   phone: settings.phone, email: settings.email, swish: settings.swish, name: settings.name, allergens: settings.allergens, hours: settings.hours, closedDates: settings.closedDates, lunch: settings.lunch, happyHour: settings.happyHour,
   pickupLeadMinutes: settings.pickupLeadMinutes, pickupDaysAhead: settings.pickupDaysAhead, bookingDaysAhead: settings.bookingDaysAhead,
-  maxBookingGuests: settings.maxBookingGuests, payOnline: !!settings.payOnline
+  maxBookingGuests: settings.maxBookingGuests, payOnline: !!settings.payOnline, paySwish: !!settings.paySwish
 };
 
 rmSync("dist", { recursive: true, force: true });

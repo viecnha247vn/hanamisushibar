@@ -115,6 +115,15 @@ const sub = await call({ url: "/api/submit", method: "POST", query: { route: "su
 assert.equal(sub.status, 400); assert.match(sub.json.error, /api\/pay/);
 ok("/api/submit avvisar payment=online");
 
+// paySwish: false (data/settings.js) → manuell Swish nekas medan Stripe fungerar
+{
+  const settings = (await import("../data/settings.js")).default;
+  const sw = await call({ url: "/api/submit", method: "POST", query: { route: "submit" }, body: { ...orderBody, payment: "swish" } });
+  if (settings.paySwish) assert.notEqual(sw.status, 400);
+  else { assert.equal(sw.status, 400); assert.match(sw.json.error, /kort, Apple Pay/); }
+  ok(`/api/submit med Swish ${settings.paySwish ? "tillåts (paySwish: true)" : "nekas (paySwish: false)"}`);
+}
+
 // --- webhook ---
 // Som i produktion: Vercel-request är en ström, req.body är en getter som tolkar JSON, Stripe skickar INDENTERAD JSON
 {

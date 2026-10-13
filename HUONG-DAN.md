@@ -538,7 +538,7 @@ journalctl -u hanami-print -f                              # xem log
 | Vercel (Production) | `STRIPE_SECRET_KEY` (Secret), `STRIPE_WEBHOOK_SECRET` (Secret), `STRIPE_ACCOUNT`, `STRIPE_VAT_PCT=6`, `SITE_URL=https://www.hanamisushibar.se` |
 | Moms | **6 %** inkluderad (thuế thực phẩm tạm giảm). Code tự tạo thuế suất "Moms 6 %" trong Stripe; không tính moms trên dricks |
 | Phí nền tảng | 4 % + 2 kr mỗi đơn (`STRIPE_FEE_PCT`/`STRIPE_FEE_FIXED`, mặc định) |
-| Lựa chọn trong giỏ | **Betala med kort nu** (mặc định) · **Swish**. "Kort i kassan" đã bỏ khỏi web 2026-10-12 (server vẫn nhận `payment: "kort"` từ trang cũ còn mở) |
+| Lựa chọn trong giỏ | Chỉ **Betala med kort nu** (kort · Apple Pay · Google Pay). "Kort i kassan" bỏ 2026-10-12. **Swish thủ công tạm khoá 2026-10-13** trong lúc làm Swish Handel: `paySwish: false` trong `data/settings.js` → ẩn trên web và `/api/submit` từ chối đơn Swish (chỉ khi Stripe đang chạy; Stripe hỏng thì Swish tự hiện lại để khách vẫn đặt được). Mở lại: đổi thành `paySwish: true` → commit → Vercel tự deploy |
 | Thử thật | 12 kr Sushisoja, Apple Pay → đơn **H1022**, phí 2,48 kr, moms 0,68 kr, chuyển sang Hanami; rồi hoàn toàn bộ (tiền + chuyển khoản + phí) — mọi khoản về 0 |
 
 > **Lỗi đã sửa 2026-10-12:** `api/stripe-webhook.js` cũ đọc `req.body` trước. Trên Vercel `req.body` là getter tự parse JSON (`config.api.bodyParser` chỉ có tác dụng với Next.js), Stripe gửi JSON thụt lề → `JSON.stringify` cho byte khác → **mọi webhook bị 400 "Bad signature"**, tiền thu nhưng không có đơn. Nay đọc luồng thô trước; `tests/pay.test.mjs` có test mô phỏng đúng tình huống này.

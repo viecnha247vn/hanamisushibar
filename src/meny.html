@@ -287,6 +287,7 @@
 
 /* ================= menysidan ================= */
 const PAY_ONLINE = !!SETTINGS.payOnline && !!ENDPOINT;   // onlinebetalning slås på i data/settings.js (payOnline: true)
+const PAY_SWISH = !!SETTINGS.paySwish || !PAY_ONLINE;     // manuell Swish (paySwish), alltid som reserv om online är av
 const ITEMS = {};
 $$("[data-add]").forEach(b => { ITEMS[b.dataset.add] = { id: b.dataset.add, cat: b.dataset.cat, name: b.dataset.name, price: Number(b.dataset.price) }; });
 
@@ -658,7 +659,7 @@ function renderDrawer() {
         <small id="tipInfo">${tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Tack, men ingen dricks behövs – vi blir lika glada ändå."}</small></div>
       <div class="field"><span class="lbl">Betalning</span><div class="choice pay">
         ${PAY_ONLINE ? `<label><input type="radio" name="pay" value="online" checked>Betala med kort nu <span class="paymeth">kort · Apple Pay · Google Pay</span></label>` : ""}
-        <label><input type="radio" name="pay" value="swish"${PAY_ONLINE ? "" : " checked"}>Swish till ${swishNo}</label></div>
+        ${PAY_SWISH ? `<label><input type="radio" name="pay" value="swish"${PAY_ONLINE ? "" : " checked"}>Swish till ${swishNo}</label>` : ""}</div>
         <small id="payInfo">${PAY_ONLINE ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}` : `Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Ange ditt ordernummer som meddelande.`}</small></div>
       <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
         <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>

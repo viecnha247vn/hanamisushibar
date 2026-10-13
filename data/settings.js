@@ -11,6 +11,10 @@ export default {
   // Onlinebetalning via Stripe (Q89 Pay): kort, Apple Pay och Google Pay direkt i beställningen.
   // Kräver STRIPE_SECRET_KEY + STRIPE_ACCOUNT på Vercel (annars svarar /api/pay 503). Aktiverad 2026-10-12.
   payOnline: true,
+  // Manuell Swish till numret ovan (gästen swishar själv, köket bockar "Betald"). false = dold medan Swish Handel
+  // ordnas – då betalar alla med kort online. Visas ändå automatiskt om onlinebetalningen är avstängd (payOnline false),
+  // så att det alltid finns ett sätt att betala.
+  paySwish: false,
   instagram: "hanamisushi99999",
   timezone: "Europe/Stockholm",
   // veckodag (0 = söndag) -> [öppnar, stänger] i hela timmar, null = stängt
