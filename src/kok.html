@@ -91,7 +91,7 @@ ul li b{display:inline-block;min-width:2.2ch}
 .rbar{height:12px;border-radius:0 4px 4px 0;background:var(--koi);min-width:2px}
 .rtable tr:hover td{background:#EEF4FA}
 .rwrap{overflow-x:auto;border-radius:12px}
-.rnote{font-size:13px;color:var(--ink-2);margin:10px 2px}
+
 .day{margin:18px 0 8px;font-size:15px;font-weight:700;color:var(--ink-2)}
 .day:first-child{margin-top:0}
 .mcat{margin:16px 0 6px;font-weight:700;color:var(--ink-2)}
@@ -212,8 +212,6 @@ ul li b{display:inline-block;min-width:2.2ch}
     <div id="rWarn" class="banner warn" hidden></div>
     <div class="tiles" id="rTiles"></div>
     <div class="rwrap"><table class="rtable" id="rTable"></table></div>
-    <p class="rnote">Datum = när beställningen togs emot. Avbokade räknas inte (utom onlinebetalda – deras återbetalning syns under Återbetalt).
-      Netto = brutto − återbetalt. Moms ingår i priserna och räknas på netto utan dricks. <b>Ej markerad betald</b> = Swish där köket inte bockat Betald – stäm av mot Swish. Rapporten räknar från och med <span id="rFrom"></span> (tidigare beställningar och <i>kort i kassan</i> var test).</p>
   </section>
 
   <section data-panel="qr" hidden>
@@ -449,7 +447,6 @@ async function loadReport(){
       `<tr class="sum"><td>Totalt</td><td>${t.orders}</td><td>${krf(t.net)}</td><td></td><td>${krf(t.online)}</td><td>${krf(t.swish)}</td><td>${t.refunded ? krf(t.refunded) : "–"}</td></tr></tbody>`;
   } catch (e) { if (e.message !== "401") $("#rTable").innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; }
 }
-$("#rFrom").textContent = CFG.reportFrom || "start";
 $("#rMode").onchange = loadReport; $("#rMonth").onchange = loadReport; $("#rYear").onchange = loadReport; $("#rReload").onclick = loadReport;
 $("#rCsv").onclick = async () => {
   const r = reportRange();
