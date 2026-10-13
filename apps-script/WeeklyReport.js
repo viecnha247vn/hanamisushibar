@@ -1,5 +1,6 @@
 /**
- * Avstämningsrapport per vecka (mån–sön) till restaurangen – som PDF, måndag morgon ~06.
+ * Avstämningsrapport per vecka (mån–sön, måndag ~06) och per månad (den 1:a ~06, hela förra månaden)
+ * till restaurangen – som PDF, samma uppställning.
  * Visar försäljning per momssats och betalsätt, transaktionsavgifter för kortbetalning online och
  * vad som betalas ut via Stripe för veckans försäljning. Swish går direkt till restaurangen utan avgift.
  *
@@ -47,7 +48,10 @@ function weeklyData_(from, to) {
   const methods = ['online', 'swish'].map(k => ({ key: k, label: k === 'online' ? 'Kort online (kort, Apple Pay, Google Pay)' : 'Swish', n: m[k].n, ...split(m[k].gross, m[k].tips) }));
   const fee = m.online.fee, feeEx = r2(fee / (1 + feeVat / 100));
   return {
-    from: from, to: to, week: isoWeek_(from), vatPct: vat, feeVatPct: feeVat, cancelled: cancelled, archive: data.archive,
+    from: from, to: to, week: isoWeek_(from),
+    label: from.slice(8) === '01' && to === addDays_(addDays_(to, 1).slice(0, 8) + '01', -1) && from.slice(0, 7) === to.slice(0, 7)
+      ? MONTHS_SV[Number(from.slice(5, 7)) - 1] + ' ' + from.slice(0, 4) : 'vecka ' + isoWeek_(from),
+    vatPct: vat, feeVatPct: feeVat, cancelled: cancelled, archive: data.archive,
     sales: sales, refunds: ref, orders: m.online.n + m.swish.n, methods: methods,
     fee: { n: m.online.n, total: r2(fee), ex: feeEx, vat: r2(fee - feeEx) },
     payout: { cards: r2(m.online.gross), refunded: r2(m.online.refunded), fee: r2(fee), total: r2(m.online.gross - m.online.refunded - fee) },
@@ -71,7 +75,7 @@ function weeklyPdfHtml_(w) {
     'tr.sum td{font-weight:bold}tr.pay td{background:#ECEEF1;font-weight:bold;font-size:11pt}.note{font-size:8.5pt;color:#7A8794;margin-top:4pt}' +
     '</style></head><body>' +
     '<table class="head"><tr><td><h1>Avstämningsrapport</h1>' +
-      '<div class="meta"><b>' + esc_(APP.NAME) + '</b><br>' + esc_(ORG.company) + ' · Org.nr: ' + ORG.orgnr + '<br><b>Period:</b> ' + w.from + ' till ' + w.to + ' (vecka ' + w.week + ')<br><b>Framtagen:</b> ' + now_('yyyy-MM-dd HH:mm') + '</div>' +
+      '<div class="meta"><b>' + esc_(APP.NAME) + '</b><br>' + esc_(ORG.company) + ' · Org.nr: ' + ORG.orgnr + '<br><b>Period:</b> ' + w.from + ' till ' + w.to + ' (' + w.label + ')<br><b>Framtagen:</b> ' + now_('yyyy-MM-dd HH:mm') + '</div>' +
     '</td><td class="right">' + (logo ? '<img src="' + logo + '" width="64" height="64"><br>' : '') + esc_(ORG.street) + '<br>' + esc_(ORG.city) + '</td></tr></table>' +
 
     '<h2>Översikt</h2><table class="r">' + th(['', 'Ex. moms', 'Moms', 'Totalt inkl. moms']) +
@@ -107,33 +111,43 @@ function weeklyPdfHtml_(w) {
     '</body></html>';
 }
 
-function weeklyMail_(from, to) {
+function weeklyMail_(from, to) { return avstamningMail_(from, to); }
+
+/** Skickar avstämningsrapporten för from–to (vecka eller månad) som PDF. */
+function avstamningMail_(from, to) {
   const rcpt = reportRecipients_();
   if (!rcpt) throw new Error('REPORT_EMAIL/NOTIFY_EMAIL saknas');
   const w = weeklyData_(from, to);
-  const pdf = Utilities.newBlob(weeklyPdfHtml_(w), 'text/html', 'v.html').getAs('application/pdf').setName('Hanami_avstamning_v' + w.week + '_' + from + '.pdf');
+  const pdf = Utilities.newBlob(weeklyPdfHtml_(w), 'text/html', 'v.html').getAs('application/pdf').setName(w.label.indexOf('vecka') === 0 ? 'Hanami_avstamning_v' + w.week + '_' + from + '.pdf' : 'Hanami_avstamning_' + from.slice(0, 7) + '.pdf');
   const html = '<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;color:#161B26">' +
-    '<p>Hej!</p><p>Här är avstämningsrapporten för <b>vecka ' + w.week + '</b> (' + from + ' – ' + to + ').</p>' +
+    '<p>Hej!</p><p>Här är avstämningsrapporten för <b>' + w.label + '</b> (' + from + ' – ' + to + ').</p>' +
     '<table style="border-collapse:collapse;font-size:15px">' +
     '<tr><td style="padding:4px 18px 4px 0;color:#4B5261">Försäljning totalt</td><td style="text-align:right">' + krR_(w.sales.total - w.refunds.total) + '</td></tr>' +
     '<tr><td style="padding:4px 18px 4px 0;color:#4B5261">Transaktionsavgift</td><td style="text-align:right">−' + krR_(w.fee.total) + '</td></tr>' +
     '<tr><td style="padding:4px 18px 4px 0"><b>Utbetalas via Stripe</b></td><td style="text-align:right"><b>' + krR_(w.payout.total) + '</b></td></tr>' +
     '<tr><td style="padding:4px 18px 4px 0;color:#4B5261">Swish (direkt till er)</td><td style="text-align:right">' + krR_(w.swishDirect) + '</td></tr></table>' +
     '<p style="color:#4B5261;font-size:13px">Hela rapporten finns i bifogad PDF.</p></div>';
-  MailApp.sendEmail({ to: rcpt, subject: '🧾 Avstämningsrapport vecka ' + w.week + ' · ' + from + '–' + to, htmlBody: html,
-    body: 'Avstämningsrapport vecka ' + w.week + ' (' + from + '–' + to + ')\nUtbetalas via Stripe: ' + krR_(w.payout.total), name: APP.NAME + ' rapport', attachments: [pdf] });
-  log_('INFO', 'Veckorapport', 'vecka ' + w.week + ' → ' + rcpt);
+  MailApp.sendEmail({ to: rcpt, subject: '🧾 Avstämningsrapport ' + w.label + ' · ' + from + '–' + to, htmlBody: html,
+    body: 'Avstämningsrapport ' + w.label + ' (' + from + '–' + to + ')\nUtbetalas via Stripe: ' + krR_(w.payout.total), name: APP.NAME + ' rapport', attachments: [pdf] });
+  log_('INFO', 'Avstämningsrapport', w.label + ' → ' + rcpt);
   return w;
 }
 
-/** Daglig trigger ~06: på måndagar skickas förra veckans rapport (högst en gång). */
+/** Daglig trigger ~06: måndag → förra veckan, den 1:a → förra månaden (var och en högst en gång). */
 function weeklyReportTick() {
-  const today = now_('yyyy-MM-dd');
-  if (new Date(today + 'T12:00:00Z').getUTCDay() !== 1) return;
-  const last = weekRange_(addDays_(today, -1)), props = PropertiesService.getScriptProperties();
-  if (props.getProperty('WEEKLY_SENT') === last.from) return;
-  weeklyMail_(last.from, last.to);
-  props.setProperty('WEEKLY_SENT', last.from);
+  const today = now_('yyyy-MM-dd'), props = PropertiesService.getScriptProperties();
+  if (new Date(today + 'T12:00:00Z').getUTCDay() === 1) {
+    const last = weekRange_(addDays_(today, -1));
+    if (props.getProperty('WEEKLY_SENT') !== last.from) { avstamningMail_(last.from, last.to); props.setProperty('WEEKLY_SENT', last.from); }
+  }
+  if (today.slice(8) === '01') {
+    const to = addDays_(today, -1), from = to.slice(0, 8) + '01';
+    if (props.getProperty('MONTHLY_SENT') !== from) { avstamningMail_(from, to); props.setProperty('MONTHLY_SENT', from); }
+  }
+}
+function monthlyReportTest() {
+  const today = now_('yyyy-MM-dd'), w = avstamningMail_(today.slice(0, 8) + '01', today);
+  say_('Månadsrapport för ' + w.label + ' (hittills) skickad till ' + reportRecipients_() + '.');
 }
 function weeklyReportTest() {
   const last = weekRange_(addDays_(now_('yyyy-MM-dd'), -7)), cur = weekRange_(now_('yyyy-MM-dd'));

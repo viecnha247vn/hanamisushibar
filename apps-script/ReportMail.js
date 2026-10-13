@@ -1,7 +1,7 @@
 /**
  * Omsättningsrapport per e-post till ägaren.
  *   • Dagsrapport varje dag kl 20.05 (efter stängning 20.00).
- *   • Månadsrapport sista dagen i månaden, i samma veva.
+ *   • Månadsrapport: avstämningsrapport (PDF) den 1:a för hela förra månaden – se WeeklyReport.js.
  *
  * Exakt klockslag: Apps Scripts dagliga triggers går bara "ungefär" (±15 min). Därför körs scheduleReportMail
  * en gång mitt på dagen och lägger en ENGÅNGS-trigger på exakt 20.05 samma dag (sendReportMail).
@@ -110,8 +110,7 @@ function sendReportMail() {
   try {
     const d = new Date(today + 'T12:00:00Z');
     mailReport_('dag', today, today, d.getUTCDate() + ' ' + MONTHS_SV[d.getUTCMonth()] + ' ' + d.getUTCFullYear());
-    if (addDays_(today, 1).slice(0, 7) !== today.slice(0, 7))
-      mailReport_('månad', today.slice(0, 8) + '01', today, MONTHS_SV[d.getUTCMonth()].replace(/^./, c => c.toUpperCase()) + ' ' + d.getUTCFullYear());
+    // månadsrapporten skickas som avstämningsrapport (PDF) den 1:a, se WeeklyReport.js
   } catch (e) { log_('ERROR', 'Rapport-mejl', e.stack || e.message); props.deleteProperty('REPORT_SENT'); throw e; }
 }
 
@@ -134,7 +133,7 @@ function reportMailEnable() {
   ScriptApp.newTrigger('weeklyReportTick').timeBased().atHour(6).everyDays(1).inTimezone(APP.TZ).create();   // måndagar: veckorapport
   ScriptApp.newTrigger('scheduleReportMail').timeBased().atHour(12).everyDays(1).inTimezone(APP.TZ).create();
   const today = scheduleReportMail();
-  say_('E-postrapporter är PÅ ✅\n\nDagsrapport varje dag kl 20.05, månadsrapport sista dagen i månaden, avstämningsrapport (PDF) varje måndag ca kl 06.\nMottagare: ' +
+  say_('E-postrapporter är PÅ ✅\n\nDagsrapport varje dag kl 20.05. Avstämningsrapport (PDF): varje måndag ca kl 06 för förra veckan och den 1:a ca kl 06 för förra månaden.\nMottagare: ' +
     (reportRecipients_() || '(saknas – fyll i REPORT_EMAIL eller NOTIFY_EMAIL)') + (today ? '\n\nFörsta rapporten kommer idag kl 20.05.' : '\n\nFörsta rapporten kommer imorgon kl 20.05.'));
 }
 function reportMailDisable() {

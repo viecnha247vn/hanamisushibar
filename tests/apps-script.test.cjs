@@ -480,8 +480,7 @@ test("rapport-mejl: summering = lib/report.js, dagsrapport skickas en gång, må
   assert.doesNotMatch(sent[0].htmlBody, /Q89|avgift|Via Stripe/i, "plattformsavgiften får inte synas i ägarens rapport");
   const today = E.call("health").time.slice(0, 10), d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1);
   const lastDay = d.toISOString().slice(5, 7) !== today.slice(5, 7);
-  assert.equal(sent.length, lastDay ? 2 : 1, "månadsrapport bara sista dagen");
-  if (lastDay) assert.match(sent[1].subject, /^📅 Månadsrapport /);
+  assert.equal(sent.length, 1, "kvällsmejlet är bara dagsrapporten (månaden kommer som PDF den 1:a)"); void lastDay;
   E.ctx.sendReportMail();
   assert.equal(E.log.mails.length, before + sent.length, "skickades två gånger samma dag");
 
@@ -554,6 +553,14 @@ test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift,
   const m = E.log.mails[n];
   assert.equal(m.to, "agare@exempel.se"); assert.match(m.subject, /Avstämningsrapport vecka 42/);
   assert.equal(m.attachments[0].name, "Hanami_avstamning_v42_2026-10-12.pdf");
+  // månad: samma uppställning, etikett "oktober 2026", filnamn per månad
+  const mo = E.ctx.weeklyData_("2026-10-01", "2026-10-31");
+  assert.equal(mo.label, "oktober 2026"); assert.equal(mo.fee.total, 38.44);
+  assert.match(E.ctx.weeklyPdfHtml_(mo), /2026-10-01 till 2026-10-31 \(oktober 2026\)/);
+  const k = E.log.mails.length; E.ctx.avstamningMail_("2026-10-01", "2026-10-31");
+  assert.match(E.log.mails[k].subject, /Avstämningsrapport oktober 2026/);
+  assert.equal(E.log.mails[k].attachments[0].name, "Hanami_avstamning_2026-10.pdf");
+  assert.equal(E.ctx.weeklyData_("2026-10-12", "2026-10-31").label, "vecka 42", "delmånad är ingen månad");
   E.ctx.reportOrders_ = orig;
 });
 

@@ -30,7 +30,7 @@ function onOpen() {
       .addItem('Slå på (dag 20.05 + månad)', 'reportMailEnable')
       .addItem('Stäng av', 'reportMailDisable')
       .addItem('Skicka dagsrapport nu (test)', 'reportMailTestDay')
-      .addItem('Skicka månadsrapport nu (test)', 'reportMailTestMonth')
+      .addItem('Skicka månadsrapport nu (denna månad, test)', 'monthlyReportTest')
       .addItem('Skicka veckorapport nu (denna vecka, test)', 'weeklyReportTest'))
     .addSubMenu(ui.createMenu('Q89 plattformsrapport')
       .addItem('Slå på (varje morgon, gårdagen)', 'platformReportEnable')
