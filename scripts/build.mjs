@@ -45,7 +45,7 @@ const plusIcon = `<svg aria-hidden="true"><use href="#i-plus"/></svg>`;
 const two = n => String(n).padStart(2, "0");
 const tag = id =>
   id === "lunch" ? `<span class="tag" data-for="lunch">Mån–fre ${settings.lunch.from}–${settings.lunch.to}</span>` :
-  id === "happy" ? `<span class="tag" data-for="happy">${settings.happyHour.from}–${settings.happyHour.to} varje dag</span>` : "";
+  id === "happy" ? `<span class="tag" data-for="happy">Hämtas ${settings.happyHour.from}–${settings.happyHour.to} varje dag</span>` : "";
 
 /* Kategoribilder i static/bilder/<id>-{s,m,l}.{webp,jpg}. Saknas bilden får kategorin ingen banderoll. */
 /* Ånga över varma rätter. Per bild: [mitt i % från vänster, bredd %, varaktighet s, fördröjning s, start % från botten]

@@ -438,4 +438,17 @@ test("reportOrders: driftark + arkiv, inga personuppgifter, datumfilter, ogiltig
   }
 });
 
+/* ---------------- happy hour: hämtning 16–17 vald av gästen ---------------- */
+test("happy hour-order med vald dag/tid (asap av) sparas med den tiden, även en senare dag", () => {
+  const today = E.call("health").time.slice(0, 10);
+  const d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1);
+  const tomorrow = d.toISOString().slice(0, 10);
+  const r = E.call("order", { kind: "pickup", name: "Hh", phone: "+46701112233", asap: false, happy: true,
+    pickupDate: tomorrow, pickupTime: "16:30", whenText: "imorgon kl 16:30", payment: "swish", tip: 0, items: [{ id: "happy-1", qty: 1 }] });
+  assert.equal(r.ok, true, JSON.stringify(r)); assert.match(r.no, /^H\d+$/);
+  const sh = E.sheets["Beställningar"], head = sh.data[0], row = sh.data.find(x => x[head.indexOf("Ordernr")] === r.no);
+  assert.equal(String(row[head.indexOf("Hämtas datum")]), tomorrow);
+  assert.equal(String(row[head.indexOf("Hämtas tid")]), "16:30");
+});
+
 console.log("\n" + passed + " tester OK");

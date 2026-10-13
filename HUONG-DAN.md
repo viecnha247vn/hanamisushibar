@@ -361,7 +361,9 @@ Khách **không tự chọn giờ lấy** nữa. Giờ lấy = **bây giờ (ho�
 - **Đặt đơn 24/7:** ngày đóng cửa, sau giờ đóng cửa, hoặc khi bếp không kịp trước giờ đóng → đơn tự chuyển sang **ngày mở cửa kế tiếp**, giờ lấy = giờ mở cửa + thời gian chủ quán chọn (VD 11:00 + 30 phút = 11:30). Bỏ qua Chủ nhật và các ngày trong `closedDates`. Quy tắc nằm ở `lib/pickup.js` (Vercel), `pickupInfo()` trong `src/meny.html` (trang khách) và `createOrder_` trong `apps-script/Orders.js`.
 - Đơn đặt ban đêm: máy in in ngay nếu đang bật (đầu đơn ghi `IMORGON` / `KL 11:30`), nếu tắt thì in khi bật máy sáng hôm sau (lúc đó ghi `IDAG`). Trong `/kok` đơn nằm ở **ngày lấy hàng**.
 - "Slut idag" chỉ áp dụng cho đơn lấy trong ngày; đơn cho ngày mai vẫn đặt được món đó.
-- Món happy hour chỉ đặt được trong giờ happy hour và lấy trong ngày; món lunch chỉ khi ngày lấy là thứ 2–6.
+- **Happy hour (từ 2026-10-13):** *mang về* — khách **đặt bất cứ lúc nào, mọi ngày**, nhưng **cả đơn chỉ lấy 16.00–17.00** một ngày quán mở. Ở bước thanh toán khách chọn **Dag** (hôm nay + tối đa `pickupDaysAhead` = 3 ngày, bỏ ngày đóng cửa) và **Tid** (16.00 / 16.15 / 16.30 / 16.45, chỉ những giờ bếp kịp theo thời gian chuẩn bị). Món lunch + happy hour cùng một đơn bị chặn (giờ lấy khác nhau) với thông báo rõ. *Tại bàn (QR)* — như cũ, chỉ đặt được trong 16–17. Quy tắc: `lib/happy.js` (server) và `happySlots()` trong `src/meny.html` (web); test `tests/happy.test.mjs`.
+  Bếp: đơn đặt trước cho ngày sau vẫn **in ngay** khi khách đặt (phiếu ghi rõ ngày/giờ lấy, ví dụ "IMORGON KL 16:30"); trong köksvyn đơn nằm ở **ngày lấy** (chọn ngày đó trong ô ngày).
+- Món lunch chỉ khi ngày lấy là thứ 2–6, 11–14.
 
 ### 7.3 Betald: đánh dấu đơn đã trả tiền
 
