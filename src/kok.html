@@ -81,6 +81,10 @@ ul li b{display:inline-block;min-width:2.2ch}
 .tile.hero .k,.tile.hero .s{color:#fff;opacity:.8}.tile.hero .v{font-size:32px}
 .tile.warn{border-color:var(--warn);background:#FFF8DB}
 .tile .s{font-size:12px;color:var(--ink-2);margin-top:2px}
+.rlabel{font-weight:600;color:var(--ink-2)}
+.rnav{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
+.rnav .btn{min-width:42px;padding:10px 12px}
+.rnav input{min-width:0}
 .rtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-variant-numeric:tabular-nums}
 .rtable th,.rtable td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .rtable th:first-child,.rtable td:first-child{text-align:left}
@@ -200,13 +204,18 @@ ul li b{display:inline-block;min-width:2.2ch}
 
   <section data-panel="report" hidden>
     <div class="tools">
-      <select id="rMode" aria-label="Visa">
-        <option value="month">Månad – per dag</option>
-        <option value="year">År – per månad</option>
-      </select>
+      <div class="leadbtns" id="rModes" role="group" aria-label="Visa">
+        <button type="button" data-rmode="day">Dag</button><button type="button" data-rmode="week">Vecka</button><button type="button" data-rmode="month" aria-pressed="true">Månad</button><button type="button" data-rmode="year">År</button>
+      </div>
+      <div class="rnav">
+      <button class="btn" type="button" id="rPrev" aria-label="Föregående">‹</button>
+      <input type="date" id="rDate" aria-label="Dag" hidden>
       <input type="month" id="rMonth" aria-label="Månad">
       <input type="number" id="rYear" min="2024" max="2100" style="width:100px" aria-label="År" hidden>
-      <button class="btn" type="button" id="rReload">Visa</button>
+      <button class="btn" type="button" id="rNext" aria-label="Nästa">›</button>
+      <button class="btn" type="button" id="rToday">Idag</button>
+      </div>
+      <span class="rlabel" id="rLabel"></span>
       <button class="btn" type="button" id="rCsv">Ladda ner CSV</button>
     </div>
     <div id="rWarn" class="banner warn" hidden></div>
@@ -409,50 +418,78 @@ document.addEventListener("click", async e => {
 /* ---------- rapport (omsättning per dag / månad) ---------- */
 const krf = n => (Number(n) || 0).toLocaleString("sv-SE", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " kr";
 const MONTHS = ["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
+let rMode = "month";
+const pad2 = n => String(n).padStart(2, "0");
+const isoD = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseD = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d, 12); };
+const addD = (s, n) => { const d = parseD(s); d.setDate(d.getDate() + n); return isoD(d); };
+function isoWeek(s) { const d = parseD(s); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); const w1 = new Date(d.getFullYear(), 0, 4, 12);
+  return 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7); }
 function reportRange(){
   const now = nowSE();
+  if (!$("#rDate").value) $("#rDate").value = iso(now);
   if (!$("#rMonth").value) $("#rMonth").value = iso(now).slice(0, 7);
   if (!$("#rYear").value) $("#rYear").value = now.getFullYear();
-  if ($("#rMode").value === "year") { const y = $("#rYear").value; return { from: `${y}-01-01`, to: `${y}-12-31`, by: "months" }; }
+  if (rMode === "day") { const d = $("#rDate").value; return { from: d, to: d, by: "days", mode: "day",
+    label: parseD(d).toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) }; }
+  if (rMode === "week") { const d = $("#rDate").value, mon = addD(d, -((parseD(d).getDay() + 6) % 7)), sun = addD(mon, 6);
+    return { from: mon, to: sun, by: "days", mode: "week", label: `Vecka ${isoWeek(mon)} · ${Number(mon.slice(8))}/${Number(mon.slice(5,7))}–${Number(sun.slice(8))}/${Number(sun.slice(5,7))} ${sun.slice(0,4)}` }; }
+  if (rMode === "year") { const y = $("#rYear").value; return { from: `${y}-01-01`, to: `${y}-12-31`, by: "months", mode: "year", label: `${y}` }; }
   const [y, m] = $("#rMonth").value.split("-").map(Number);
-  return { from: `${y}-${String(m).padStart(2,"0")}-01`, to: `${y}-${String(m).padStart(2,"0")}-${String(new Date(y, m, 0).getDate()).padStart(2,"0")}`, by: "days" };
+  return { from: `${y}-${pad2(m)}-01`, to: `${y}-${pad2(m)}-${pad2(new Date(y, m, 0).getDate())}`, by: "days", mode: "month", label: `${MONTHS[m - 1]} ${y}` };
+}
+function shiftReport(dir){
+  if (rMode === "day") $("#rDate").value = addD($("#rDate").value || today(), dir);
+  else if (rMode === "week") $("#rDate").value = addD($("#rDate").value || today(), 7 * dir);
+  else if (rMode === "year") $("#rYear").value = Number($("#rYear").value) + dir;
+  else { const [y, m] = $("#rMonth").value.split("-").map(Number), d = new Date(y, m - 1 + dir, 1, 12); $("#rMonth").value = isoD(d).slice(0, 7); }
+  loadReport();
 }
 async function loadReport(){
-  const r = reportRange(), year = r.by === "months";
-  $("#rMonth").hidden = year; $("#rYear").hidden = !year;
+  const r = reportRange(), year = r.mode === "year";
+  $("#rDate").hidden = !(r.mode === "day" || r.mode === "week"); $("#rMonth").hidden = r.mode !== "month"; $("#rYear").hidden = !year;
+  $$("#rModes [data-rmode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.rmode === rMode)));
+  $("#rLabel").textContent = r.mode === "month" || r.mode === "year" ? "" : r.label;
   $("#rTiles").innerHTML = ""; $("#rTable").innerHTML = `<tr><td>Hämtar…</td></tr>`; $("#rWarn").hidden = true;
   try {
     const d = await api(`?view=report&from=${r.from}&to=${r.to}`);
     if (d.archive === "error") { $("#rWarn").hidden = false; $("#rWarn").textContent = "Arkivet (beställningar äldre än 30 dagar) gick inte att läsa – äldre dagar kan saknas. Försök igen om en stund."; }
     const t = d.total;
     const tile = (k, v, cls = "", sub = "") => `<div class="tile ${cls}"><div class="k">${k}</div><div class="v">${v}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div>`;
+    const heroLabel = r.mode === "day" ? `Netto ${r.label}` : r.mode === "week" ? `Netto vecka ${isoWeek(r.from)}` : `Netto ${r.label}`;
     $("#rTiles").innerHTML =
-      tile(year ? `Netto ${$("#rYear").value}` : `Netto ${MONTHS[Number(r.from.slice(5,7)) - 1]} ${r.from.slice(0,4)}`, krf(t.net), "hero", `${t.orders} order · snitt ${krf(t.avg)}`) +
+      tile(esc(heroLabel), krf(t.net), "hero", `${t.orders} order · snitt ${krf(t.avg)}`) +
       tile("Online kort", krf(t.online)) + tile("Swish", krf(t.swish)) +
       tile("Dricks", krf(t.tips)) + tile("Återbetalt", krf(t.refunded)) + tile(`Moms ${d.vatPct} % (ingår)`, krf(t.vat)) +
       (t.unpaid ? tile("Ej markerad betald", krf(t.unpaid), "warn", "stäm av mot Swish") : "") +
       tile("Hämtning / bord", `${t.pickup} / ${t.table}`, "", t.cancelled ? `${t.cancelled} avbokade` : "");
-    // en rad per dag i månaden / per månad i året, även tomma
+    if (r.mode === "day") { $("#rTable").innerHTML = ""; return; }
+    // en rad per dag (vecka/månad) eller per månad (år), även tomma
     const rows = [];
-    if (year) for (let m = 1; m <= 12; m++) { const k = `${r.from.slice(0,4)}-${String(m).padStart(2,"0")}`; rows.push({ key: k, label: MONTHS[m-1], ...(d.months.find(x => x.month === k) || {}) }); }
-    else { const last = Number(r.to.slice(8)); for (let i = 1; i <= last; i++) { const k = r.from.slice(0,8) + String(i).padStart(2,"0");
-      const wd = new Date(k + "T12:00:00").toLocaleDateString("sv-SE", { weekday: "short" });
-      rows.push({ key: k, label: `${wd} ${i}/${Number(k.slice(5,7))}`, ...(d.days.find(x => x.date === k) || {}) }); } }
+    if (year) for (let m = 1; m <= 12; m++) { const k = `${r.from.slice(0,4)}-${pad2(m)}`; rows.push({ key: k, label: MONTHS[m-1], ...(d.months.find(x => x.month === k) || {}) }); }
+    else for (let k = r.from; k <= r.to; k = addD(k, 1)) {
+      const wd = parseD(k).toLocaleDateString("sv-SE", { weekday: "short" });
+      rows.push({ key: k, label: `${wd} ${Number(k.slice(8))}/${Number(k.slice(5,7))}`, ...(d.days.find(x => x.date === k) || {}) }); }
     const max = Math.max(1, ...rows.map(x => x.net || 0));
     $("#rTable").innerHTML = `<thead><tr><th>${year ? "Månad" : "Dag"}</th><th>Order</th><th>Netto</th><th></th><th>Online</th><th>Swish</th><th>Återbet.</th></tr></thead><tbody>` +
-      rows.map(x => `<tr class="${x.orders ? "" : "zero"}" title="${esc(x.label)}: netto ${esc(krf(x.net))}, ${x.orders || 0} order">
+      rows.map(x => `<tr class="${x.orders ? "" : "zero"}" data-rday="${year ? "" : x.key}" style="${year ? "" : "cursor:pointer"}" title="${esc(x.label)}: netto ${esc(krf(x.net))}, ${x.orders || 0} order">
         <td>${esc(x.label)}</td><td>${x.orders || 0}</td><td>${krf(x.net)}</td>
         <td class="barc">${x.net ? `<div class="rbar" style="width:${(x.net / max * 100).toFixed(1)}%"></div>` : ""}</td>
         <td>${krf(x.online)}</td><td>${krf(x.swish)}</td><td>${x.refunded ? krf(x.refunded) : "–"}</td></tr>`).join("") +
       `<tr class="sum"><td>Totalt</td><td>${t.orders}</td><td>${krf(t.net)}</td><td></td><td>${krf(t.online)}</td><td>${krf(t.swish)}</td><td>${t.refunded ? krf(t.refunded) : "–"}</td></tr></tbody>`;
   } catch (e) { if (e.message !== "401") $("#rTable").innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; }
 }
-$("#rMode").onchange = loadReport; $("#rMonth").onchange = loadReport; $("#rYear").onchange = loadReport; $("#rReload").onclick = loadReport;
+$("#rModes").onclick = e => { const b = e.target.closest("[data-rmode]"); if (!b) return; rMode = b.dataset.rmode; loadReport(); };
+$("#rPrev").onclick = () => shiftReport(-1); $("#rNext").onclick = () => shiftReport(1);
+$("#rToday").onclick = () => { const t = today(); $("#rDate").value = t; $("#rMonth").value = t.slice(0, 7); $("#rYear").value = t.slice(0, 4); loadReport(); };
+$("#rDate").onchange = loadReport; $("#rMonth").onchange = loadReport; $("#rYear").onchange = loadReport;
+// tryck på en dag i tabellen → visa den dagen
+$("#rTable").onclick = e => { const tr = e.target.closest("[data-rday]"); if (!tr || !tr.dataset.rday) return; $("#rDate").value = tr.dataset.rday; rMode = "day"; loadReport(); };
 $("#rCsv").onclick = async () => {
   const r = reportRange();
   try {
     const res = await api(`?view=report&from=${r.from}&to=${r.to}&by=${r.by}&format=csv`, { raw: true });
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(await res.blob()), download: `hanami-omsattning-${r.by === "months" ? r.from.slice(0,4) : r.from.slice(0,7)}.csv` });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(await res.blob()), download: `hanami-omsattning-${r.mode === "year" ? r.from.slice(0,4) : r.mode === "month" ? r.from.slice(0,7) : r.from + (r.to !== r.from ? "_" + r.to : "")}.csv` });
     document.body.appendChild(a); a.click(); a.remove();
   } catch (e) { if (e.message !== "401") alert(e.message); }
 };

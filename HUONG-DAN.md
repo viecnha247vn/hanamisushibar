@@ -654,8 +654,9 @@ Hoàn tay trong Dashboard (dự phòng): Queenie89 AB → Transaktioner → ch�
 
 Köksvyn có tab **Rapport** (cùng mật khẩu `ADMIN_KEY`):
 
-- **Månad – per dag**: chọn tháng → ô tổng + bảng từng ngày (cả ngày không có đơn) với thanh ngang theo doanh thu.
-- **År – per månad**: chọn năm → bảng 12 tháng.
+- Nút **Dag / Vecka / Månad / År** (thêm Dag và Vecka 2026-10-13). **‹ ›** lùi/tiến một ngày/tuần/tháng/năm, **Idag** về hiện tại.
+  - **Dag**: ô tổng của một ngày. **Vecka**: thứ 2–CN (tuần ISO) + bảng 7 ngày. **Månad**: bảng từng ngày. **År**: bảng 12 tháng.
+  - Bấm vào một ngày trong bảng → mở ngày đó.
 - **Ladda ner CSV**: file cho kế toán (dấu `;`, số thập phân dấu phẩy, mở thẳng trong Excel/Numbers tiếng Thuỵ Điển).
 
 | Ô | Nghĩa |
