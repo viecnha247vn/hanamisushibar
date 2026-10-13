@@ -129,16 +129,17 @@ function scheduleReportMail() {
 
 function reportMailEnable() {
   ScriptApp.getProjectTriggers().forEach(t => {
-    if (['scheduleReportMail', 'sendReportMail'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+    if (['scheduleReportMail', 'sendReportMail', 'weeklyReportTick'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
+  ScriptApp.newTrigger('weeklyReportTick').timeBased().atHour(6).everyDays(1).inTimezone(APP.TZ).create();   // måndagar: veckorapport
   ScriptApp.newTrigger('scheduleReportMail').timeBased().atHour(12).everyDays(1).inTimezone(APP.TZ).create();
   const today = scheduleReportMail();
-  say_('E-postrapporter är PÅ ✅\n\nDagsrapport varje dag kl 20.05, månadsrapport sista dagen i månaden.\nMottagare: ' +
+  say_('E-postrapporter är PÅ ✅\n\nDagsrapport varje dag kl 20.05, månadsrapport sista dagen i månaden, avstämningsrapport (PDF) varje måndag ca kl 06.\nMottagare: ' +
     (reportRecipients_() || '(saknas – fyll i REPORT_EMAIL eller NOTIFY_EMAIL)') + (today ? '\n\nFörsta rapporten kommer idag kl 20.05.' : '\n\nFörsta rapporten kommer imorgon kl 20.05.'));
 }
 function reportMailDisable() {
   ScriptApp.getProjectTriggers().forEach(t => {
-    if (['scheduleReportMail', 'sendReportMail'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+    if (['scheduleReportMail', 'sendReportMail', 'weeklyReportTick'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
   });
   say_('E-postrapporter är AV.');
 }

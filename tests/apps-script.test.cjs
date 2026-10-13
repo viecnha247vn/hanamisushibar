@@ -14,7 +14,7 @@ console.log("Apps Script");
 test("setup skapar flikar, triggers och nyckel", () => {
   assert.deepEqual(Object.keys(E.sheets).sort(), ["Beställningar", "Betalningar", "Bokningar", "Logg", "Meny"]);
   // sendReportMail (engång kl 20.05) läggs bara om setup körs före 20.05 – beror på klockan
-  assert.deepEqual(E.log.triggers.filter(t => t !== "sendReportMail"), ["handleEdit", "resetSoldOut", "nightlyCleanup", "scheduleReportMail"]);
+  assert.deepEqual(E.log.triggers.filter(t => t !== "sendReportMail"), ["handleEdit", "resetSoldOut", "nightlyCleanup", "scheduleReportMail", "weeklyReportTick"]);
   assert.equal(E.props.CLEANUP_ENABLED, "off");
   assert.ok(E.props.API_SECRET.length > 30);
 });
@@ -526,6 +526,35 @@ test("Q89 plattformsrapport: bara till PLATFORM_EMAIL, aldrig till restaurangens
   const logg = E.sheets["Logg"].data.map(r => r.join(" ")).join("\n");
   assert.doesNotMatch(logg, /12,92|24,04/);
   E.ctx.platformData_ = orig;
+});
+
+test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift, utbetalning via Stripe", () => {
+  const orig = E.ctx.reportOrders_;
+  E.ctx.reportOrders_ = () => ({ archive: "ok", orders: [
+    { d: "2026-10-14", online: true, payment: "Online kort", status: "Klar", paid: true, total: 489, tip: 0, refunded: 0 },
+    { d: "2026-10-14", online: true, payment: "Online kort", status: "Klar", paid: true, total: 12, tip: 0, refunded: 12 },
+    { d: "2026-10-15", online: true, payment: "Online kort", status: "Klar", paid: true, total: 310, tip: 10, refunded: 0 },
+    { d: "2026-10-15", online: false, payment: "Swish", status: "Klar", paid: true, total: 200, tip: 0, refunded: 0 },
+    { d: "2026-10-16", online: false, payment: "Kort i kassan", status: "Klar", paid: true, total: 999, tip: 0, refunded: 0 },
+    { d: "2026-10-16", online: false, payment: "Swish", status: "Avbokad", paid: false, total: 150, tip: 0, refunded: 0 }
+  ] });
+  const w = E.ctx.weeklyData_("2026-10-12", "2026-10-18");
+  assert.equal(w.week, 42); assert.equal(w.orders, 4); assert.equal(w.cancelled, 1);
+  assert.equal(w.sales.total, 1011); assert.equal(w.sales.tips, 10); assert.equal(w.refunds.total, 12);
+  // avgift: 489 → 21,56; 12 → 2,48; 310 → 14,40  = 38,44 (inkl. 25 % moms: 30,75 + 7,69)
+  assert.equal(w.fee.total, 38.44); assert.equal(w.fee.ex, 30.75); assert.equal(w.fee.vat, 7.69); assert.equal(w.fee.n, 3);
+  assert.equal(w.payout.cards, 811); assert.equal(w.payout.total, 811 - 12 - 38.44);
+  assert.equal(w.swishDirect, 200);
+  const html = E.ctx.weeklyPdfHtml_(w);
+  ["Avstämningsrapport", "Försäljning per momssats", "Försäljning per betalmetod", "Avgifter per betalmetod", "Utbetalningssummering", "Transaktionsavgift", "Utbetalas via Stripe", "vecka 42"]
+    .forEach(t => assert.ok(html.includes(t), "saknar " + t));
+  assert.doesNotMatch(html, /Q89|plattform|application/i);
+  E.props.REPORT_EMAIL = "agare@exempel.se";
+  const n = E.log.mails.length; E.ctx.weeklyMail_("2026-10-12", "2026-10-18");
+  const m = E.log.mails[n];
+  assert.equal(m.to, "agare@exempel.se"); assert.match(m.subject, /Avstämningsrapport vecka 42/);
+  assert.equal(m.attachments[0].name, "Hanami_avstamning_v42_2026-10-12.pdf");
+  E.ctx.reportOrders_ = orig;
 });
 
 console.log("\n" + passed + " tester OK");
