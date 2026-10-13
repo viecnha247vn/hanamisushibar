@@ -465,8 +465,8 @@ test("rapport-mejl: summering = lib/report.js, dagsrapport skickas en gång, må
   ];
   const t = E.ctx.summarizeReport_(orders, 6).total;
   // samma siffror som tests/report.test.mjs räknar fram med lib/report.js
-  assert.equal(t.orders, 4); assert.equal(t.gross, 562); assert.equal(t.net, 462); assert.equal(t.fee, 16.48);
-  assert.equal(t.payout, 195.52); assert.equal(t.unpaid, 100); assert.equal(t.cancelled, 1); assert.equal(t.tips, 10);
+  assert.equal(t.orders, 4); assert.equal(t.gross, 562); assert.equal(t.net, 462); assert.equal(t.fee, undefined); assert.equal(t.payout, undefined);
+  assert.equal(t.unpaid, 100); assert.equal(t.cancelled, 1); assert.equal(t.tips, 10);
   assert.equal(t.vat, Math.round((462 - 10) * 6 / 106 * 100) / 100);
 
   E.props.REPORT_EMAIL = "agare@exempel.se";
@@ -476,7 +476,7 @@ test("rapport-mejl: summering = lib/report.js, dagsrapport skickas en gång, må
   const sent = E.log.mails.slice(before);
   assert.ok(sent.length >= 1, "ingen dagsrapport");
   assert.equal(sent[0].to, "agare@exempel.se"); assert.match(sent[0].subject, /^📊 Dagsrapport /);
-  assert.match(sent[0].htmlBody, /Via Stripe till banken/);
+  assert.doesNotMatch(sent[0].htmlBody, /Q89|avgift|Via Stripe/i, "plattformsavgiften får inte synas i ägarens rapport");
   const today = E.call("health").time.slice(0, 10), d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1);
   const lastDay = d.toISOString().slice(5, 7) !== today.slice(5, 7);
   assert.equal(sent.length, lastDay ? 2 : 1, "månadsrapport bara sista dagen");

@@ -663,8 +663,6 @@ Köksvyn có tab **Rapport** (cùng mật khẩu `ADMIN_KEY`):
 | Netto | Brutto (Summa gồm dricks) − Återbetalt |
 | Online kort / Swish / Kort i kassan | chia theo cách trả (cột Betalning; online = có `pi_…` trong cột Stripe) |
 | Moms 6 % (ingår) | (Netto − Dricks) × 6/106 — dricks không chịu moms. Tỷ lệ lấy từ `STRIPE_VAT_PCT` |
-| Q89-avgift | 4 % + 2 kr mỗi đơn online (cùng công thức Stripe trừ); không hoàn khi hoàn tiền |
-| Via Stripe | Hanami nhận từ Stripe về ngân hàng = Online − Återbetalt − Q89-avgift |
 | Ej markerad betald | đơn Swish/kassa mà bếp chưa bấm **Betald** → đối chiếu với Swish/kassa |
 
 Quy tắc: ngày = **Mottagen** (lúc nhận đơn). Đơn **Avbokad** không tính, trừ đơn đã trả online (tiền đã thu; phần hoàn hiện ở Återbetalt).
@@ -674,7 +672,8 @@ Cài đặt: đưa `Report.js` (mới) và `Api.js` lên Apps Script → Triển
 
 ### Báo cáo qua e-mail (ngày 20:05 + cuối tháng) — thêm 2026-10-13
 
-- **Hằng ngày 20:05**: e-mail "📊 Dagsrapport …" — netto, số đơn, theo cách trả, dricks, hoàn tiền, moms, Q89-avgift, *Via Stripe till banken*, cảnh báo *Ej markerad betald*.
+- **Hằng ngày 20:05**: e-mail "📊 Dagsrapport …" — netto, số đơn, theo cách trả, dricks, hoàn tiền, moms, cảnh báo *Ej markerad betald*.
+- **Hoa hồng Q89 (4 % + 2 kr) KHÔNG hiện** trong Rapport, CSV hay e-mail của quán (bỏ 2026-10-13). Theo dõi trong Stripe Dashboard của Queenie89 AB → Connect → *Plattformsavgifter* (Application fees).
 - **Ngày cuối tháng 20:05**: thêm e-mail "📅 Månadsrapport …" với bảng từng ngày.
 - Cùng quy tắc tính như tab Rapport (đọc cả Arkiv). Gửi tối đa 1 lần/ngày.
 - Người nhận: thuộc tính `REPORT_EMAIL` (nhiều địa chỉ cách nhau dấu phẩy), không có thì `NOTIFY_EMAIL`. Đặt ở Apps Script → ⚙️ Cài đặt dự án → Thuộc tính tập lệnh.

@@ -22,17 +22,15 @@ const rep = summarize(orders, { vatPct: 6 });
 const d1 = rep.days.find(d => d.date === "2026-10-01");
 assert.equal(d1.orders, 3); assert.equal(d1.gross, 462); assert.equal(d1.net, 462);
 assert.equal(d1.online, 212); assert.equal(d1.swish, 150); assert.equal(d1.kassa, 100); assert.equal(d1.unpaid, 100); assert.equal(d1.tips, 10);
-assert.equal(d1.fee, 10.48);                                  // 4 % av 212 = 8,48 + 2 kr
-assert.equal(d1.payout, 201.52);                              // 212 − 10,48
+assert.equal(d1.fee, undefined); assert.equal(d1.payout, undefined);   // plattformsavgiften visas aldrig för restaurangen
 assert.equal(d1.vat, Math.round((462 - 10) * 6 / 106 * 100) / 100);
 assert.equal(d1.pickup, 2); assert.equal(d1.table, 1); assert.equal(d1.avg, 154);
-ok("dag: brutto/netto, per betalsätt, dricks, ej markerad betald, Q89-avgift, via Stripe, moms utan dricks");
+ok("dag: brutto/netto, per betalsätt, dricks, ej markerad betald, moms utan dricks, ingen plattformsavgift");
 
 const d2 = rep.days.find(d => d.date === "2026-10-02");
 assert.equal(d2.cancelled, 1); assert.equal(d2.orders, 1); assert.equal(d2.gross, 100); assert.equal(d2.refunded, 100); assert.equal(d2.net, 0);
-assert.equal(d2.fee, 6); assert.equal(d2.payout, -6);         // avgiften behålls vid återbetalning
 assert.equal(d2.vat, 0);
-ok("avbokad Swish räknas inte; avbokad onlineorder räknas med återbetalningen (avgiften behålls)");
+ok("avbokad Swish räknas inte; avbokad onlineorder räknas med återbetalningen");
 
 assert.deepEqual(rep.months.map(m => m.month), ["2026-10", "2026-11"]);
 const oct = rep.months[0];
@@ -48,7 +46,7 @@ ok("tom period ger nollor");
 
 const csv = reportCsv(rep);
 assert.ok(csv.startsWith("﻿Datum;Order;Brutto"));
-assert.match(csv, /\r\n2026-10-01;3;462;10;0;462;[\d,]+;212;150;100;100;10,48;201,52;2;1;0\r\n/);
+assert.match(csv, /\r\n2026-10-01;3;462;10;0;462;[\d,]+;212;150;100;100;2;1;0\r\n/);
 assert.match(csv, /\r\nTotalt;5;862;/);
 assert.match(reportCsv(rep, "months"), /\r\n2026-11;1;300;20;50;250;/);
 ok("CSV: semikolon, decimalkomma, BOM för Excel, per dag och per månad");

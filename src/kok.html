@@ -213,8 +213,7 @@ ul li b{display:inline-block;min-width:2.2ch}
     <div class="tiles" id="rTiles"></div>
     <div class="rwrap"><table class="rtable" id="rTable"></table></div>
     <p class="rnote">Datum = när beställningen togs emot. Avbokade räknas inte (utom onlinebetalda – deras återbetalning syns under Återbetalt).
-      Netto = brutto − återbetalt. Moms ingår i priserna och räknas på netto utan dricks. Q89‑avgift = 4 % + 2 kr per onlineorder.
-      <b>Via Stripe</b> = vad Hanami får från Stripe till banken. <b>Ej markerad betald</b> = Swish/kassa där köket inte bockat Betald – stäm av mot Swish och kassan.</p>
+      Netto = brutto − återbetalt. Moms ingår i priserna och räknas på netto utan dricks. <b>Ej markerad betald</b> = Swish/kassa där köket inte bockat Betald – stäm av mot Swish och kassan.</p>
   </section>
 
   <section data-panel="qr" hidden>
@@ -433,7 +432,6 @@ async function loadReport(){
       tile(year ? `Netto ${$("#rYear").value}` : `Netto ${MONTHS[Number(r.from.slice(5,7)) - 1]} ${r.from.slice(0,4)}`, krf(t.net), "hero", `${t.orders} order · snitt ${krf(t.avg)}`) +
       tile("Online kort", krf(t.online)) + tile("Swish", krf(t.swish)) + tile("Kort i kassan", krf(t.kassa)) +
       tile("Dricks", krf(t.tips)) + tile("Återbetalt", krf(t.refunded)) + tile(`Moms ${d.vatPct} % (ingår)`, krf(t.vat)) +
-      tile("Q89‑avgift", krf(t.fee), "", "4 % + 2 kr / onlineorder") + tile("Via Stripe", krf(t.payout), "", "till Hanamis bank") +
       (t.unpaid ? tile("Ej markerad betald", krf(t.unpaid), "warn", "stäm av mot Swish/kassa") : "") +
       tile("Hämtning / bord", `${t.pickup} / ${t.table}`, "", t.cancelled ? `${t.cancelled} avbokade` : "");
     // en rad per dag i månaden / per månad i året, även tomma

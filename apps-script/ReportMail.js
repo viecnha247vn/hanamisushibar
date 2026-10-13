@@ -7,28 +7,23 @@
  * en gång mitt på dagen och lägger en ENGÅNGS-trigger på exakt 20.05 samma dag (sendReportMail).
  * Mottagare: skriptegenskapen REPORT_EMAIL (flera adresser med komma), annars NOTIFY_EMAIL.
  * Siffrorna räknas som i köksvyns Rapport (lib/report.js) – samma regler, även arkivet läses (Report.js).
+ * Plattformsavgiften (Q89) ingår inte – den följs upp i Stripe.
  */
 const REPORT_AT = { h: 20, m: 5 };
 
 /* ---------------- summering (samma regler som lib/report.js) ---------------- */
 
-function feeOre_(totalOre) {
-  const pct = Number(prop_('STRIPE_FEE_PCT', 4)), fixed = Math.round(Number(prop_('STRIPE_FEE_FIXED', 2)) * 100);
-  return totalOre > 0 ? Math.min(totalOre, Math.round(totalOre * pct / 100) + fixed) : 0;
-}
-
 function summarizeReport_(orders, vatPct) {
-  const K = ['orders', 'gross', 'tips', 'refunded', 'online', 'swish', 'kassa', 'unpaid', 'fee', 'pickup', 'table', 'cancelled'];
+  const K = ['orders', 'gross', 'tips', 'refunded', 'online', 'swish', 'kassa', 'unpaid', 'pickup', 'table', 'cancelled'];
   const blank = () => K.reduce((o, k) => (o[k] = 0, o), {});
   const t = blank(), days = {};
   (orders || []).forEach(o => {
     const targets = [t, days[o.d] || (days[o.d] = blank())];
     if (o.status === 'Avbokad' && !o.online) { targets.forEach(x => x.cancelled++); return; }
     const amount = Number(o.total) || 0, tip = Number(o.tip) || 0, refunded = Math.min(Number(o.refunded) || 0, amount);
-    const fee = o.online ? feeOre_(Math.round(amount * 100)) / 100 : 0;
     const method = o.online ? 'online' : /swish/i.test(o.payment || '') ? 'swish' : 'kassa';
     targets.forEach(x => {
-      x.orders++; x.gross += amount; x.tips += tip; x.refunded += refunded; x[method] += amount; x.fee += fee;
+      x.orders++; x.gross += amount; x.tips += tip; x.refunded += refunded; x[method] += amount;
       x[o.kind === 'table' ? 'table' : 'pickup']++;
       if (!o.online && !o.paid) x.unpaid += amount;
     });
@@ -36,7 +31,6 @@ function summarizeReport_(orders, vatPct) {
   const fin = x => {
     x.net = x.gross - x.refunded;
     x.vat = Math.max(0, (x.net - x.tips) * vatPct / (100 + vatPct));
-    x.payout = x.online - x.refunded - x.fee;
     x.avg = x.orders ? x.net / x.orders : 0;
     Object.keys(x).forEach(k => { x[k] = Math.round(x[k] * 100) / 100; });
     return x;
@@ -81,7 +75,6 @@ function mailReport_(kind, from, to, title) {
     '<table style="border-collapse:collapse;width:100%;font-size:15px">' +
       row('Online kort', krR_(t.online)) + row('Swish', krR_(t.swish)) + row('Kort i kassan', krR_(t.kassa)) +
       row('Dricks', krR_(t.tips)) + row('Återbetalt', krR_(t.refunded)) + row('Moms ' + vat + ' % (ingår)', krR_(t.vat)) +
-      row('Q89-avgift', krR_(t.fee)) + row('Via Stripe till banken', krR_(t.payout), true) +
       row('Hämtning / bord', t.pickup + ' / ' + t.table) + (t.cancelled ? row('Avbokade (räknas inte)', t.cancelled) : '') +
       (t.unpaid ? '<tr><td colspan="2" style="padding:10px 12px;background:#FFF8DB;border-radius:8px;font-size:14px">⚠️ <b>Ej markerad betald: ' + krR_(t.unpaid) + '</b> – Swish/kassa där köket inte bockat Betald. Stäm av mot Swish och kassan.</td></tr>' : '') +
     '</table>' + daysTable +
@@ -91,7 +84,7 @@ function mailReport_(kind, from, to, title) {
     '</div></div>';
   const text = [APP.NAME + ' – ' + title, 'Netto: ' + krR_(t.net) + ' (' + t.orders + ' order)', 'Online kort: ' + krR_(t.online),
     'Swish: ' + krR_(t.swish), 'Kort i kassan: ' + krR_(t.kassa), 'Dricks: ' + krR_(t.tips), 'Återbetalt: ' + krR_(t.refunded),
-    'Moms ' + vat + ' %: ' + krR_(t.vat), 'Q89-avgift: ' + krR_(t.fee), 'Via Stripe: ' + krR_(t.payout),
+    'Moms ' + vat + ' %: ' + krR_(t.vat),
     t.unpaid ? 'Ej markerad betald: ' + krR_(t.unpaid) : ''].filter(Boolean).join('\n');
   MailApp.sendEmail({ to: to_, subject: (kind === 'dag' ? '📊 Dagsrapport ' : '📅 Månadsrapport ') + title + ' · ' + krR_(t.net), htmlBody: html, body: text, name: APP.NAME + ' rapport' });
   log_('INFO', 'Rapport-mejl', kind + ' ' + from + '–' + to + ' → ' + to_ + ' · netto ' + t.net);
