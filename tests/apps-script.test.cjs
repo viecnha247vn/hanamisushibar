@@ -415,4 +415,27 @@ test("återbetalning: refundInfo, delbelopp, hela, idempotent, via webhook (paym
   assert.equal(E.call("refunded", { no, refundedOre: 0 }).status, 400);
 });
 
+/* ---------------- omsättningsrapport (Report.js) ---------------- */
+test("reportOrders: driftark + arkiv, inga personuppgifter, datumfilter, ogiltigt intervall", () => {
+  const today = E.call("health").time.slice(0, 10);
+  const r = E.call("reportOrders", { from: today, to: today });
+  assert.equal(r.ok, true);
+  const o = r.orders.find(x => x.online && x.refunded === 300);
+  assert.ok(o, "onlineordern med återbetalning saknas"); assert.equal(o.total, 300); assert.equal(o.d, today);
+  r.orders.forEach(x => { assert.equal(x.d, today); assert.equal(x.name, undefined); assert.equal(x.phone, undefined); });
+  assert.equal(E.call("reportOrders", { from: today, to: "2000-01-01" }).status, 400);
+  assert.equal(E.call("reportOrders", { from: "x", to: today }).status, 400);
+
+  // arkivet (nattstädningen flyttade äldre rader dit tidigare i testerna)
+  const arch = E.files[E.props.ARCHIVE_ID];
+  if (arch) {
+    const a = arch.getSheetByName("Beställningar"), head = a.data[0];
+    const archived = a.data.slice(1).map(x => String(x[head.indexOf("Mottagen")]).slice(0, 10)).filter(d => /^\d{4}-/.test(d));
+    assert.ok(archived.length > 0, "arkivet är tomt i testet");
+    const all = E.call("reportOrders", { from: "2000-01-01", to: today });
+    assert.equal(all.archive, "ok");
+    archived.forEach(d => assert.ok(all.orders.some(x => x.d === d), "arkiverad dag " + d + " saknas i rapporten"));
+  }
+});
+
 console.log("\n" + passed + " tester OK");

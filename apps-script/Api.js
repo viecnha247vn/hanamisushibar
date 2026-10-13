@@ -53,6 +53,8 @@ const ACTIONS = {
   // återbetalning (Refund.js) – pengarna flyttas av Vercel/Stripe, här antecknas resultatet
   refundInfo:    p => orderForRefund_(p.no),
   refunded:      p => withLock_(() => setRefunded_(p)),
+  // omsättningsrapport (Report.js) – köksvyn → Rapport
+  reportOrders:  p => reportOrders_(p.from, p.to),
   // skrivarbryggan (print-bridge/)
   printQueue:    () => ({ jobs: printQueue_() }),
   printJob:      p => ({ job: printJob_(p.no) }),

@@ -648,6 +648,28 @@ Hoàn tay trong Dashboard (dự phòng): Queenie89 AB → Transaktioner → ch�
 | Tab Logg: "Stripe-belopp avviker" | ai đó sửa giá trong tab Meny giữa chừng; đơn không tạo, tiền đã thu → hoàn tiền thủ công từ Dashboard và liên hệ khách |
 | Khách trả nhưng Stripe giữ tiền | tài khoản Hanami chưa xác minh xong (`charges_enabled` nhưng `payouts_enabled` = false) → chủ quán bổ sung giấy tờ trong Express Dashboard |
 
+### Báo cáo doanh thu (köksvyn → Rapport) — thêm 2026-10-13
+
+Köksvyn có tab **Rapport** (cùng mật khẩu `ADMIN_KEY`):
+
+- **Månad – per dag**: chọn tháng → ô tổng + bảng từng ngày (cả ngày không có đơn) với thanh ngang theo doanh thu.
+- **År – per månad**: chọn năm → bảng 12 tháng.
+- **Ladda ner CSV**: file cho kế toán (dấu `;`, số thập phân dấu phẩy, mở thẳng trong Excel/Numbers tiếng Thuỵ Điển).
+
+| Ô | Nghĩa |
+|---|---|
+| Netto | Brutto (Summa gồm dricks) − Återbetalt |
+| Online kort / Swish / Kort i kassan | chia theo cách trả (cột Betalning; online = có `pi_…` trong cột Stripe) |
+| Moms 6 % (ingår) | (Netto − Dricks) × 6/106 — dricks không chịu moms. Tỷ lệ lấy từ `STRIPE_VAT_PCT` |
+| Q89-avgift | 4 % + 2 kr mỗi đơn online (cùng công thức Stripe trừ); không hoàn khi hoàn tiền |
+| Via Stripe | Hanami nhận từ Stripe về ngân hàng = Online − Återbetalt − Q89-avgift |
+| Ej markerad betald | đơn Swish/kassa mà bếp chưa bấm **Betald** → đối chiếu với Swish/kassa |
+
+Quy tắc: ngày = **Mottagen** (lúc nhận đơn). Đơn **Avbokad** không tính, trừ đơn đã trả online (tiền đã thu; phần hoàn hiện ở Återbetalt).
+Dữ liệu đọc từ **cả Sheet chính và Arkiv** (nightlyCleanup chuyển đơn > 30 ngày sang file Arkiv — `ARCHIVE_ID`), nên tháng cũ vẫn đủ. Mỗi lần xem tối đa 13 tháng.
+Code: `apps-script/Report.js` (action `reportOrders`), `lib/report.js` (cộng tổng, CSV), `lib/routes/admin.js` (`GET ?view=report`), `src/kok.html`; test `tests/report.test.mjs`.
+Cài đặt: đưa `Report.js` (mới) và `Api.js` lên Apps Script → Triển khai → Phiên bản mới. Chưa đưa lên thì tab Rapport báo "Okänd action: reportOrders".
+
 ### Dữ liệu cá nhân
 Tab Betalningar chứa bản sao đơn (tên, điện thoại) **chỉ trong lúc chờ thanh toán**. Khi trả xong, `payConfirm` xoá bản sao đó (chỉ giữ loại đơn + số bàn); dữ liệu khách nằm duy nhất ở Beställningar và theo Cleanup như trước. Dòng chưa trả xoá sau 2 ngày. Không cần sửa `Cleanup.js`.
 
