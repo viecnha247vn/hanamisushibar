@@ -22,10 +22,10 @@ const rep = summarize(orders, { vatPct: 6 });
 const d1 = rep.days.find(d => d.date === "2026-10-14");
 assert.equal(d1.orders, 2); assert.equal(d1.gross, 362); assert.equal(d1.net, 362);
 assert.equal(d1.online, 212); assert.equal(d1.swish, 150); assert.equal(d1.kassa, undefined); assert.equal(d1.unpaid, 0); assert.equal(d1.tips, 10);
-assert.equal(d1.fee, undefined); assert.equal(d1.payout, undefined);   // plattformsavgiften visas aldrig för restaurangen
+assert.equal(d1.fee, 10.48); assert.equal(d1.payout, 201.52);   // 4 % + 2 kr på 212 kr online
 assert.equal(d1.vat, Math.round((362 - 10) * 6 / 106 * 100) / 100);
 assert.equal(d1.pickup, 1); assert.equal(d1.table, 1); assert.equal(d1.avg, 181);
-ok("dag: brutto/netto, online/Swish, dricks, moms utan dricks; 'kort i kassan' (test) och plattformsavgift räknas inte");
+ok("dag: brutto/netto, online/Swish, dricks, moms utan dricks; 'kort i kassan' (test) räknas inte");
 
 const d2 = rep.days.find(d => d.date === "2026-10-15");
 assert.equal(d2.cancelled, 1); assert.equal(d2.orders, 1); assert.equal(d2.gross, 100); assert.equal(d2.refunded, 100); assert.equal(d2.net, 0);
@@ -37,7 +37,11 @@ const oct = rep.months[0];
 assert.equal(oct.orders, 3); assert.equal(oct.net, 362); assert.equal(oct.cancelled, 1);
 assert.equal(rep.months[1].net, 250); assert.equal(rep.months[1].refunded, 50);
 assert.equal(rep.total.orders, 4); assert.equal(rep.total.net, 612); assert.equal(rep.total.gross, 762);
+assert.equal(d2.fee, 6); assert.equal(d2.payout, -6);                 // avgiften behålls vid återbetalning
+assert.equal(rep.months[1].fee, 14); assert.equal(rep.months[1].payout, 236);
+assert.equal(rep.total.fee, 30.48); assert.equal(rep.total.payout, 431.52);
 ok("månader och totalt summeras; trasiga rader hoppas över");
+ok("transaktionsavgift och Utbetalas via Stripe (online − återbetalt − avgift), som Avstämningsrapporten");
 
 const fromRep = summarize([{ d: "2026-10-12", total: 999, online: true, status: "Klar" }, ...orders], { from: "2026-10-13" });
 assert.equal(fromRep.total.net, 612); assert.ok(!fromRep.days.some(d => d.date === "2026-10-12"));
@@ -49,7 +53,7 @@ ok("tom period ger nollor");
 
 const csv = reportCsv(rep);
 assert.ok(csv.startsWith("﻿Datum;Order;Brutto"));
-assert.match(csv, /\r\n2026-10-14;2;362;10;0;362;[\d,]+;212;150;0;1;1;0\r\n/);
+assert.match(csv, /\r\n2026-10-14;2;362;10;0;362;[\d,]+;212;150;0;1;1;0;10,48;201,52\r\n/);
 assert.match(csv, /\r\nTotalt;4;762;/);
 assert.match(reportCsv(rep, "months"), /\r\n2026-11;1;300;20;50;250;/);
 ok("CSV: semikolon, decimalkomma, BOM för Excel, per dag och per månad");

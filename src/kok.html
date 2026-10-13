@@ -460,6 +460,8 @@ async function loadReport(){
     $("#rTiles").innerHTML =
       tile(esc(heroLabel), krf(t.net), "hero", `${t.orders} order · snitt ${krf(t.avg)}`) +
       tile("Online kort", krf(t.online)) + tile("Swish", krf(t.swish)) +
+      tile("Transaktionsavgift", t.fee ? "−" + krf(t.fee) : krf(0), "", "online kort, behålls vid återbetalning") +
+      tile("Utbetalas via Stripe", krf(t.payout), "", "online kort − återbetalt − avgift") +
       tile("Dricks", krf(t.tips)) + tile("Återbetalt", krf(t.refunded)) + tile(`Moms ${d.vatPct} % (ingår)`, krf(t.vat)) +
       (t.unpaid ? tile("Ej markerad betald", krf(t.unpaid), "warn", "stäm av mot Swish") : "") +
       tile("Hämtning / bord", `${t.pickup} / ${t.table}`, "", t.cancelled ? `${t.cancelled} avbokade` : "");
@@ -471,12 +473,12 @@ async function loadReport(){
       const wd = parseD(k).toLocaleDateString("sv-SE", { weekday: "short" });
       rows.push({ key: k, label: `${wd} ${Number(k.slice(8))}/${Number(k.slice(5,7))}`, ...(d.days.find(x => x.date === k) || {}) }); }
     const max = Math.max(1, ...rows.map(x => x.net || 0));
-    $("#rTable").innerHTML = `<thead><tr><th>${year ? "Månad" : "Dag"}</th><th>Order</th><th>Netto</th><th></th><th>Online</th><th>Swish</th><th>Återbet.</th></tr></thead><tbody>` +
+    $("#rTable").innerHTML = `<thead><tr><th>${year ? "Månad" : "Dag"}</th><th>Order</th><th>Netto</th><th></th><th>Online</th><th>Avgift</th><th>Utbetalas</th><th>Swish</th><th>Återbet.</th></tr></thead><tbody>` +
       rows.map(x => `<tr class="${x.orders ? "" : "zero"}" data-rday="${year ? "" : x.key}" style="${year ? "" : "cursor:pointer"}" title="${esc(x.label)}: netto ${esc(krf(x.net))}, ${x.orders || 0} order">
         <td>${esc(x.label)}</td><td>${x.orders || 0}</td><td>${krf(x.net)}</td>
         <td class="barc">${x.net ? `<div class="rbar" style="width:${(x.net / max * 100).toFixed(1)}%"></div>` : ""}</td>
-        <td>${krf(x.online)}</td><td>${krf(x.swish)}</td><td>${x.refunded ? krf(x.refunded) : "–"}</td></tr>`).join("") +
-      `<tr class="sum"><td>Totalt</td><td>${t.orders}</td><td>${krf(t.net)}</td><td></td><td>${krf(t.online)}</td><td>${krf(t.swish)}</td><td>${t.refunded ? krf(t.refunded) : "–"}</td></tr></tbody>`;
+        <td>${krf(x.online)}</td><td>${x.fee ? "−" + krf(x.fee) : "–"}</td><td>${krf(x.payout)}</td><td>${krf(x.swish)}</td><td>${x.refunded ? krf(x.refunded) : "–"}</td></tr>`).join("") +
+      `<tr class="sum"><td>Totalt</td><td>${t.orders}</td><td>${krf(t.net)}</td><td></td><td>${krf(t.online)}</td><td>${t.fee ? "−" + krf(t.fee) : "–"}</td><td>${krf(t.payout)}</td><td>${krf(t.swish)}</td><td>${t.refunded ? krf(t.refunded) : "–"}</td></tr></tbody>`;
   } catch (e) { if (e.message !== "401") $("#rTable").innerHTML = `<tr><td class="err">${esc(e.message)}</td></tr>`; }
 }
 $("#rModes").onclick = e => { const b = e.target.closest("[data-rmode]"); if (!b) return; rMode = b.dataset.rmode; loadReport(); };
