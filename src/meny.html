@@ -405,8 +405,8 @@ function happySlots() {
   for (let i = 0; i <= (SETTINGS.pickupDaysAhead ?? 3); i++) {
     const d = new Date(now); d.setDate(d.getDate() + i);
     const hrs = hoursOn(d); if (!hrs) continue;
-    const earliest = Math.max(HH.from * 60, hrs[0] * 60 + lead, i === 0 ? nowMin + lead : 0), times = [];
-    for (let m = HH.from * 60; m < Math.min(HH.to, hrs[1]) * 60; m += HH_STEP) if (m >= earliest) times.push(hm(m));
+    const earliest = Math.max(HH.from * 60, hrs[0] * 60, i === 0 ? nowMin + 1 : 0), times = [];   // hela 16.00–17.00, bara ej passerade tider
+    for (let m = HH.from * 60; m <= Math.min(HH.to, hrs[1]) * 60; m += HH_STEP) if (m >= earliest) times.push(hm(m));
     if (times.length) out.push({ date: isoDate(d), label: i === 0 ? "Idag" : i === 1 ? "Imorgon" : `${dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1)} ${d.getDate()}/${d.getMonth() + 1}`, times });
   }
   return out;

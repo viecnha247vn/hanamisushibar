@@ -11,17 +11,21 @@ const at = (date, hm) => { const [h, m] = hm.split(":").map(Number); return { da
 const LEAD = 30;
 
 let s = happySlots(at("2026-10-12", "10:00"), LEAD);
-assert.deepEqual(s[0], { date: "2026-10-12", times: ["16:00", "16:15", "16:30", "16:45"] });
+assert.deepEqual(s[0], { date: "2026-10-12", times: ["16:00", "16:15", "16:30", "16:45", "17:00"] });
 assert.equal(s.length, 4, "idag + 3 dagar framåt");
-ok("morgon: idag 16.00–16.45 + tre dagar till");
+ok("morgon: idag 16.00–17.00 + tre dagar till");
+
+s = happySlots(at("2026-10-12", "15:46"), LEAD);
+assert.deepEqual(s[0].times, ["16:00", "16:15", "16:30", "16:45", "17:00"]);
+ok("15.46: hela 16.00–17.00 går att välja (förberedelsetiden spärrar inte)");
 
 s = happySlots(at("2026-10-12", "16:10"), LEAD);
-assert.deepEqual(s[0].times, ["16:45"]);   // 16:10 + 30 = 16:40 → nästa kvart
-ok("mitt i happy hour: bara tider köket hinner (16.45)");
+assert.deepEqual(s[0].times, ["16:15", "16:30", "16:45", "17:00"]);
+ok("mitt i happy hour: bara tider som inte passerat");
 
-s = happySlots(at("2026-10-12", "16:40"), LEAD);
-assert.equal(s[0].date, "2026-10-13"); assert.deepEqual(s[0].times, ["16:00", "16:15", "16:30", "16:45"]);
-ok("för sent idag → från imorgon");
+s = happySlots(at("2026-10-12", "17:00"), LEAD);
+assert.equal(s[0].date, "2026-10-13"); assert.deepEqual(s[0].times, ["16:00", "16:15", "16:30", "16:45", "17:00"]);
+ok("efter 17.00 → från imorgon");
 
 s = happySlots(at("2026-10-17", "21:00"), LEAD);
 assert.ok(!s.some(d => d.date === "2026-10-18"), "söndag är stängd");
@@ -30,12 +34,13 @@ ok("lördag kväll: söndag (stängt) hoppas över → måndag");
 
 assert.deepEqual(pickHappySlot("", "", at("2026-10-12", "09:00"), LEAD), { date: "2026-10-12", time: "16:00" });
 assert.deepEqual(pickHappySlot("2026-10-14", "16:30", at("2026-10-12", "09:00"), LEAD), { date: "2026-10-14", time: "16:30" });
-assert.equal(pickHappySlot("2026-10-12", "17:00", at("2026-10-12", "09:00"), LEAD), undefined);
+assert.deepEqual(pickHappySlot("2026-10-12", "17:00", at("2026-10-12", "09:00"), LEAD), { date: "2026-10-12", time: "17:00" });
+assert.equal(pickHappySlot("2026-10-12", "17:15", at("2026-10-12", "09:00"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-12", "15:45", at("2026-10-12", "09:00"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-12", "16:00", at("2026-10-12", "16:00"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-30", "16:00", at("2026-10-12", "09:00"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-18", "16:00", at("2026-10-17", "09:00"), LEAD), undefined);
-ok("valideringen: rätt tid godkänns; 17.00, 15.45, passerad tid, för långt fram och stängd dag nekas");
+ok("valideringen: 16.00–17.00 godkänns; 17.15, 15.45, passerad tid, för långt fram och stängd dag nekas");
 
 // --- buildOrder (det /api/submit och /api/pay kör) med verklig klocka: välj en giltig tid från happySlots() ---
 const base = { type: "pickup-order", name: "Anna", phone: "0701234567", payment: "online", items: [{ id: "happy-1", qty: 1 }] };

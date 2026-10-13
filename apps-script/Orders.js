@@ -97,7 +97,9 @@ function createOrder_(p, pre) {
       p.whenText = whenText_(p.pickupDate, p.pickupTime);
     } else {
       const lead = lead_(), m = toMin_(p.pickupTime);
-      if (lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
+      // happy hour (gästen väljer 16.00–17.00, lib/happy.js): ingen förberedelsekontroll – bara att tiden inte passerat
+      if (p.happy && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes - 5) throw new ApiError(400, 'Den hämtningstiden har redan passerat. Välj en ny tid.');
+      if (!p.happy && lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
         throw new ApiError(400, 'Köket behöver ' + lead + ' minuter just nu. Välj en senare hämtningstid.');
     }
   }
