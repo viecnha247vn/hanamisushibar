@@ -10,18 +10,22 @@
  * Plattformsavgiften (Q89) ingår inte – den följs upp i Stripe.
  */
 const REPORT_AT = { h: 20, m: 5 };
+const REPORT_FROM_DEFAULT = '2026-10-13';   // allt före var test (samma som reportFrom i data/settings.js); skriptegenskap REPORT_FROM går före
 
 /* ---------------- summering (samma regler som lib/report.js) ---------------- */
 
 function summarizeReport_(orders, vatPct) {
-  const K = ['orders', 'gross', 'tips', 'refunded', 'online', 'swish', 'kassa', 'unpaid', 'pickup', 'table', 'cancelled'];
+  const K = ['orders', 'gross', 'tips', 'refunded', 'online', 'swish', 'unpaid', 'pickup', 'table', 'cancelled'];
   const blank = () => K.reduce((o, k) => (o[k] = 0, o), {});
   const t = blank(), days = {};
+  const from = prop_('REPORT_FROM', REPORT_FROM_DEFAULT);
   (orders || []).forEach(o => {
+    if (from && String(o.d) < from) return;                                    // före start = test
+    if (!o.online && !/swish/i.test(o.payment || '')) return;                  // "Kort i kassan" räknas inte (test)
     const targets = [t, days[o.d] || (days[o.d] = blank())];
     if (o.status === 'Avbokad' && !o.online) { targets.forEach(x => x.cancelled++); return; }
     const amount = Number(o.total) || 0, tip = Number(o.tip) || 0, refunded = Math.min(Number(o.refunded) || 0, amount);
-    const method = o.online ? 'online' : /swish/i.test(o.payment || '') ? 'swish' : 'kassa';
+    const method = o.online ? 'online' : 'swish';
     targets.forEach(x => {
       x.orders++; x.gross += amount; x.tips += tip; x.refunded += refunded; x[method] += amount;
       x[o.kind === 'table' ? 'table' : 'pickup']++;
@@ -73,17 +77,17 @@ function mailReport_(kind, from, to, title) {
     '<div style="font-size:13px;opacity:.8">netto · ' + t.orders + ' order · snitt ' + krR_(t.avg) + '</div></div>' +
     '<div style="border:1px solid #e5e7eb;border-top:0;padding:14px 22px 20px;border-radius:0 0 12px 12px">' +
     '<table style="border-collapse:collapse;width:100%;font-size:15px">' +
-      row('Online kort', krR_(t.online)) + row('Swish', krR_(t.swish)) + row('Kort i kassan', krR_(t.kassa)) +
+      row('Online kort', krR_(t.online)) + row('Swish', krR_(t.swish)) +
       row('Dricks', krR_(t.tips)) + row('Återbetalt', krR_(t.refunded)) + row('Moms ' + vat + ' % (ingår)', krR_(t.vat)) +
       row('Hämtning / bord', t.pickup + ' / ' + t.table) + (t.cancelled ? row('Avbokade (räknas inte)', t.cancelled) : '') +
-      (t.unpaid ? '<tr><td colspan="2" style="padding:10px 12px;background:#FFF8DB;border-radius:8px;font-size:14px">⚠️ <b>Ej markerad betald: ' + krR_(t.unpaid) + '</b> – Swish/kassa där köket inte bockat Betald. Stäm av mot Swish och kassan.</td></tr>' : '') +
+      (t.unpaid ? '<tr><td colspan="2" style="padding:10px 12px;background:#FFF8DB;border-radius:8px;font-size:14px">⚠️ <b>Ej markerad betald: ' + krR_(t.unpaid) + '</b> – Swish där köket inte bockat Betald. Stäm av mot Swish.</td></tr>' : '') +
     '</table>' + daysTable +
     (data.archive === 'error' ? '<p style="color:#9B2C2C;font-size:13px">Arkivet gick inte att läsa – äldre dagar kan saknas.</p>' : '') +
     '<p style="margin-top:18px;font-size:13px;color:#4B5261">Netto = brutto − återbetalt. Moms räknas på netto utan dricks. Datum = när beställningen togs emot.</p>' +
     (site ? '<a href="' + site + '/kok" style="display:inline-block;background:#161B26;color:#fff;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:600">Öppna Rapport i köksvyn</a>' : '') +
     '</div></div>';
   const text = [APP.NAME + ' – ' + title, 'Netto: ' + krR_(t.net) + ' (' + t.orders + ' order)', 'Online kort: ' + krR_(t.online),
-    'Swish: ' + krR_(t.swish), 'Kort i kassan: ' + krR_(t.kassa), 'Dricks: ' + krR_(t.tips), 'Återbetalt: ' + krR_(t.refunded),
+    'Swish: ' + krR_(t.swish), 'Dricks: ' + krR_(t.tips), 'Återbetalt: ' + krR_(t.refunded),
     'Moms ' + vat + ' %: ' + krR_(t.vat),
     t.unpaid ? 'Ej markerad betald: ' + krR_(t.unpaid) : ''].filter(Boolean).join('\n');
   MailApp.sendEmail({ to: to_, subject: (kind === 'dag' ? '📊 Dagsrapport ' : '📅 Månadsrapport ') + title + ' · ' + krR_(t.net), htmlBody: html, body: text, name: APP.NAME + ' rapport' });

@@ -246,7 +246,7 @@ writeFileSync("dist/meny.html", page("src/meny.html", {
 writeFileSync("dist/tack.html", page("src/tack.html", { path: "/tack" }));
 writeFileSync("dist/villkor.html", page("src/villkor.html", { path: "/villkor" }));
 
-const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes }));
+const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes, reportFrom: settings.reportFrom || "" }));
 writeFileSync("dist/kok.html", kok);
 
 console.log(`Byggt från ${source}: ${menu.length} kategorier, ${ids.length} rätter → dist/ (index, meny, tack, villkor, kok)`);

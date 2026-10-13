@@ -661,10 +661,11 @@ Köksvyn có tab **Rapport** (cùng mật khẩu `ADMIN_KEY`):
 | Ô | Nghĩa |
 |---|---|
 | Netto | Brutto (Summa gồm dricks) − Återbetalt |
-| Online kort / Swish / Kort i kassan | chia theo cách trả (cột Betalning; online = có `pi_…` trong cột Stripe) |
+| Online kort / Swish | chia theo cách trả (cột Betalning; online = có `pi_…` trong cột Stripe) |
 | Moms 6 % (ingår) | (Netto − Dricks) × 6/106 — dricks không chịu moms. Tỷ lệ lấy từ `STRIPE_VAT_PCT` |
-| Ej markerad betald | đơn Swish/kassa mà bếp chưa bấm **Betald** → đối chiếu với Swish/kassa |
+| Ej markerad betald | đơn Swish mà bếp chưa bấm **Betald** → đối chiếu với Swish |
 
+**Từ 2026-10-13:** báo cáo chỉ tính từ ngày `reportFrom` trong `data/settings.js` (= 2026-10-13; e-mail dùng thuộc tính `REPORT_FROM`, mặc định cùng ngày) — mọi đơn trước đó là thử. Đơn **Kort i kassan** không tính nữa (cách trả này đã bỏ, các đơn đó là thử). Chỉ còn **Online kort** và **Swish**.
 Quy tắc: ngày = **Mottagen** (lúc nhận đơn). Đơn **Avbokad** không tính, trừ đơn đã trả online (tiền đã thu; phần hoàn hiện ở Återbetalt).
 Dữ liệu đọc từ **cả Sheet chính và Arkiv** (nightlyCleanup chuyển đơn > 30 ngày sang file Arkiv — `ARCHIVE_ID`), nên tháng cũ vẫn đủ. Mỗi lần xem tối đa 13 tháng.
 Code: `apps-script/Report.js` (action `reportOrders`), `lib/report.js` (cộng tổng, CSV), `lib/routes/admin.js` (`GET ?view=report`), `src/kok.html`; test `tests/report.test.mjs`.

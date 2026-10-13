@@ -457,18 +457,19 @@ test("happy hour-order med vald dag/tid (asap av) sparas med den tiden, även en
 /* ---------------- rapporter per e-post (ReportMail.js) ---------------- */
 test("rapport-mejl: summering = lib/report.js, dagsrapport skickas en gång, månadsrapport sista dagen", () => {
   const orders = [
-    { d: "2026-10-01", kind: "pickup", payment: "Online kort", status: "Klar", paid: true, total: 212, tip: 0, online: true, refunded: 0 },
-    { d: "2026-10-01", kind: "table", payment: "Swish", status: "Klar", paid: true, total: 150, tip: 10, online: false, refunded: 0 },
-    { d: "2026-10-01", kind: "pickup", payment: "Kort i kassan", status: "Klar", paid: false, total: 100, tip: 0, online: false, refunded: 0 },
-    { d: "2026-10-02", kind: "pickup", payment: "Swish", status: "Avbokad", paid: false, total: 999, tip: 0, online: false, refunded: 0 },
-    { d: "2026-10-02", kind: "pickup", payment: "Online kort", status: "Avbokad", paid: true, total: 100, tip: 0, online: true, refunded: 100 }
+    { d: "2026-10-14", kind: "pickup", payment: "Online kort", status: "Klar", paid: true, total: 212, tip: 0, online: true, refunded: 0 },
+    { d: "2026-10-14", kind: "table", payment: "Swish", status: "Klar", paid: true, total: 150, tip: 10, online: false, refunded: 0 },
+    { d: "2026-10-14", kind: "pickup", payment: "Kort i kassan", status: "Klar", paid: false, total: 100, tip: 0, online: false, refunded: 0 },
+    { d: "2026-10-15", kind: "pickup", payment: "Swish", status: "Avbokad", paid: false, total: 999, tip: 0, online: false, refunded: 0 },
+    { d: "2026-10-15", kind: "pickup", payment: "Online kort", status: "Avbokad", paid: true, total: 100, tip: 0, online: true, refunded: 100 }
   ];
   const t = E.ctx.summarizeReport_(orders, 6).total;
   // samma siffror som tests/report.test.mjs räknar fram med lib/report.js
-  assert.equal(t.orders, 4); assert.equal(t.gross, 562); assert.equal(t.net, 462); assert.equal(t.fee, undefined); assert.equal(t.payout, undefined);
-  assert.equal(t.unpaid, 100); assert.equal(t.cancelled, 1); assert.equal(t.tips, 10);
-  assert.equal(t.vat, Math.round((462 - 10) * 6 / 106 * 100) / 100);
+  assert.equal(t.orders, 3); assert.equal(t.gross, 462); assert.equal(t.net, 362); assert.equal(t.fee, undefined); assert.equal(t.payout, undefined);
+  assert.equal(t.unpaid, 0); assert.equal(t.kassa, undefined); assert.equal(t.cancelled, 1); assert.equal(t.tips, 10);
+  assert.equal(t.vat, Math.round((362 - 10) * 6 / 106 * 100) / 100);
 
+  assert.equal(E.ctx.summarizeReport_([{ d: "2026-10-12", total: 500, online: true, status: "Klar" }], 6).total.orders, 0, "före REPORT_FROM räknas inte");
   E.props.REPORT_EMAIL = "agare@exempel.se";
   delete E.props.REPORT_SENT;
   const before = E.log.mails.length;

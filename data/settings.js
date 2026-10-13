@@ -15,6 +15,8 @@ export default {
   // ordnas – då betalar alla med kort online. Visas ändå automatiskt om onlinebetalningen är avstängd (payOnline false),
   // så att det alltid finns ett sätt att betala.
   paySwish: false,
+  // Rapporten (köksvyn, CSV, e-post) räknar från och med den här dagen – allt före var test.
+  reportFrom: "2026-10-13",
   instagram: "hanamisushi99999",
   timezone: "Europe/Stockholm",
   // veckodag (0 = söndag) -> [öppnar, stänger] i hela timmar, null = stängt
