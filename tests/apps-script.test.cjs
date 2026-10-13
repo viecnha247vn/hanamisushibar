@@ -449,6 +449,8 @@ test("happy hour-order med vald dag/tid (asap av) sparas med den tiden, även en
   const sh = E.sheets["Beställningar"], head = sh.data[0], row = sh.data.find(x => x[head.indexOf("Ordernr")] === r.no);
   assert.equal(String(row[head.indexOf("Hämtas datum")]), tomorrow);
   assert.equal(String(row[head.indexOf("Hämtas tid")]), "16:30");
+  assert.match(String(row[head.indexOf("Beställning")]), / HH\b/, "happy hour-rätten saknar HH i namnet");
+  assert.ok(!/ HH/.test(String(sh.data.find(x => /maki/i.test(String(x[head.indexOf("Beställning")])) && !/HH/.test(String(x[head.indexOf("Beställning")])))?.[head.indexOf("Beställning")] || "")));
 });
 
 console.log("\n" + passed + " tester OK");

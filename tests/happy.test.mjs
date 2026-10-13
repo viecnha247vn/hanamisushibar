@@ -20,8 +20,16 @@ assert.deepEqual(s[0].times, ["16:00", "16:15", "16:30", "16:45", "17:00"]);
 ok("15.46: hela 16.00–17.00 går att välja (förberedelsetiden spärrar inte)");
 
 s = happySlots(at("2026-10-12", "16:10"), LEAD);
-assert.deepEqual(s[0].times, ["16:15", "16:30", "16:45", "17:00"]);
-ok("mitt i happy hour: bara tider som inte passerat");
+assert.deepEqual(s[0], { date: "2026-10-12", asap: true, times: [] });
+assert.deepEqual(s[1].times, ["16:00", "16:15", "16:30", "16:45", "17:00"]);
+assert.deepEqual(pickHappySlot("", "", at("2026-10-12", "16:10"), LEAD), { date: "2026-10-12", asap: true });
+assert.deepEqual(pickHappySlot("2026-10-12", "16:45", at("2026-10-12", "16:10"), LEAD), { date: "2026-10-12", asap: true });
+assert.deepEqual(pickHappySlot("2026-10-13", "16:30", at("2026-10-12", "16:10"), LEAD), { date: "2026-10-13", time: "16:30" });
+ok("under happy hour: idag = så snart som möjligt (köksvyns tid), andra dagar valfri tid 16–17");
+
+s = happySlots(at("2026-10-12", "15:59"), LEAD);
+assert.deepEqual(s[0].times, ["16:00", "16:15", "16:30", "16:45", "17:00"]);
+ok("15.59 (före happy hour): gästen väljer tid fritt");
 
 s = happySlots(at("2026-10-12", "17:00"), LEAD);
 assert.equal(s[0].date, "2026-10-13"); assert.deepEqual(s[0].times, ["16:00", "16:15", "16:30", "16:45", "17:00"]);
@@ -37,7 +45,7 @@ assert.deepEqual(pickHappySlot("2026-10-14", "16:30", at("2026-10-12", "09:00"),
 assert.deepEqual(pickHappySlot("2026-10-12", "17:00", at("2026-10-12", "09:00"), LEAD), { date: "2026-10-12", time: "17:00" });
 assert.equal(pickHappySlot("2026-10-12", "17:15", at("2026-10-12", "09:00"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-12", "15:45", at("2026-10-12", "09:00"), LEAD), undefined);
-assert.equal(pickHappySlot("2026-10-12", "16:00", at("2026-10-12", "16:00"), LEAD), undefined);
+assert.equal(pickHappySlot("2026-10-12", "16:00", at("2026-10-12", "17:05"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-30", "16:00", at("2026-10-12", "09:00"), LEAD), undefined);
 assert.equal(pickHappySlot("2026-10-18", "16:00", at("2026-10-17", "09:00"), LEAD), undefined);
 ok("valideringen: 16.00–17.00 godkänns; 17.15, 15.45, passerad tid, för långt fram och stängd dag nekas");
@@ -53,13 +61,15 @@ assert.match(o.whenText, new RegExp(` kl ${t}$`));
 ok("buildOrder: gästens val blir hämtningstid (asap av, whenText)");
 
 const auto = buildOrder(base);
-assert.equal(auto.pickupDate, live[0].date); assert.equal(auto.pickupTime, live[0].times[0]);
-ok("buildOrder utan val (gammal sida) → första lediga happy hour-tid");
+assert.equal(auto.pickupDate, live[0].date);
+if (live[0].asap) { assert.equal(auto.asap, true); assert.equal(auto.happy, true); ok("buildOrder under happy hour (just nu) → så snart som möjligt med köksvyns tid"); }
+else { assert.equal(auto.pickupTime, live[0].times[0]); ok("buildOrder utan val (gammal sida) → första lediga happy hour-tid"); }
 
 assert.throws(() => buildOrder({ ...base, happyDate: last.date, happyTime: "18:00" }), /välj en ny tid/);
 assert.throws(() => buildOrder({ ...base, items: [{ id: "happy-1", qty: 1 }, { id: "lunch-1", qty: 1 }] }), /Beställ dem var för sig/);
 ok("buildOrder: ogiltig tid och lunch + happy hour i samma beställning nekas med tydligt besked");
 
+// Under happy hour (verklig klocka kan inte styras här) – kontrollera grenen via pickHappySlot ovan.
 const plain = buildOrder({ ...base, items: [{ id: "maki-1", qty: 1 }] });
 assert.equal(plain.asap, true); assert.equal(plain.happy, undefined);
 ok("utan happy hour-rätter: som förut (så snart som möjligt)");

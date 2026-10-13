@@ -41,7 +41,8 @@ function priceLines_(p) {
     const extra = r.extra == null ? 0 : Number(r.extra);
     if (!(Number.isInteger(extra) && extra >= 0 && extra <= 2000)) throw new ApiError(400, 'Ogiltigt tillägg.');
     const detail = String(r.detail == null ? '' : r.detail).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 240);
-    return { id: it.id, name: it.name, categoryId: it.categoryId, qty: qty, price: it.price + extra,
+    // Happy hour-rätter får "HH" efter namnet (kvitto, köksvy, mejl, Stripe) – flera heter som vanliga rätter (Sushi mix 30)
+    return { id: it.id, name: it.categoryId === 'happy' || /^happy-/.test(it.id) ? it.name + ' HH' : it.name, categoryId: it.categoryId, qty: qty, price: it.price + extra,
              note: [detail, note].filter(String).join(' · ') };
   });
   const sum = lines.reduce((s, l) => s + l.qty * l.price, 0);

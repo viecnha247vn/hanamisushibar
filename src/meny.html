@@ -166,9 +166,9 @@
 .pickup .lbl{font:500 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-2)}
 .pickup b{font:500 1.15rem/1.3 var(--serif);color:var(--ink)}
 .pickup small{font-size:.86rem;color:var(--ink-2)}
-.hhsel{display:grid;grid-template-columns:1.4fr 1fr;gap:.6rem;margin-top:.35rem}
+.hhsel{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:.6rem;margin-top:.35rem}
 .hhsel label{display:grid;gap:.25rem;font:500 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-2)}
-.hhsel select{font:400 1rem/1.2 var(--sans);letter-spacing:0;text-transform:none;color:var(--ink);padding:.6rem .7rem;border:1px solid rgba(184,146,63,.6);border-radius:2px;background:#fff;min-height:44px}
+.hhsel select{width:100%;min-width:0;font:400 1rem/1.2 var(--sans);letter-spacing:0;text-transform:none;color:var(--ink);padding:.6rem .7rem;border:1px solid rgba(184,146,63,.6);border-radius:2px;background:#fff;min-height:44px}
 .hhnote{display:flex;gap:.6rem;align-items:flex-start;margin:.9rem 0 0;padding:.75rem .9rem;border-left:3px solid var(--gold);background:var(--sakura-3);font-size:.92rem;line-height:1.45;color:var(--ink)}
 .hhnote b{font-weight:600}
 .choice.pay label{flex-wrap:wrap}.choice.pay .paymeth{display:block;width:100%;font-size:.78rem;color:var(--ink-2);margin:.15rem 0 0 1.6rem}
@@ -405,6 +405,11 @@ function happySlots() {
   for (let i = 0; i <= (SETTINGS.pickupDaysAhead ?? 3); i++) {
     const d = new Date(now); d.setDate(d.getDate() + i);
     const hrs = hoursOn(d); if (!hrs) continue;
+    if (i === 0 && happyNow()) {   // under happy hour: köksvyns förberedelsetid, ingen valfri tid
+      const m = Math.ceil((nowMin + lead) / 5) * 5;
+      if (m <= hrs[1] * 60) out.push({ date: isoDate(d), label: "Idag", asap: true, eta: hm(m), times: [] });
+      continue;
+    }
     const earliest = Math.max(HH.from * 60, hrs[0] * 60, i === 0 ? nowMin + 1 : 0), times = [];   // hela 16.00–17.00, bara ej passerade tider
     for (let m = HH.from * 60; m <= Math.min(HH.to, hrs[1]) * 60; m += HH_STEP) if (m >= earliest) times.push(hm(m));
     if (times.length) out.push({ date: isoDate(d), label: i === 0 ? "Idag" : i === 1 ? "Imorgon" : `${dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1)} ${d.getDate()}/${d.getMonth() + 1}`, times });
@@ -414,10 +419,17 @@ function happySlots() {
 let happyPick = null;                       // { date, time } – gästens val i kassan
 function currentHappyPick(slots = happySlots()) {
   const day = happyPick && slots.find(x => x.date === happyPick.date);
-  if (!day || !day.times.includes(happyPick.time)) happyPick = slots.length ? { date: slots[0].date, time: slots[0].times[0] } : null;
+  if (!day || (!day.asap && !day.times.includes(happyPick.time))) {
+    const first = day || slots[0];
+    happyPick = first ? { date: first.date, time: first.asap ? "" : first.times[0] } : null;
+  }
   return happyPick;
 }
-const happyLabel = (slots, p) => `${slots.find(x => x.date === p.date).label.toLowerCase()} kl ${p.time.replace(":", ".")}`;
+const happyLabel = (slots, p) => { const d = slots.find(x => x.date === p.date); return d.asap ? `idag ca kl ${d.eta.replace(":", ".")}` : `${d.label.toLowerCase()} kl ${p.time.replace(":", ".")}`; };
+const timeOptions = day => day.asap ? `<option value="">ca ${day.eta.replace(":", ".")}</option>` : day.times.map(t => `<option value="${t}"${happyPick && t === happyPick.time ? " selected" : ""}>${t.replace(":", ".")}</option>`).join("");
+const happyHint = day => day.asap
+  ? `Happy hour pågår – du hämtar så snart maten är klar (köket behöver ca ${SETTINGS.pickupLeadMinutes} min). Vill du hämta en annan dag? Välj dag.`
+  : `Happy hour-rätter hämtas ${HH_TXT}. Välj tid – den gäller hela beställningen.`;
 function syncHappy() {
   const sec = $("#cat-happy"), st = $("[data-hh]"), now = happyNow();
   const on = TABLE ? now : true;           // hämtning: alltid beställningsbart
@@ -427,7 +439,7 @@ function syncHappy() {
     st.classList.toggle("on", now);
     st.textContent = TABLE
       ? (now ? `Pågår nu – beställ före ${pad(HH.to)}.00` : `Vid bordet kan happy hour beställas ${HH_TXT}.`)
-      : (now ? `Pågår nu · beställ och hämta senast ${pad(HH.to)}.00 – eller välj en annan dag` : `Beställ när du vill – du hämtar ${HH_TXT} en dag du väljer`);
+      : (now ? `Pågår nu · hämtas så snart köket hinner (ca ${SETTINGS.pickupLeadMinutes} min)` : `Beställ när du vill – välj hämtningstid ${HH_TXT}`);
   }
   if (TABLE && !on) {
     const gone = [...new Set([...cart.values()].map(c => c.id).filter(isHappy))];
@@ -443,7 +455,7 @@ function add(id) {
   if (!ORDERING.open) { toast("Onlinebeställning är tillfälligt stängd"); return; }
   if (isHappy(id) && !syncHappy()) { toast(`Happy hour gäller ${HH_TXT}`); return; }
   if (MIX.items[id] && !mixHasDefault(id)) return openMix(id);   // måste välja (boba, fyllning, bitar …)
-  addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}${isHappy(id) && !TABLE ? ` · hämtas ${HH_TXT}` : MIX.items[id] ? " · ändra i varukorgen" : ""}`);
+  addLine(id, null); toast(`Tillagd · ${ITEMS[id].name}${isHappy(id) && !TABLE ? (happyNow() ? ` · klar om ca ${SETTINGS.pickupLeadMinutes} min` : ` · hämtas ${HH_TXT}`) : MIX.items[id] ? " · ändra i varukorgen" : ""}`);
 }
 /* Mixar som har en färdig sammansättning på menyn (sushimix, lunchmix, barn, vegan): + lägger till som på menyn,
    valen öppnas bara om gästen trycker på "Välj maki · byt nigiri". */
@@ -624,7 +636,9 @@ function happyNote() {
   if (TABLE || !cartHas(isHappy)) return "";
   if (cartHas(id => id.startsWith("lunch-")))
     return `<p class="hhnote"><span><b>Lunch och happy hour hämtas vid olika tider</b> (lunch ${pad(SETTINGS.lunch.from)}.00–${pad(SETTINGS.lunch.to)}.00, happy hour ${HH_TXT}). Beställ dem var för sig.</span></p>`;
-  return `<p class="hhnote"><span><b>Happy hour hämtas ${HH_TXT}.</b> Hela beställningen blir klar samtidigt – du väljer dag och tid i nästa steg.</span></p>`;
+  return happyNow()
+    ? `<p class="hhnote"><span><b>Happy hour pågår.</b> Beställningen blir klar om ca ${SETTINGS.pickupLeadMinutes} minuter – eller välj en annan dag i nästa steg.</span></p>`
+    : `<p class="hhnote"><span><b>Happy hour hämtas ${HH_TXT}.</b> Hela beställningen blir klar samtidigt – du väljer dag och tid i nästa steg.</span></p>`;
 }
 
 function renderDrawer() {
@@ -725,21 +739,21 @@ function happyPickupHtml(slots) {
   return `<div class="pickup" id="hhPickup">
     <span class="lbl">Hämtning · happy hour</span>
     <b id="hhWhen">Klar att hämta ${esc(happyLabel(slots, p))}</b>
-    <small>Happy hour-rätter hämtas ${HH_TXT}, därför gäller tiden hela beställningen.</small>
+    <small id="hhHint">${esc(happyHint(day))}</small>
     <div class="hhsel">
       <label>Dag<select id="hhDay">${slots.map(x => `<option value="${x.date}"${x.date === p.date ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>
-      <label>Tid<select id="hhTime">${day.times.map(t => `<option value="${t}"${t === p.time ? " selected" : ""}>${t.replace(":", ".")}</option>`).join("")}</select></label>
+      <label>Tid<select id="hhTime"${day.asap ? " disabled" : ""}>${timeOptions(day)}</select></label>
     </div></div>`;
 }
 document.addEventListener("change", e => {
   if (e.target.id !== "hhDay" && e.target.id !== "hhTime") return;
   const slots = happySlots();
-  if (e.target.id === "hhDay") { const day = slots.find(x => x.date === e.target.value); happyPick = { date: e.target.value, time: day ? day.times[0] : "" }; }
+  if (e.target.id === "hhDay") { const day = slots.find(x => x.date === e.target.value); happyPick = { date: e.target.value, time: day && !day.asap ? day.times[0] : "" }; }
   else happyPick = { date: $("#hhDay").value, time: e.target.value };
   const p = currentHappyPick(slots), day = p && slots.find(x => x.date === p.date);
   if (!p) return renderDrawer();
-  $("#hhTime").innerHTML = day.times.map(t => `<option value="${t}"${t === p.time ? " selected" : ""}>${t.replace(":", ".")}</option>`).join("");
-  $("#hhDay").value = p.date;
+  $("#hhTime").innerHTML = timeOptions(day); $("#hhTime").disabled = !!day.asap;
+  $("#hhDay").value = p.date; $("#hhHint").textContent = happyHint(day);
   $("#hhWhen").textContent = `Klar att hämta ${happyLabel(slots, p)}`;
 });
 
@@ -755,7 +769,7 @@ async function submitOrder(e) {
   const payload = {
     type: TABLE ? "table-order" : "pickup-order", table: TABLE || null, name, phone,
     wishTime: TABLE || hhp ? "" : (f.wish ? f.wish.value.trim() : ""),
-    happyDate: hhp ? hhp.date : undefined, happyTime: hhp ? hhp.time : undefined,
+    happyDate: hhp ? hhp.date : undefined, happyTime: hhp && hhp.time ? hhp.time : undefined,
     payment: f.pay.value, tip: tipValue(), message: f.message.value.trim(), email: f.email.value.trim(), website: f.website.value,
     items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
