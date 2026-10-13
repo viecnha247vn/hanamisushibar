@@ -13,7 +13,8 @@ const today = E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "yyyy-M
 console.log("Apps Script");
 test("setup skapar flikar, triggers och nyckel", () => {
   assert.deepEqual(Object.keys(E.sheets).sort(), ["Beställningar", "Betalningar", "Bokningar", "Logg", "Meny"]);
-  assert.deepEqual(E.log.triggers, ["handleEdit", "resetSoldOut", "nightlyCleanup"]);
+  // sendReportMail (engång kl 20.05) läggs bara om setup körs före 20.05 – beror på klockan
+  assert.deepEqual(E.log.triggers.filter(t => t !== "sendReportMail"), ["handleEdit", "resetSoldOut", "nightlyCleanup", "scheduleReportMail"]);
   assert.equal(E.props.CLEANUP_ENABLED, "off");
   assert.ok(E.props.API_SECRET.length > 30);
 });
@@ -451,6 +452,41 @@ test("happy hour-order med vald dag/tid (asap av) sparas med den tiden, även en
   assert.equal(String(row[head.indexOf("Hämtas tid")]), "16:30");
   assert.match(String(row[head.indexOf("Beställning")]), / HH\b/, "happy hour-rätten saknar HH i namnet");
   assert.ok(!/ HH/.test(String(sh.data.find(x => /maki/i.test(String(x[head.indexOf("Beställning")])) && !/HH/.test(String(x[head.indexOf("Beställning")])))?.[head.indexOf("Beställning")] || "")));
+});
+
+/* ---------------- rapporter per e-post (ReportMail.js) ---------------- */
+test("rapport-mejl: summering = lib/report.js, dagsrapport skickas en gång, månadsrapport sista dagen", () => {
+  const orders = [
+    { d: "2026-10-01", kind: "pickup", payment: "Online kort", status: "Klar", paid: true, total: 212, tip: 0, online: true, refunded: 0 },
+    { d: "2026-10-01", kind: "table", payment: "Swish", status: "Klar", paid: true, total: 150, tip: 10, online: false, refunded: 0 },
+    { d: "2026-10-01", kind: "pickup", payment: "Kort i kassan", status: "Klar", paid: false, total: 100, tip: 0, online: false, refunded: 0 },
+    { d: "2026-10-02", kind: "pickup", payment: "Swish", status: "Avbokad", paid: false, total: 999, tip: 0, online: false, refunded: 0 },
+    { d: "2026-10-02", kind: "pickup", payment: "Online kort", status: "Avbokad", paid: true, total: 100, tip: 0, online: true, refunded: 100 }
+  ];
+  const t = E.ctx.summarizeReport_(orders, 6).total;
+  // samma siffror som tests/report.test.mjs räknar fram med lib/report.js
+  assert.equal(t.orders, 4); assert.equal(t.gross, 562); assert.equal(t.net, 462); assert.equal(t.fee, 16.48);
+  assert.equal(t.payout, 195.52); assert.equal(t.unpaid, 100); assert.equal(t.cancelled, 1); assert.equal(t.tips, 10);
+  assert.equal(t.vat, Math.round((462 - 10) * 6 / 106 * 100) / 100);
+
+  E.props.REPORT_EMAIL = "agare@exempel.se";
+  delete E.props.REPORT_SENT;
+  const before = E.log.mails.length;
+  E.ctx.sendReportMail();
+  const sent = E.log.mails.slice(before);
+  assert.ok(sent.length >= 1, "ingen dagsrapport");
+  assert.equal(sent[0].to, "agare@exempel.se"); assert.match(sent[0].subject, /^📊 Dagsrapport /);
+  assert.match(sent[0].htmlBody, /Via Stripe till banken/);
+  const today = E.call("health").time.slice(0, 10), d = new Date(today + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1);
+  const lastDay = d.toISOString().slice(5, 7) !== today.slice(5, 7);
+  assert.equal(sent.length, lastDay ? 2 : 1, "månadsrapport bara sista dagen");
+  if (lastDay) assert.match(sent[1].subject, /^📅 Månadsrapport /);
+  E.ctx.sendReportMail();
+  assert.equal(E.log.mails.length, before + sent.length, "skickades två gånger samma dag");
+
+  const m0 = E.log.mails.length;
+  E.ctx.mailReport_("månad", today.slice(0, 8) + "01", today, "test");
+  assert.match(E.log.mails[m0].htmlBody, /Per dag/);
 });
 
 console.log("\n" + passed + " tester OK");

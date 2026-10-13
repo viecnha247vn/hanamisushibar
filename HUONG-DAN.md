@@ -672,6 +672,16 @@ Dữ liệu đọc từ **cả Sheet chính và Arkiv** (nightlyCleanup chuyển
 Code: `apps-script/Report.js` (action `reportOrders`), `lib/report.js` (cộng tổng, CSV), `lib/routes/admin.js` (`GET ?view=report`), `src/kok.html`; test `tests/report.test.mjs`.
 Cài đặt: đưa `Report.js` (mới) và `Api.js` lên Apps Script → Triển khai → Phiên bản mới. Chưa đưa lên thì tab Rapport báo "Okänd action: reportOrders".
 
+### Báo cáo qua e-mail (ngày 20:05 + cuối tháng) — thêm 2026-10-13
+
+- **Hằng ngày 20:05**: e-mail "📊 Dagsrapport …" — netto, số đơn, theo cách trả, dricks, hoàn tiền, moms, Q89-avgift, *Via Stripe till banken*, cảnh báo *Ej markerad betald*.
+- **Ngày cuối tháng 20:05**: thêm e-mail "📅 Månadsrapport …" với bảng từng ngày.
+- Cùng quy tắc tính như tab Rapport (đọc cả Arkiv). Gửi tối đa 1 lần/ngày.
+- Người nhận: thuộc tính `REPORT_EMAIL` (nhiều địa chỉ cách nhau dấu phẩy), không có thì `NOTIFY_EMAIL`. Đặt ở Apps Script → ⚙️ Cài đặt dự án → Thuộc tính tập lệnh.
+- Giờ chính xác: Apps Script không hẹn đúng phút được, nên trigger `scheduleReportMail` (~12 giờ trưa) tạo một trigger một lần `sendReportMail` đúng 20:05 hôm đó.
+- **Bật**: Google Sheet → **Hanami → Rapporter per e-post → Slå på**. Thử ngay: *Skicka dagsrapport nu (test)* / *Skicka månadsrapport nu (test)*. Tắt: *Stäng av*.
+- Code: `apps-script/ReportMail.js`, menu trong `Setup.js`. Phí/moms lấy từ thuộc tính `STRIPE_FEE_PCT`, `STRIPE_FEE_FIXED`, `STRIPE_VAT_PCT` (mặc định 4 / 2 / 6).
+
 ### Dữ liệu cá nhân
 Tab Betalningar chứa bản sao đơn (tên, điện thoại) **chỉ trong lúc chờ thanh toán**. Khi trả xong, `payConfirm` xoá bản sao đó (chỉ giữ loại đơn + số bàn); dữ liệu khách nằm duy nhất ở Beställningar và theo Cleanup như trước. Dòng chưa trả xoá sau 2 ngày. Không cần sửa `Cleanup.js`.
 

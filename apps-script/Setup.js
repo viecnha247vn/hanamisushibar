@@ -26,6 +26,11 @@ function onOpen() {
       .addItem('Slå på nattlig städning', 'cleanupEnable')
       .addItem('Stäng av nattlig städning', 'cleanupDisable')
       .addItem('Öppna arkivarket', 'openArchive'))
+    .addSubMenu(ui.createMenu('Rapporter per e-post')
+      .addItem('Slå på (dag 20.05 + månad)', 'reportMailEnable')
+      .addItem('Stäng av', 'reportMailDisable')
+      .addItem('Skicka dagsrapport nu (test)', 'reportMailTestDay')
+      .addItem('Skicka månadsrapport nu (test)', 'reportMailTestMonth'))
     .addSeparator()
     .addItem('Installera / reparera', 'setup')
     .addItem('Kontrollera installationen', 'setupCheck')
@@ -76,12 +81,15 @@ function setup_(force) {
   // Triggers
   step('triggers', () => {
     ScriptApp.getProjectTriggers().forEach(t => {
-      if (['handleEdit', 'resetSoldOut', 'nightlyCleanup'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+      if (['handleEdit', 'resetSoldOut', 'nightlyCleanup', 'scheduleReportMail', 'sendReportMail'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
     });
     ScriptApp.newTrigger('handleEdit').forSpreadsheet(ss).onEdit().create();
     ScriptApp.newTrigger('resetSoldOut').timeBased().atHour(4).everyDays(1).inTimezone(APP.TZ).create();
     // Städningen en halvtimme senare så att de två nattjobben inte krockar om låset
     ScriptApp.newTrigger('nightlyCleanup').timeBased().atHour(4).nearMinute(30).everyDays(1).inTimezone(APP.TZ).create();
+    // Rapporter per e-post (ReportMail.js): kl ~12 läggs en engångstrigger på exakt 20.05
+    ScriptApp.newTrigger('scheduleReportMail').timeBased().atHour(12).everyDays(1).inTimezone(APP.TZ).create();
+    scheduleReportMail();
   });
 
   // Hemlig nyckel och räknare
