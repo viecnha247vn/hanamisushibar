@@ -145,7 +145,7 @@ test("köket kan höja förberedelsetiden och för tidiga hämtningar nekas", ()
   assert.equal(E.call("adminLead", { minutes: 2 }).status, 400);
   E.call("adminLead", { minutes: 15 });
 });
-test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelsetid", () => {
+test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelsetid, öppning och stängning", () => {
   const nowMin = Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "HH")) * 60 +
                  Number(E.ctx.Utilities.formatDate(new Date(), "Europe/Stockholm", "mm"));
   const hhmm = m => pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
@@ -158,16 +158,18 @@ test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelse
   assert.equal(r.pickupTime, want); assert.equal(r.whenText, "idag kl " + want);
   const row = E.sheets["Beställningar"].data.find(x => x[1] === r.no);
   assert.ok(row.includes(want), "arket får den räknade tiden, inte klientens");
-  // före öppning: räknas från öppningstiden
+  // före öppning: klar kl öppning (om köket hinner till dess)
   const open = Math.min(nowMin + 60, 1300);
   r = E.call("order", { ...base, openFrom: open, closeAt: 1440 });
-  assert.equal(r.pickupTime, hhmm(Math.ceil((Math.max(nowMin, open) + 45) / 5) * 5));
-  // köket hinner inte före stängning
+  assert.equal(r.pickupTime, hhmm(Math.max(open, Math.ceil((nowMin + 45) / 5) * 5)));
+  // nära stängning: tiden får bli efter stängning (beställt 20.00 → 20.15)
   r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin + 20 });
-  assert.equal(r.status, 400); assert.match(r.error, /hinner inte/);
-  // stängt
-  r = E.call("order", { ...base, openFrom: 0, closeAt: Math.max(1, nowMin) });
-  assert.equal(r.status, 400);
+  assert.equal(r.pickupTime, want);
+  // mer än 5 minuter efter stängning: nekas
+  if (nowMin >= 10) {
+    r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin - 6 });
+    assert.equal(r.status, 400); assert.match(r.error, /stängt/);
+  }
   E.call("adminLead", { minutes: 15 });
 });
 test("beställning när det är stängt: hämtas nästa öppna dag, 'slut idag' gäller inte", () => {
@@ -178,7 +180,7 @@ test("beställning när det är stängt: hämtas nästa öppna dag, 'slut idag' 
     pickupTime: "11:30", whenText: "x", items: [{ id: "maki-1", qty: 1 }] };
   let r = E.call("order", { ...base, pickupDate: tomorrow });
   assert.equal(r.ok, true, JSON.stringify(r));
-  assert.equal(r.pickupTime, "11:30"); assert.equal(r.whenText, "imorgon kl 11:30");
+  assert.equal(r.pickupTime, "11:00"); assert.equal(r.whenText, "imorgon kl 11:00");   // nästa dag: kl öppning
   const row = E.sheets["Beställningar"].data.find(x => x[1] === r.no), head = E.sheets["Beställningar"].data[0];
   assert.equal(row[head.indexOf("Hämtas datum")], tomorrow);
   assert.ok(E.call("printQueue").jobs.some(j => j.no === r.no && j.pickupDate === tomorrow), "skrivs ut med morgondagens datum");

@@ -74,9 +74,10 @@ function createOrder_(p, pre) {
   const isTable = p.kind === 'table';
 
   // Hämtningstid. Köket väljer förberedelsetiden i köksvyn (PICKUP_LEAD) – därför räknas tiden här, där värdet bor.
-  //   asap: tidigast möjligt = max(nu, öppning) + förberedelsetid, avrundat uppåt till 5 min, senast vid stängning.
+  //   asap: före öppning → kl öppning (tidigast nu + förberedelsetid); öppet till och med stängningsminuten →
+  //         nu + förberedelsetid avrundat uppåt till 5 min (får bli efter stängning, t.ex. 20.00 → 20.15).
   //         Vercel skickar dagen (pickupDate), öppning/stängning den dagen (openFrom/closeAt, minuter) och standardtiden.
-  //         Beställning när det är stängt (dygnet runt): pickupDate är en senare dag → öppning + förberedelsetid.
+  //         Beställning när det är stängt (dygnet runt): pickupDate är en senare dag → kl öppning.
   //   annars (äldre klient): gästens valda tid kontrolleras mot förberedelsetiden.
   if (!isTable) {
     const nowP = nowParts_();
@@ -87,11 +88,11 @@ function createOrder_(p, pre) {
       const later = /^\d{4}-\d{2}-\d{2}$/.test(String(p.pickupDate || '')) && p.pickupDate > nowP.date;
       if (later) {
         if (p.pickupDate > addDays_(nowP.date, 14)) throw new ApiError(400, 'Ogiltigt hämtningsdatum.');
-        p.pickupTime = hhmm_(Math.min(Math.ceil((open + lead) / 5) * 5, close));
+        p.pickupTime = hhmm_(open);
       } else {
-        if (nowP.minutes >= close) throw new ApiError(400, 'Vi har precis stängt. Ladda om sidan så beställer du till nästa öppna dag.');
-        const m = Math.ceil((Math.max(nowP.minutes, open) + lead) / 5) * 5;
-        if (m > close) throw new ApiError(400, 'Köket hinner inte före stängning kl ' + hhmm_(close) + '. Ladda om sidan så beställer du till nästa öppna dag.');
+        // 5 minuters marginal (gästen tryckte vid 20.00), och en redan betald onlinebeställning (pre) nekas aldrig
+        if (nowP.minutes > close + 5 && !pre) throw new ApiError(400, 'Vi har precis stängt. Ladda om sidan så beställer du till nästa öppna dag.');
+        const m = Math.max(open, Math.ceil((nowP.minutes + lead) / 5) * 5);
         p.pickupDate = nowP.date;
         p.pickupTime = hhmm_(m);
       }
