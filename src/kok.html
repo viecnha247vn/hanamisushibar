@@ -390,7 +390,7 @@ document.addEventListener("click", async e => {
   catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
 });
 
-/* Återbetala (bara onlinebetalda): kort → tillbaka till gästens kort, dras från Hanamis Stripe-saldo.
+/* Återbetala (bara onlinebetalda): kort → tillbaka till gästens kort, dras från nästa utbetalning.
    Swish Handel → tillbaka till gästens Swish, dras från Hanamis Swish-konto. Manuell Swish/kontant återbetalas direkt. */
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-refund]"); if (!b) return;
@@ -400,7 +400,7 @@ document.addEventListener("click", async e => {
   const amount = Number(String(val).replace(",", ".").replace(/[^\d.]/g, ""));
   if (!(amount >= 1 && amount <= max)) return alert(`Ange ett belopp mellan 1 och ${max} kr.`);
   if (!confirm(sw ? `Återbetala ${amount} kr för ${no}?\n\nPengarna går direkt tillbaka till gästens Swish och dras från Hanamis Swish-konto (Nordea). Det går inte att ångra.`
-                  : `Återbetala ${amount} kr för ${no}?\n\nPengarna går tillbaka till gästens kort (5–10 bankdagar) och dras från Hanamis Stripe-saldo. Det går inte att ångra.`)) return;
+                  : `Återbetala ${amount} kr för ${no}?\n\nPengarna går tillbaka till gästens kort (5–10 bankdagar) och dras från nästa utbetalning till ert bankkonto. Det går inte att ångra.`)) return;
   b.disabled = true;
   try {
     const r = await api("", { method: "POST", body: JSON.stringify({ kind: "refund", no, amount }) });
@@ -461,8 +461,8 @@ async function loadReport(){
     $("#rTiles").innerHTML =
       tile(esc(heroLabel), krf(t.net), "hero", `${t.orders} order · snitt ${krf(t.avg)}`) +
       tile("Online kort", krf(t.online)) + tile("Swish", krf(t.swish)) +
-      tile("Transaktionsavgift", t.fee ? "−" + krf(t.fee) : krf(0), "", "online kort, behålls vid återbetalning") +
-      tile("Utbetalas via Stripe", krf(t.payout), "", "online kort − återbetalt − avgift") +
+      tile("Transaktionsavgift", t.fee ? "−" + krf(t.fee) : krf(0), "", "för kortbetalningar online") +
+      tile("Till ditt bankkonto", krf(t.payout), "", "kortbetalningar efter avgift och återbetalningar") +
       tile("Dricks", krf(t.tips)) + tile("Återbetalt", krf(t.refunded)) + tile(`Moms ${d.vatPct} % (ingår)`, krf(t.vat)) +
       (t.unpaid ? tile("Ej markerad betald", krf(t.unpaid), "warn", "stäm av mot Swish") : "") +
       tile("Hämtning / bord", `${t.pickup} / ${t.table}`, "", t.cancelled ? `${t.cancelled} avbokade` : "");
@@ -474,7 +474,7 @@ async function loadReport(){
       const wd = parseD(k).toLocaleDateString("sv-SE", { weekday: "short" });
       rows.push({ key: k, label: `${wd} ${Number(k.slice(8))}/${Number(k.slice(5,7))}`, ...(d.days.find(x => x.date === k) || {}) }); }
     const max = Math.max(1, ...rows.map(x => x.net || 0));
-    $("#rTable").innerHTML = `<thead><tr><th>${year ? "Månad" : "Dag"}</th><th>Order</th><th>Netto</th><th></th><th>Online</th><th>Avgift</th><th>Utbetalas</th><th>Swish</th><th>Återbet.</th></tr></thead><tbody>` +
+    $("#rTable").innerHTML = `<thead><tr><th>${year ? "Månad" : "Dag"}</th><th>Order</th><th>Netto</th><th></th><th>Online</th><th>Avgift</th><th>Till bank</th><th>Swish</th><th>Återbet.</th></tr></thead><tbody>` +
       rows.map(x => `<tr class="${x.orders ? "" : "zero"}" data-rday="${year ? "" : x.key}" style="${year ? "" : "cursor:pointer"}" title="${esc(x.label)}: netto ${esc(krf(x.net))}, ${x.orders || 0} order">
         <td>${esc(x.label)}</td><td>${x.orders || 0}</td><td>${krf(x.net)}</td>
         <td class="barc">${x.net ? `<div class="rbar" style="width:${(x.net / max * 100).toFixed(1)}%"></div>` : ""}</td>
