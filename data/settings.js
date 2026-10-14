@@ -15,6 +15,9 @@ export default {
   // ordnas – då betalar alla med kort online. Visas ändå automatiskt om onlinebetalningen är avstängd (payOnline false),
   // så att det alltid finns ett sätt att betala.
   paySwish: false,
+  // Swish Handel med API (nummer SWISH_PAYEE på Vercel): gästen betalar i Swish-appen, ordern skickas till köket först
+  // när Swish bekräftat. Visas bara när SWISH_CERT/SWISH_KEY/SWISH_PAYEE finns på Vercel. Ingen plattformsavgift.
+  swishApi: true,
   // Rapporten (köksvyn, CSV, e-post) räknar från och med den här dagen – allt före var test.
   reportFrom: "2026-10-13",
   instagram: "hanamisushi99999",

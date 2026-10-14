@@ -701,3 +701,43 @@ Cài đặt: đưa `Report.js` (mới) và `Api.js` lên Apps Script → Triển
 Tab Betalningar chứa bản sao đơn (tên, điện thoại) **chỉ trong lúc chờ thanh toán**. Khi trả xong, `payConfirm` xoá bản sao đó (chỉ giữ loại đơn + số bàn); dữ liệu khách nằm duy nhất ở Beställningar và theo Cleanup như trước. Dòng chưa trả xoá sau 2 ngày. Không cần sửa `Cleanup.js`.
 
 Lưu ý khớp văn bản pháp lý: Cleanup của Hanami ẩn danh sau **12 tháng** (thoả thuận với quán). Mẫu Integritetspolicy Q89 gửi phải điền `{{ANONYMISERING}}` = "12 månader" cho Hanami.
+
+## Swish Handel (API) — thêm ngày 2026-10-14
+
+Khách chọn **Swish** khi đặt món:
+- **Điện thoại:** app Swish tự mở, số tiền đã điền sẵn.
+- **Máy tính:** trang hiện mã QR để khách quét bằng điện thoại.
+
+Đơn chỉ vào bếp **sau khi Swish xác nhận đã trả** (giống thanh toán thẻ). Tiền vào thẳng tài khoản Swish Handel của quán tại Nordea, số **123 706 67 56**. Q89 không thu phí phần này, còn phí giao dịch Swish thì Nordea tính riêng.
+
+### Cài một lần (đã làm 2026-10-14)
+1. **Xin quyền:** Nordea cấp quyền vào portal.swish.nu (Swish Företagsportal → Certifikat).
+2. **Tạo khoá trên Mac:**
+   ```
+   mkdir -p ~/swish && cd ~/swish
+   openssl genrsa -out hanami-swish.key 4096
+   openssl req -new -key hanami-swish.key -out hanami-swish.csr -subj "/CN=Hanami Sushi Bar"
+   ```
+   **Không gửi file `.key` cho bất kỳ ai.**
+3. **Tạo chứng chỉ:** vào portal → Nytt certifikat → **Hoppa över** → tải `hanami-swish.csr` lên → Generera → Ladda ner. Đổi tên file tải về thành `~/swish/hanami-swish.pem`.
+4. **Thêm biến trên Vercel** (Settings → Environment Variables, chọn Sensitive):
+   - `SWISH_CERT` = kết quả của `base64 -i ~/swish/hanami-swish.pem`
+   - `SWISH_KEY` = kết quả của `base64 -i ~/swish/hanami-swish.key`
+   - `SWISH_PAYEE` = `1237066756`
+   - Tuỳ chọn: `SWISH_CA`, chỉ cần khi Vercel báo lỗi chứng chỉ máy chủ Swish.
+5. **Bật/tắt:** đặt `swishApi: true` trong `data/settings.js`. Lựa chọn Swish chỉ hiện khi đủ 3 biến trên Vercel.
+6. **Gia hạn:** chứng chỉ có hạn khoảng 2 năm. Gần hết hạn thì lặp lại bước 2–4.
+
+### Cách chạy
+| Bước | Ở đâu |
+|---|---|
+| Khách bấm "Betala … med Swish" | `POST /api/pay` (payment `swishapi`) → `lib/swish.js` tạo yêu cầu thanh toán |
+| Trang `/tack` | Mở `swish://paymentrequest?token=…` trên điện thoại, hoặc hiện QR qua `GET /api/pay?qr=…` trên máy tính. Hỏi trạng thái mỗi 2 giây |
+| Swish báo kết quả | `POST /api/swish` (callback). Server **luôn hỏi lại Swish** bằng chứng chỉ trước khi ghi vào Sheet, vì callback không có chữ ký |
+| Tạo đơn | Apps Script `payConfirm` (method `swish`). Cột Betalning = "Online Swish – BETALD", cột Stripe = `swish:<paymentReference>` |
+| Hoàn tiền | Köksvyn → nút **↩ Återbetala**. Tiền rút từ tài khoản Swish của quán, trả thẳng về Swish của khách |
+
+### Lưu ý
+- Yêu cầu thanh toán Swish có hạn 3 phút. Khách không trả kịp thì đơn không được tạo, giỏ hàng vẫn còn.
+- Báo cáo: đơn Swish nằm ở cột **Swish**, không bị trừ Transaktionsavgift.
+- **Hoàn tiền Swish cần đủ số dư trong tài khoản Swish Handel.** Nếu Swish từ chối (ví dụ lỗi AM04), köksvyn sẽ báo lỗi rõ ràng.

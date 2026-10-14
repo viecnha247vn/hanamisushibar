@@ -333,7 +333,7 @@ function orderCard(o, fresh){
       <button class="btn" type="button" data-o="${esc(o.no)}" data-s="Avbokad" data-confirm="Avboka ${esc(o.no)}?">Avboka</button>
       <button class="btn ${o.paid ? "ok" : ""}" type="button" data-paid="${esc(o.no)}" data-val="${o.paid ? "0" : "1"}">${o.paid ? "Betald ✓" : "Markera betald"}</button>
       <button class="btn" type="button" data-reprint="${esc(o.no)}" title="Skriv ut igen" aria-label="Skriv ut ${esc(o.no)} igen" style="flex:0 0 auto">🖨</button></div>`}
-    ${o.online && o.refunded < o.total ? `<div class="acts"><button class="btn" type="button" data-refund="${esc(o.no)}" data-max="${o.total - o.refunded}">↩ Återbetala</button></div>` : ""}
+    ${(o.online || /^Online Swish/.test(o.payment || "")) && o.refunded < o.total ? `<div class="acts"><button class="btn" type="button" data-refund="${esc(o.no)}" data-swish="${o.online ? "" : "1"}" data-max="${o.total - o.refunded}">↩ Återbetala</button></div>` : ""}
   </article>`;
 }
 
@@ -390,20 +390,21 @@ document.addEventListener("click", async e => {
   catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
 });
 
-/* Återbetala (bara onlinebetalda): pengarna går tillbaka till gästens kort och dras från Hanamis Stripe-saldo.
-   Swish/kontant återbetalas som förut direkt till gästen. Servern kontrollerar beloppet mot Stripe. */
+/* Återbetala (bara onlinebetalda): kort → tillbaka till gästens kort, dras från Hanamis Stripe-saldo.
+   Swish Handel → tillbaka till gästens Swish, dras från Hanamis Swish-konto. Manuell Swish/kontant återbetalas direkt. */
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-refund]"); if (!b) return;
-  const no = b.dataset.refund, max = Number(b.dataset.max);
-  const val = prompt(`Återbetala ${no} till gästens kort.\nBelopp i kr (högst ${max}):`, String(max));
+  const no = b.dataset.refund, max = Number(b.dataset.max), sw = !!b.dataset.swish;
+  const val = prompt(`Återbetala ${no} till gästens ${sw ? "Swish" : "kort"}.\nBelopp i kr (högst ${max}):`, String(max));
   if (val === null) return;
   const amount = Number(String(val).replace(",", ".").replace(/[^\d.]/g, ""));
   if (!(amount >= 1 && amount <= max)) return alert(`Ange ett belopp mellan 1 och ${max} kr.`);
-  if (!confirm(`Återbetala ${amount} kr för ${no}?\n\nPengarna går tillbaka till gästens kort (5–10 bankdagar) och dras från Hanamis Stripe-saldo. Det går inte att ångra.`)) return;
+  if (!confirm(sw ? `Återbetala ${amount} kr för ${no}?\n\nPengarna går direkt tillbaka till gästens Swish och dras från Hanamis Swish-konto (Nordea). Det går inte att ångra.`
+                  : `Återbetala ${amount} kr för ${no}?\n\nPengarna går tillbaka till gästens kort (5–10 bankdagar) och dras från Hanamis Stripe-saldo. Det går inte att ångra.`)) return;
   b.disabled = true;
   try {
     const r = await api("", { method: "POST", body: JSON.stringify({ kind: "refund", no, amount }) });
-    alert(`Klart – ${r.amount} kr återbetalas för ${no}.` + (r.remaining > 0 ? ` Kvar att återbetala: ${r.remaining} kr.` : "") + (r.noted ? " Gästen får ett mejl om e-post finns." : ""));
+    alert((r.status === "pending" ? `Skickat till Swish – ${r.amount} kr återbetalas för ${no}. Bekräftelsen syns här om en stund.` : `Klart – ${r.amount} kr återbetalas för ${no}.`) + (r.remaining > 0 ? ` Kvar att återbetala: ${r.remaining} kr.` : "") + (r.noted ? " Gästen får ett mejl om e-post finns." : ""));
     loadOrders();
   } catch (err) { if (err.message !== "401") alert(err.message); b.disabled = false; }
 });

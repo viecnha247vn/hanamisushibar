@@ -63,12 +63,15 @@ function rowObject_(sh, row) {
 function mailRefund_(r, kr) {
   const to = r['E-post'];
   if (!to) return false;
+  const viaSwish = /swish/i.test(r['Betalning'] || '');
+  const dest = viaSwish ? 'till ditt Swish-konto' : 'till kortet du betalade med';
+  const when = viaSwish ? 'Pengarna syns i Swish direkt.' : 'Det tar normalt 5–10 bankdagar innan pengarna syns på ditt konto.';
   const text = 'Hej ' + (r['Namn'] || '') + '!\n\nVi har återbetalat ' + krText_(kr) + ' kr för beställning ' + r['Ordernr'] +
-    ' till kortet du betalade med. Det tar normalt 5–10 bankdagar innan pengarna syns på ditt konto.\n\nHälsningar\n' + APP.NAME + '\n' + APP.PHONE;
+    ' ' + dest + '. ' + when + '\n\nHälsningar\n' + APP.NAME + '\n' + APP.PHONE;
   const html = guestMail_({ eyebrow: 'Återbetalning ' + r['Ordernr'], body:
     '<p style="margin:0 0 14px;color:#1B2A3A;font-size:16px">Hej ' + esc_(r['Namn'] || '') + '!</p>' +
     '<p style="margin:0 0 14px;color:#1B2A3A">Vi har återbetalat <b>' + esc_(krText_(kr)) + ' kr</b> för beställning <b>' + esc_(r['Ordernr']) +
-    '</b> till kortet du betalade med.</p>' +
-    '<p style="margin:0;color:#4C5B6B;font-size:14px">Det tar normalt 5–10 bankdagar innan pengarna syns på ditt konto. Frågor? Ring oss på ' + esc_(APP.PHONE) + '.</p>' });
+    '</b> ' + dest + '.</p>' +
+    '<p style="margin:0;color:#4C5B6B;font-size:14px">' + when + ' Frågor? Ring oss på ' + esc_(APP.PHONE) + '.</p>' });
   return sendGuestMail_(to, 'Återbetalning ' + r['Ordernr'] + ' – ' + APP.NAME, html, text);
 }

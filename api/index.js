@@ -13,7 +13,8 @@
 //   /api/print                   skrivarbryggan (Raspberry Pi, reserv)
 //   /api/sdp/<SDP_KEY>           Epson Server Direct Print (TM-m30III i köket)
 //   /api/cloudprnt/<KEY>         Star CloudPRNT (reserv)
-//   /api/pay                     onlinebetalning via Stripe (Q89 Pay) – start + status
+//   /api/pay                     onlinebetalning via Stripe (Q89 Pay) och Swish Handel – start + status
+//   /api/swish                   Swish callback (betalning/återbetalning)
 //   /api/platform                plattformsrapport för Queenie89 AB (bara Apps Script, x-report-key)
 //   /api/stripe/webhook          egen funktion api/stripe-webhook.js (rå kropp krävs för signaturen)
 
@@ -26,8 +27,9 @@ import sdp from "../lib/routes/sdp.js";
 import cloudprnt from "../lib/routes/cloudprnt.js";
 import pay from "../lib/routes/pay.js";
 import platform from "../lib/routes/platform.js";
+import swish from "../lib/routes/swish.js";
 
-const ROUTES = { submit, admin, availability, health, print, pay, platform };
+const ROUTES = { submit, admin, availability, health, print, pay, platform, swish };
 const KEYED = { sdp, cloudprnt };                 // slutpunkter där nyckeln är andra ledet i adressen
 
 /**

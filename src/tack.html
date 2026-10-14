@@ -8,7 +8,8 @@
 <link rel="canonical" href="https://hanamisushibar.se/tack">
 <!--HEAD-->
 <style>
-/* Tacksidan efter onlinebetalning (Stripe skickar gästen hit: /tack?ref=…&sid=…) */
+/* Tacksidan efter onlinebetalning (Stripe skickar gästen hit: /tack?ref=…&sid=…; Swish: /tack?ref=…&sid=sw_…&tok=…) */
+.tack .swqr{display:block;width:220px;height:220px;margin:.8rem auto .4rem;background:#fff;padding:10px;border-radius:4px}
 .tack{min-height:70svh;display:flex;align-items:center;padding:calc(var(--hdr) + 40px) 0 72px}
 .tack .wrap{max-width:34rem;text-align:center}
 .tack .big{font:italic 400 clamp(3rem,10vw,4.6rem)/1 var(--serif);margin:.6rem 0 .4rem;color:var(--koi-deep)}
@@ -46,19 +47,37 @@
 /* ================= tacksidan ================= */
 (function () {
   const q = new URLSearchParams(location.search);
-  const ref = q.get("ref") || "", sid = q.get("sid") || "";
+  const ref = q.get("ref") || "", sid = q.get("sid") || "", tok = q.get("tok") || "";
+  const isSwish = /^sw_/.test(sid), isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const el = id => document.getElementById(id);
   const kr = n => `${Number(n) || 0} kr`;
   if (!/^P[A-Z0-9]{12}$/.test(ref) || !sid) return fail("Vi hittar ingen betalning att bekräfta.");
 
+  // Swish: öppna appen en gång (mobil) eller visa QR-koden (dator) och vänta på bekräftelsen (förfrågan gäller 3 min)
+  if (isSwish && /^[A-Za-z0-9]{10,64}$/.test(tok)) {
+    const app = `swish://paymentrequest?token=${encodeURIComponent(tok)}&callbackurl=${encodeURIComponent(location.href)}`;
+    el("tEyebrow").textContent = "Betala med Swish";
+    el("tText").textContent = isPhone ? "Godkänn betalningen i Swish-appen. Du kommer tillbaka hit automatiskt." : "Skanna QR-koden med Swish-appen i mobilen och godkänn betalningen.";
+    const box = el("tBox");
+    box.innerHTML = isPhone
+      ? `<a class="btn gold" href="${esc(app)}">Öppna Swish</a><span class="sm" style="display:block;margin-top:.6rem">Öppnades inte appen? Tryck på knappen.</span>`
+      : `<img class="swqr" src="/api/pay?qr=${encodeURIComponent(tok)}" alt="QR-kod för Swish-betalning" width="220" height="220"><span class="sm">Belopp och mottagare är redan ifyllda.</span>`;
+    box.hidden = false;
+    let opened = false; try { opened = sessionStorage.getItem("swish-" + ref) === "1"; sessionStorage.setItem("swish-" + ref, "1"); } catch {}
+    if (isPhone && !opened) location.href = app;
+  }
+
   let tries = 0;
+  const maxTries = isSwish ? 100 : 15;
   async function poll() {
     let r;
     try { r = await fetch(`/api/pay?ref=${encodeURIComponent(ref)}&sid=${encodeURIComponent(sid)}`, { cache: "no-store" }).then(x => x.json()); }
     catch { r = null; }
     if (r && r.ok && r.status === "betald") return paid(r);
-    if (r && r.ok && (r.status === "misslyckad" || r.status === "utgången")) return fail("Betalningen gick inte igenom. Inget har dragits från ditt kort.", true);
-    if (++tries < 15) return setTimeout(poll, tries < 5 ? 1500 : 3000);
+    if (r && r.ok && (r.status === "misslyckad" || r.status === "utgången"))
+      return fail(isSwish ? "Swish-betalningen avbröts eller gick inte igenom. Inga pengar har dragits – din beställning finns kvar i varukorgen."
+                          : "Betalningen gick inte igenom. Inget har dragits från ditt kort.", true);
+    if (++tries < maxTries) return setTimeout(poll, isSwish ? 2000 : tries < 5 ? 1500 : 3000);
     fail("Vi har inte fått bekräftelse från banken ännu. Har du betalat syns beställningen hos oss inom någon minut – ring annars " + SETTINGS.phone + ".", true);
   }
 
@@ -72,6 +91,7 @@
       (isTable ? "Köket har fått beställningen och börjar direkt. Maten kommer till bordet."
                : `Hämtas ${esc(r.when || "så snart maten är klar")} på Östergatan 53.${r.phone ? ` Vi sms:ar ${esc(r.phone)} när den är klar.` : ""}`);
     const box = el("tBox");
+    try { sessionStorage.removeItem("swish-" + ref); } catch {}
     box.innerHTML = `<div class="box"><b>Kvitto</b>${r.email ? `Kvitto och bekräftelse skickas till ${esc(r.email)}.` : "Vill du ha kvitto på mejl? Säg till i kassan så skriver vi ut ett."}
       <span class="sm" style="display:block;margin-top:.4rem">Behöver du ändra något? Ring oss direkt på <a href="tel:${esc(SETTINGS.phone)}">${esc(SETTINGS.phone)}</a>.</span></div>`;
     box.hidden = false;
@@ -85,6 +105,7 @@
     el("tEyebrow").textContent = "Något gick fel";
     el("tNo").textContent = "–";
     el("tText").textContent = msg;
+    el("tBox").hidden = true;
     el("tActions").innerHTML = `<a class="btn gold" href="/meny${keepCart ? "" : ""}">Tillbaka till menyn</a><a class="btn ghost" href="tel:${esc(SETTINGS.phone)}">Ring ${esc(SETTINGS.phone)}</a>`;
   }
 

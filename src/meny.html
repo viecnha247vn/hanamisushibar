@@ -293,6 +293,12 @@
 /* ================= menysidan ================= */
 const PAY_ONLINE = !!SETTINGS.payOnline && !!ENDPOINT;   // onlinebetalning slås på i data/settings.js (payOnline: true)
 const PAY_SWISH = !!SETTINGS.paySwish || !PAY_ONLINE;     // manuell Swish (paySwish), alltid som reserv om online är av
+let SWISH_API = false;                                     // Swish Handel – servern säger till via /api/availability
+const payInfoText = pay => pay === "online"
+  ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}`
+  : pay === "swishapi"
+  ? `Swish-appen öppnas med beloppet ifyllt (på dator: skanna QR-koden med mobilen). ${TABLE ? "Köket får beställningen" : "Vi börjar laga"} så fort betalningen är klar.`
+  : `Swish-nummer ${swishNo} (${SETTINGS.name}). Ange ditt ordernummer som meddelande.`;
 const ITEMS = {};
 $$("[data-add]").forEach(b => { ITEMS[b.dataset.add] = { id: b.dataset.add, cat: b.dataset.cat, name: b.dataset.name, price: Number(b.dataset.price) }; });
 
@@ -717,14 +723,15 @@ function renderDrawer() {
         <small id="tipInfo">${tipValue() ? `Dricks ${tipValue()} kr · att betala ${payTotal()} kr` : "Tack, men ingen dricks behövs – vi blir lika glada ändå."}</small></div>
       <div class="field"><span class="lbl">Betalning</span><div class="choice pay">
         ${PAY_ONLINE ? `<label><input type="radio" name="pay" value="online" checked>Betala med kort nu <span class="paymeth">kort · Apple Pay · Google Pay</span></label>` : ""}
-        ${PAY_SWISH ? `<label><input type="radio" name="pay" value="swish"${PAY_ONLINE ? "" : " checked"}>Swish till ${swishNo}</label>` : ""}</div>
-        <small id="payInfo">${PAY_ONLINE ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}` : `Swish-nummer ${swishNo} (${esc(SETTINGS.name)}). Ange ditt ordernummer som meddelande.`}</small></div>
+        ${SWISH_API ? `<label><input type="radio" name="pay" value="swishapi"${PAY_ONLINE ? "" : " checked"}>Swish <span class="paymeth">betala i Swish-appen</span></label>` : ""}
+        ${PAY_SWISH && !SWISH_API ? `<label><input type="radio" name="pay" value="swish"${PAY_ONLINE ? "" : " checked"}>Swish till ${swishNo}</label>` : ""}</div>
+        <small id="payInfo">${esc(payInfoText(PAY_ONLINE ? "online" : SWISH_API ? "swishapi" : "swish"))}</small></div>
       <div class="field"><label for="oMsg">Meddelande till köket</label><textarea id="oMsg" name="message" placeholder="Allergier, önskemål som gäller hela beställningen …"></textarea>
         <small class="allergi"><b>Allergi?</b> Skriv vilket ämne det gäller. Köket kan innehålla ${SETTINGS.allergens.join(", ")}.</small></div>
       <input class="sr" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div id="orderErr" class="err" hidden></div>
     </form>`;
-  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${submitLabel(PAY_ONLINE ? "online" : "swish")}</button>
+  foot.innerHTML = `<button class="btn gold block" type="submit" form="orderForm" id="orderSubmit">${submitLabel(PAY_ONLINE ? "online" : SWISH_API ? "swishapi" : "swish")}</button>
     <button class="btn ghost block" type="button" data-back>Tillbaka</button>
     <small class="terms-note">Genom att beställa godkänner du våra <a href="/villkor" target="_blank" rel="noopener">köpvillkor</a>.</small>`;
   if ((pi && pi.closed && !hhMode) || hhBlocked) $("#orderSubmit").disabled = true;
@@ -774,10 +781,11 @@ async function submitOrder(e) {
     items: [...cart.values()].map(c => ({ id: c.id, qty: c.qty, note: c.note, opts: c.opts || undefined }))
   };
   try {
-    if (payload.payment === "online") {
-      btn.textContent = "Öppnar betalning …";
+    if (payload.payment === "online" || payload.payment === "swishapi") {
+      btn.textContent = payload.payment === "swishapi" ? "Öppnar Swish …" : "Öppnar betalning …";
       const r = await send(payload, "/api/pay");
       if (r.demo) throw new Error("Demoläge – onlinebetalning kräver att sidan körs på servern.");
+      // Swish: tacksidan öppnar appen (mobil) eller visar QR-koden (dator) och väntar på bekräftelsen
       syncCart();                                  // korgen ligger kvar tills tacksidan bekräftar betalningen
       location.href = r.url; return;
     }
@@ -805,14 +813,12 @@ function closeDrawer() {
 }
 
 /* ---------- betalsätt: knapptext och hjälptext ---------- */
-const submitLabel = pay => pay === "online" ? `Betala ${payTotal()} kr` : `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
+const submitLabel = pay => pay === "online" ? `Betala ${payTotal()} kr` : pay === "swishapi" ? `Betala ${payTotal()} kr med Swish` : `${TABLE ? "Skicka till köket" : "Skicka beställning"} · ${payTotal()} kr`;
 document.addEventListener("change", e => {
   if (e.target.name !== "pay") return;
   const btn = $("#orderSubmit"); if (btn) btn.textContent = submitLabel(e.target.value);
   const info = $("#payInfo"); if (!info) return;
-  info.textContent = e.target.value === "online"
-    ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}`
-    : `Swish-nummer ${swishNo} (${SETTINGS.name}). Ange ditt ordernummer som meddelande.`;
+  info.textContent = payInfoText(e.target.value);
 });
 // Gästen avbröt i Stripe → tillbaka till korgen med allt kvar
 if (/[?&]avbruten=/.test(location.search)) {
@@ -825,7 +831,8 @@ async function syncAvailability() {
   if (!ENDPOINT) return;
   try {
     const r = await fetch("/api/availability"); if (!r.ok) return;
-    const { items, leadMinutes, ordering } = await r.json();
+    const { items, leadMinutes, ordering, swishApi } = await r.json();
+    SWISH_API = !!swishApi;                                    // ritas om nedan om korgen är öppen
     if (leadMinutes) SETTINGS.pickupLeadMinutes = leadMinutes;   // köket kan höja tiden när det är fullt
     setOrdering(ordering);
     // "Slut idag" gäller inte beställningar som hämtas en senare dag (beställning när det är stängt)
