@@ -750,7 +750,9 @@ Trên TV mở trình duyệt và vào **hanamisushibar.se/skarm**. Màn hình ch
 
 Bếp không phải làm gì thêm. Bấm **Klar** trong köksvyn thì số đơn tự chuyển sang cột phải. Bấm **Hämtad** thì số đơn biến mất khỏi màn hình.
 
-- **Samsung TV:** mở ứng dụng **Internet**, gõ địa chỉ trên, rồi bấm nút toàn màn hình. Bấm **OK** trên điều khiển một lần để bật âm thanh. Trong Cài đặt → Chung → Quản lý năng lượng, tắt **Tự động tắt** để TV không tự tắt màn hình.
+- **Samsung TV:** mở ứng dụng **Internet**, gõ địa chỉ trên, để zoom 100% rồi bấm nút toàn màn hình. Bấm **OK** trên điều khiển một lần để bật âm thanh.
+- **TV tự tắt:** đây là cài đặt của TV, trang web không chặn được. Vào Cài đặt → Chung → **Giải pháp tiết kiệm (Eco Solution) → Tự động tắt nguồn: Tắt**. Vào Cài đặt → Chung → Quản lý hệ thống → **Thời gian tự bảo vệ (Auto Protection Time): Tắt**. Kiểm tra thêm **Hẹn giờ tắt (Sleep Timer): Tắt**.
+- Trang được viết cho trình duyệt TV đời cũ: không dùng CSS variables, flexbox hay thẻ HTML5.
 - **Hiện cả đơn tại bàn:** dùng địa chỉ `hanamisushibar.se/skarm?bord=1`.
 - **Bảo mật:** màn hình chỉ hiện số đơn và giờ lấy, không hiện tên, số điện thoại hay số tiền. Dữ liệu lấy qua `/api/board` (`lib/routes/board.js`).
 - **TV đời cũ:** nếu trình duyệt của TV quá chậm hoặc không chạy được, cắm một **Chromecast with Google TV** hoặc **Fire TV Stick** (khoảng 500–700 kr) rồi mở cùng địa chỉ.

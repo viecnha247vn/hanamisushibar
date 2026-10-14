@@ -8,56 +8,61 @@
 <link rel="icon" href="/favicon.png">
 <style>
 /* Kundskärm för TV i butiken (öppnas i TV:ns webbläsare: hanamisushibar.se/skarm).
-   Bara ordernummer – inga namn eller belopp. Skriptet är medvetet enkelt och CSS utan variabler (Samsung-TV:ns webbläsare stöder inte var(--…)). */
-*{box-sizing:border-box;margin:0;padding:0}
+   Bara ordernummer – inga namn eller belopp. Byggd för gamla TV-webbläsare (Samsung): inga CSS-variabler, ingen flexbox,
+   inga HTML5-taggar. 1rem = 1 % av skärmens höjd (sätts i skriptet), allt annat är absolut positionerat. */
+*{-webkit-box-sizing:border-box;box-sizing:border-box;margin:0;padding:0}
+html{font-size:10.8px}
 html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Neue",Arial,sans-serif;overflow:hidden;cursor:none}
-.top{height:12vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;border-bottom:2px solid rgba(212,178,106,.35)}
-.brand{display:flex;align-items:center}
-.brand img{margin-right:1.4vw}
-.brand img{height:8vh;width:8vh}
-.brand b{font:italic 400 5vh/1 Georgia,"Times New Roman",serif;color:#D4B26A}
-.brand span{display:block;font-size:1.8vh;letter-spacing:.5em;color:#9FB1C8;margin-top:.6vh}
-.clock{font-size:6vh;font-weight:300;letter-spacing:.05em}
-.cols{height:68vh;display:flex}
-.col{flex:1;display:flex;flex-direction:column;padding:2.5vh 2.5vw}
-.col+.col{border-left:2px solid rgba(255,255,255,.08)}
-.col h2{font-size:4.6vh;font-weight:700;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;margin-bottom:2.5vh}
-.col h2 i{margin-right:1.2vw}
-.col h2 i{width:2.6vh;height:2.6vh;border-radius:50%;display:inline-block}
+.top,.cols,.foot{position:absolute;left:0;right:0}
+.top{top:0;height:12rem;padding:0 5rem;border-bottom:2px solid #5B5A4E}
+.brand{float:left;height:12rem;padding-top:2rem}
+.brand img{float:left;height:8rem;width:8rem;margin-right:2.5rem}
+.brand div{float:left;padding-top:.6rem}
+.brand b{display:block;font:italic 400 5rem/1 Georgia,"Times New Roman",serif;color:#D4B26A}
+.brand span{display:block;font-size:1.8rem;letter-spacing:.5em;color:#9FB1C8;margin-top:.6rem}
+.clock{float:right;font-size:6rem;line-height:12rem;font-weight:300;letter-spacing:.05em}
+.cols{top:12rem;height:68rem}
+.col{position:absolute;top:0;bottom:0;width:50%;padding:2.5rem 4.4rem;overflow:hidden}
+.cook{left:0}
+.ready{left:50%;border-left:2px solid #1C3553}
+.col h2{font-size:4.6rem;line-height:6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;white-space:nowrap}
+.col h2 i{display:inline-block;vertical-align:middle;width:2.6rem;height:2.6rem;border-radius:50%;margin:-.6rem 2rem 0 0}
 .cook h2{color:#F2B441} .cook h2 i{background:#F2B441}
 .ready h2{color:#3FCB7E} .ready h2 i{background:#3FCB7E}
-.list{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;overflow:hidden;margin:0 -.8vw}
-.no{margin:0 .8vw 2vh;background:#10305A;border-radius:1.2vh;padding:1.2vh 1.6vw;font-weight:800;font-size:8vh;line-height:1.05;letter-spacing:.02em;font-variant-numeric:tabular-nums;text-align:center;min-width:22%}
-.no small{display:block;font-size:.3em;font-weight:400;color:#9FB1C8;letter-spacing:.06em;margin-top:.3vh}
-.ready .no{background:#0F4A35;color:#fff;border:.35vh solid #3FCB7E}
-.ready .no.new{animation:pop 1.2s ease-in-out infinite alternate}
-@keyframes pop{from{transform:scale(1);box-shadow:0 0 0 0 rgba(63,203,126,.0)}to{transform:scale(1.06);box-shadow:0 0 4vh 1vh rgba(63,203,126,.55)}}
-.empty{font-size:3vh;color:#9FB1C8;margin-top:1vh}
-.more{font-size:3vh;color:#9FB1C8;align-self:center}
-.foot{height:20vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;background:rgba(0,0,0,.18);font-size:3vh;color:#9FB1C8}
+.list{margin:0 -1.4rem}
+.no{display:inline-block;vertical-align:top;margin:0 1.4rem 2rem;background:#10305A;border-radius:1.2rem;padding:1.2rem 2.8rem;font-weight:800;font-size:8rem;line-height:1.05;letter-spacing:.02em;text-align:center;min-width:22%}
+.no small{display:block;font-size:.3em;font-weight:400;color:#9FB1C8;letter-spacing:.06em;margin-top:.3rem}
+.ready .no{background:#0F4A35;color:#fff;border:.35rem solid #3FCB7E}
+.ready .no.new{-webkit-animation:pop 1.2s ease-in-out infinite alternate;animation:pop 1.2s ease-in-out infinite alternate}
+@-webkit-keyframes pop{from{-webkit-transform:scale(1)}to{-webkit-transform:scale(1.06);box-shadow:0 0 4rem 1rem rgba(63,203,126,.55)}}
+@keyframes pop{from{transform:scale(1)}to{transform:scale(1.06);box-shadow:0 0 4rem 1rem rgba(63,203,126,.55)}}
+.empty{font-size:3rem;color:#9FB1C8;margin:1rem 1.4rem 0}
+.more{display:inline-block;font-size:3rem;color:#9FB1C8;margin:3rem 1.4rem 0}
+.foot{bottom:0;height:20rem;padding:0 5rem;background:#081A31;font-size:3rem;color:#9FB1C8}
 .foot b{color:#F6F1E7}
-.foot .order{display:flex;align-items:center}
-.foot .qr{margin-left:2vw}
-.foot .qr{height:17vh;width:17vh;background:#fff;padding:1vh;border-radius:1vh;line-height:0}
+.foot .info{float:left;line-height:20rem}
+.foot .order{float:right;height:20rem;padding-top:1.5rem}
+.foot .order .txt{float:left;text-align:right;padding-top:4.5rem;line-height:1.35}
+.foot .qr{float:left;margin-left:3.5rem;height:17rem;width:17rem;background:#fff;padding:1rem;border-radius:1rem;line-height:0}
 .foot .qr svg{width:100%;height:100%}
-.off{position:fixed;right:1.2vw;bottom:21vh;font-size:2vh;color:#ffb4a8;display:none}
+.off{position:fixed;right:2rem;bottom:21rem;font-size:2rem;color:#ffb4a8;display:none}
 .off.show{display:block}
-.sound{position:fixed;left:50%;bottom:21vh;transform:translateX(-50%);font-size:2vh;color:#9FB1C8;background:rgba(0,0,0,.35);padding:.6vh 1.2vw;border-radius:99px}
+.sound{position:fixed;left:0;right:0;bottom:21rem;text-align:center;font-size:2rem;color:#9FB1C8}
 </style>
 </head>
 <body>
-<header class="top">
+<div class="top">
   <div class="brand"><img src="/logo.png" alt=""><div><b>Hanami</b><span>SUSHI BAR</span></div></div>
   <div class="clock" id="clock"></div>
-</header>
-<main class="cols">
-  <section class="col cook"><h2><i></i>Tillagas</h2><div class="list" id="cook"></div></section>
-  <section class="col ready"><h2><i></i>Klar att hämta</h2><div class="list" id="ready"></div></section>
-</main>
-<footer class="foot">
-  <span>Ditt ordernummer står på kvittot och i bekräftelsen.</span>
-  <span class="order"><span style="text-align:right">Skanna och beställ i mobilen<br><b>hanamisushibar.se/meny</b></span><span class="qr" id="qr"></span></span>
-</footer>
+</div>
+<div class="cols">
+  <div class="col cook"><h2><i></i>Tillagas</h2><div class="list" id="cook"></div></div>
+  <div class="col ready"><h2><i></i>Klar att hämta</h2><div class="list" id="ready"></div></div>
+</div>
+<div class="foot">
+  <span class="info">Ditt ordernummer står på kvittot och i bekräftelsen.</span>
+  <span class="order"><span class="txt">Skanna och beställ i mobilen<br><b>hanamisushibar.se/meny</b></span><span class="qr" id="qr"></span></span>
+</div>
 <div class="off" id="off">Ingen anslutning – försöker igen …</div>
 <div class="sound" id="sound">Tryck OK på fjärrkontrollen för ljud när en beställning är klar</div>
 <script src="/qr.js"></script>
@@ -67,6 +72,9 @@ html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Ne
   var q = location.search, withTables = /[?&]bord=1/.test(q);
   var known = null, fresh = {}, audio = null;
   function $(id) { return document.getElementById(id); }
+  // 1rem = 1 % av höjden – fungerar även där vh/vw saknas
+  function scale() { document.documentElement.style.fontSize = (window.innerHeight || document.documentElement.clientHeight) / 100 + "px"; }
+  scale(); window.addEventListener("resize", scale);
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -90,7 +98,7 @@ html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Ne
     });
   }
 
-  function size(n) { return n <= 4 ? "11vh" : n <= 8 ? "8.5vh" : n <= 15 ? "6.2vh" : "4.8vh"; }
+  function size(n) { return n <= 4 ? "11rem" : n <= 8 ? "8.5rem" : n <= 15 ? "6.2rem" : "4.8rem"; }
   function render(el, list, ready) {
     var max = 24, shown = list.slice(0, max);
     var fs = size(shown.length);
