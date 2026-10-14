@@ -19,7 +19,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Helveti
 .brand b{font:italic 400 5vh/1 Georgia,"Times New Roman",serif;color:var(--gold)}
 .brand span{display:block;font-size:1.8vh;letter-spacing:.5em;color:var(--mute);margin-top:.6vh}
 .clock{font-size:6vh;font-weight:300;letter-spacing:.05em}
-.cols{height:78vh;display:flex}
+.cols{height:68vh;display:flex}
 .col{flex:1;display:flex;flex-direction:column;padding:2.5vh 2.5vw}
 .col+.col{border-left:2px solid rgba(255,255,255,.08)}
 .col h2{font-size:4.6vh;font-weight:700;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;margin-bottom:2.5vh}
@@ -35,15 +35,15 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Helveti
 @keyframes pop{from{transform:scale(1);box-shadow:0 0 0 0 rgba(63,203,126,.0)}to{transform:scale(1.06);box-shadow:0 0 4vh 1vh rgba(63,203,126,.55)}}
 .empty{font-size:3vh;color:var(--mute);margin-top:1vh}
 .more{font-size:3vh;color:var(--mute);align-self:center}
-.foot{height:10vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;background:rgba(0,0,0,.18);font-size:2.6vh;color:var(--mute)}
+.foot{height:20vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;background:rgba(0,0,0,.18);font-size:3vh;color:var(--mute)}
 .foot b{color:var(--ink)}
 .foot .order{display:flex;align-items:center}
-.foot .qr{margin-left:1.4vw}
-.foot .qr{height:8vh;width:8vh;background:#fff;padding:.5vh;border-radius:.6vh;line-height:0}
+.foot .qr{margin-left:2vw}
+.foot .qr{height:17vh;width:17vh;background:#fff;padding:1vh;border-radius:1vh;line-height:0}
 .foot .qr svg{width:100%;height:100%}
-.off{position:fixed;right:1.2vw;bottom:11vh;font-size:2vh;color:#ffb4a8;display:none}
+.off{position:fixed;right:1.2vw;bottom:21vh;font-size:2vh;color:#ffb4a8;display:none}
 .off.show{display:block}
-.sound{position:fixed;left:50%;bottom:11vh;transform:translateX(-50%);font-size:2vh;color:var(--mute);background:rgba(0,0,0,.35);padding:.6vh 1.2vw;border-radius:99px}
+.sound{position:fixed;left:50%;bottom:21vh;transform:translateX(-50%);font-size:2vh;color:var(--mute);background:rgba(0,0,0,.35);padding:.6vh 1.2vw;border-radius:99px}
 </style>
 </head>
 <body>
@@ -57,7 +57,7 @@ html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Helveti
 </main>
 <footer class="foot">
   <span>Ditt ordernummer står på kvittot och i bekräftelsen.</span>
-  <span class="order"><span>Beställ i mobilen: <b>hanamisushibar.se/meny</b></span><span class="qr" id="qr"></span></span>
+  <span class="order"><span style="text-align:right">Skanna och beställ i mobilen<br><b>hanamisushibar.se/meny</b></span><span class="qr" id="qr"></span></span>
 </footer>
 <div class="off" id="off">Ingen anslutning – försöker igen …</div>
 <div class="sound" id="sound">Tryck OK på fjärrkontrollen för ljud när en beställning är klar</div>
