@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Beställningar – Hanami Sushi Bar</title>
+<link rel="icon" href="/favicon.png">
+<style>
+/* Kundskärm för TV i butiken (öppnas i TV:ns webbläsare: hanamisushibar.se/skarm).
+   Bara ordernummer – inga namn eller belopp. Skriptet är medvetet enkelt (äldre Samsung-TV:ar har gammal webbläsare). */
+:root{--bg:#0B2240;--panel:#10305A;--ink:#F6F1E7;--mute:#9FB1C8;--gold:#D4B26A;--cook:#F2B441;--ready:#3FCB7E}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;overflow:hidden;cursor:none}
+.top{height:12vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;border-bottom:2px solid rgba(212,178,106,.35)}
+.brand{display:flex;align-items:center}
+.brand img{margin-right:1.4vw}
+.brand img{height:8vh;width:8vh}
+.brand b{font:italic 400 5vh/1 Georgia,"Times New Roman",serif;color:var(--gold)}
+.brand span{display:block;font-size:1.8vh;letter-spacing:.5em;color:var(--mute);margin-top:.6vh}
+.clock{font-size:6vh;font-weight:300;letter-spacing:.05em}
+.cols{height:78vh;display:flex}
+.col{flex:1;display:flex;flex-direction:column;padding:2.5vh 2.5vw}
+.col+.col{border-left:2px solid rgba(255,255,255,.08)}
+.col h2{font-size:4.6vh;font-weight:700;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;margin-bottom:2.5vh}
+.col h2 i{margin-right:1.2vw}
+.col h2 i{width:2.6vh;height:2.6vh;border-radius:50%;display:inline-block}
+.cook h2{color:var(--cook)} .cook h2 i{background:var(--cook)}
+.ready h2{color:var(--ready)} .ready h2 i{background:var(--ready)}
+.list{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;overflow:hidden;margin:0 -.8vw}
+.no{margin:0 .8vw 2vh;background:var(--panel);border-radius:1.2vh;padding:1.2vh 1.6vw;font-weight:800;font-size:var(--s,8vh);line-height:1.05;letter-spacing:.02em;font-variant-numeric:tabular-nums;text-align:center;min-width:22%}
+.no small{display:block;font-size:.3em;font-weight:400;color:var(--mute);letter-spacing:.06em;margin-top:.3vh}
+.ready .no{background:#0F4A35;color:#fff;border:.35vh solid var(--ready)}
+.ready .no.new{animation:pop 1.2s ease-in-out infinite alternate}
+@keyframes pop{from{transform:scale(1);box-shadow:0 0 0 0 rgba(63,203,126,.0)}to{transform:scale(1.06);box-shadow:0 0 4vh 1vh rgba(63,203,126,.55)}}
+.empty{font-size:3vh;color:var(--mute);margin-top:1vh}
+.more{font-size:3vh;color:var(--mute);align-self:center}
+.foot{height:10vh;display:flex;align-items:center;justify-content:space-between;padding:0 3vw;background:rgba(0,0,0,.18);font-size:2.6vh;color:var(--mute)}
+.foot b{color:var(--ink)}
+.foot .order{display:flex;align-items:center}
+.foot .qr{margin-left:1.4vw}
+.foot .qr{height:8vh;width:8vh;background:#fff;padding:.5vh;border-radius:.6vh;line-height:0}
+.foot .qr svg{width:100%;height:100%}
+.off{position:fixed;right:1.2vw;bottom:11vh;font-size:2vh;color:#ffb4a8;display:none}
+.off.show{display:block}
+.sound{position:fixed;left:50%;bottom:11vh;transform:translateX(-50%);font-size:2vh;color:var(--mute);background:rgba(0,0,0,.35);padding:.6vh 1.2vw;border-radius:99px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="/logo.png" alt=""><div><b>Hanami</b><span>SUSHI BAR</span></div></div>
+  <div class="clock" id="clock"></div>
+</header>
+<main class="cols">
+  <section class="col cook"><h2><i></i>Tillagas</h2><div class="list" id="cook"></div></section>
+  <section class="col ready"><h2><i></i>Klar att hämta</h2><div class="list" id="ready"></div></section>
+</main>
+<footer class="foot">
+  <span>Ditt ordernummer står på kvittot och i bekräftelsen.</span>
+  <span class="order"><span>Beställ i mobilen: <b>hanamisushibar.se/meny</b></span><span class="qr" id="qr"></span></span>
+</footer>
+<div class="off" id="off">Ingen anslutning – försöker igen …</div>
+<div class="sound" id="sound">Tryck OK på fjärrkontrollen för ljud när en beställning är klar</div>
+<script src="/qr.js"></script>
+<script>
+(function () {
+  var NAME = "/*NAME*/";
+  var q = location.search, withTables = /[?&]bord=1/.test(q);
+  var known = null, fresh = {}, audio = null;
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function tick() { var d = new Date(); $("clock").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  tick(); setInterval(tick, 10000);
+  try { if (window.qrSvg) $("qr").innerHTML = qrSvg("https://hanamisushibar.se/meny", 120); } catch (e) {}
+
+  // Ljud (pling) när en ny beställning blir klar – webbläsaren kräver en knapptryckning först
+  function enableSound() {
+    if (audio) return;
+    try { audio = new (window.AudioContext || window.webkitAudioContext)(); $("sound").style.display = "none"; } catch (e) {}
+  }
+  document.addEventListener("keydown", enableSound); document.addEventListener("click", enableSound);
+  function chime() {
+    if (!audio) return;
+    [880, 1318.5].forEach(function (f, i) {
+      var o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * 0.22;
+      o.frequency.value = f; o.type = "sine"; o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.4, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      o.start(t); o.stop(t + 1);
+    });
+  }
+
+  function size(n) { return n <= 4 ? "11vh" : n <= 8 ? "8.5vh" : n <= 15 ? "6.2vh" : "4.8vh"; }
+  function render(el, list, ready) {
+    var max = 24, shown = list.slice(0, max);
+    el.style.setProperty("--s", size(shown.length));
+    el.innerHTML = shown.length ? shown.map(function (o) {
+      var sub = o.table ? "Bord " + o.table : (!ready && o.time ? "kl " + o.time.replace(":", ".") : "");
+      return '<div class="no' + (ready && fresh[o.no] ? " new" : "") + '">' + esc(o.no) + (sub ? "<small>" + esc(sub) + "</small>" : "") + "</div>";
+    }).join("") + (list.length > max ? '<span class="more">+' + (list.length - max) + "</span>" : "")
+      : '<p class="empty">' + (ready ? "Inga beställningar att hämta just nu" : "Inga beställningar i kön") + "</p>";
+  }
+
+  function load() {
+    fetch("/api/board" + (withTables ? "?bord=1" : ""), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) throw new Error("svar");
+      $("off").className = "off";
+      var now = Date.now(), nowReady = {}, ding = false;
+      d.ready.forEach(function (o) {
+        nowReady[o.no] = 1;
+        if (known && !known[o.no] && !fresh[o.no]) { fresh[o.no] = now; ding = true; }
+      });
+      for (var k in fresh) if (!nowReady[k] || now - fresh[k] > 90000) delete fresh[k];   // blinkar i 1,5 min
+      known = nowReady;
+      render($("cook"), d.cooking, false);
+      render($("ready"), d.ready, true);
+      if (ding) chime();
+    }).catch(function () { $("off").className = "off show"; });
+  }
+  load(); setInterval(load, 10000);
+
+  // Håll skärmen vaken där det går, och ladda om sidan varje natt (nya versioner, minnesläckor)
+  try { if (navigator.wakeLock) navigator.wakeLock.request("screen").catch(function () {}); } catch (e) {}
+  setTimeout(function () { location.reload(); }, (function () { var d = new Date(), t = new Date(d); t.setHours(24, 5, 0, 0); return t - d; })());
+  document.title = "Beställningar – " + NAME;
+})();
+</script>
+</body>
+</html>

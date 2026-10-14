@@ -32,6 +32,15 @@
       ]
     },
     {
+      "source": "/skarm",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
       "source": "/tack",
       "headers": [
         {

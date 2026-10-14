@@ -741,3 +741,16 @@ Khách chọn **Swish** khi đặt món:
 - Yêu cầu thanh toán Swish có hạn 3 phút. Khách không trả kịp thì đơn không được tạo, giỏ hàng vẫn còn.
 - Báo cáo: đơn Swish nằm ở cột **Swish**, không bị trừ Transaktionsavgift.
 - **Hoàn tiền Swish cần đủ số dư trong tài khoản Swish Handel.** Nếu Swish từ chối (ví dụ lỗi AM04), köksvyn sẽ báo lỗi rõ ràng.
+
+## Màn hình TV cho khách (`/skarm`) — thêm ngày 2026-10-14
+
+Trên TV mở trình duyệt và vào **hanamisushibar.se/skarm**. Màn hình chia hai cột, tự cập nhật mỗi 10 giây:
+- **TILLAGAS** (đang làm): các đơn có trạng thái Ny và Tillagas, đơn cũ nhất đứng đầu.
+- **KLAR ATT HÄMTA** (xong, chờ lấy): các đơn có trạng thái Klar. Số mới chuyển sang Klar sẽ nhấp nháy trong 1,5 phút và kêu "pling", nếu đã bật âm thanh.
+
+Bếp không phải làm gì thêm. Bấm **Klar** trong köksvyn thì số đơn tự chuyển sang cột phải. Bấm **Hämtad** thì số đơn biến mất khỏi màn hình.
+
+- **Samsung TV:** mở ứng dụng **Internet**, gõ địa chỉ trên, rồi bấm nút toàn màn hình. Bấm **OK** trên điều khiển một lần để bật âm thanh. Trong Cài đặt → Chung → Quản lý năng lượng, tắt **Tự động tắt** để TV không tự tắt màn hình.
+- **Hiện cả đơn tại bàn:** dùng địa chỉ `hanamisushibar.se/skarm?bord=1`.
+- **Bảo mật:** màn hình chỉ hiện số đơn và giờ lấy, không hiện tên, số điện thoại hay số tiền. Dữ liệu lấy qua `/api/board` (`lib/routes/board.js`).
+- **TV đời cũ:** nếu trình duyệt của TV quá chậm hoặc không chạy được, cắm một **Chromecast with Google TV** hoặc **Fire TV Stick** (khoảng 500–700 kr) rồi mở cùng địa chỉ.

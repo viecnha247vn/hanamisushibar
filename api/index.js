@@ -15,6 +15,7 @@
 //   /api/cloudprnt/<KEY>         Star CloudPRNT (reserv)
 //   /api/pay                     onlinebetalning via Stripe (Q89 Pay) och Swish Handel – start + status
 //   /api/swish                   Swish callback (betalning/återbetalning)
+//   /api/board                   kundskärmen /skarm (bara ordernummer och status)
 //   /api/platform                plattformsrapport för Queenie89 AB (bara Apps Script, x-report-key)
 //   /api/stripe/webhook          egen funktion api/stripe-webhook.js (rå kropp krävs för signaturen)
 
@@ -28,8 +29,9 @@ import cloudprnt from "../lib/routes/cloudprnt.js";
 import pay from "../lib/routes/pay.js";
 import platform from "../lib/routes/platform.js";
 import swish from "../lib/routes/swish.js";
+import board from "../lib/routes/board.js";
 
-const ROUTES = { submit, admin, availability, health, print, pay, platform, swish };
+const ROUTES = { submit, admin, availability, health, print, pay, platform, swish, board };
 const KEYED = { sdp, cloudprnt };                 // slutpunkter där nyckeln är andra ledet i adressen
 
 /**
