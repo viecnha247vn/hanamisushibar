@@ -109,22 +109,35 @@ html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Ne
       : '<p class="empty">' + (ready ? "Inga beställningar att hämta just nu" : "Inga beställningar i kön") + "</p>";
   }
 
+  // XMLHttpRequest i stället för fetch: Samsung-TV:ar från 2016 (Tizen 2.4) saknar fetch och Promise-stöd i webbläsaren.
+  // t= byts var 10:e sekund så att TV:ns cache inte visar gamla data (Vercels CDN delar ändå svaret mellan skärmar).
   function load() {
-    fetch("/api/board" + (withTables ? "?bord=1" : ""), { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-      if (!d || !d.ok) throw new Error("svar");
-      $("off").className = "off";
-      var now = Date.now(), nowReady = {}, ding = false;
-      d.ready.forEach(function (o) {
-        nowReady[o.no] = 1;
-        if (known && !known[o.no] && !fresh[o.no]) { fresh[o.no] = now; ding = true; }
-      });
-      for (var k in fresh) if (!nowReady[k] || now - fresh[k] > 90000) delete fresh[k];   // blinkar i 1,5 min
-      known = nowReady;
-      render($("cook"), d.cooking, false);
-      render($("ready"), d.ready, true);
-      if (ding) chime();
-    }).catch(function () { $("off").className = "off show"; });
+    var x = new XMLHttpRequest();
+    x.open("GET", "/api/board?t=" + Math.floor(new Date().getTime() / 10000) + (withTables ? "&bord=1" : ""), true);
+    x.timeout = 15000;
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      var d = null;
+      try { d = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status !== 200 || !d || !d.ok) { $("off").className = "off show"; return; }
+      try { show(d); $("off").className = "off"; } catch (e) { $("off").textContent = "Fel: " + e.message; $("off").className = "off show"; }
+    };
+    x.send();
   }
+  function show(d) {
+    var now = new Date().getTime(), nowReady = {}, ding = false, k;
+    for (var i = 0; i < d.ready.length; i++) {
+      var o = d.ready[i];
+      nowReady[o.no] = 1;
+      if (known && !known[o.no] && !fresh[o.no]) { fresh[o.no] = now; ding = true; }
+    }
+    for (k in fresh) if (!nowReady[k] || now - fresh[k] > 90000) delete fresh[k];   // blinkar i 1,5 min
+    known = nowReady;
+    render($("cook"), d.cooking, false);
+    render($("ready"), d.ready, true);
+    if (ding) chime();
+  }
+  window.onerror = function (msg) { $("off").textContent = "Fel: " + msg; $("off").className = "off show"; };
   load(); setInterval(load, 10000);
 
   // Håll skärmen vaken där det går, och ladda om sidan varje natt (nya versioner, minnesläckor)
