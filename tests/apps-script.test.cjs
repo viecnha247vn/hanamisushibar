@@ -528,7 +528,7 @@ test("Q89 plattformsrapport: bara till PLATFORM_EMAIL, aldrig till restaurangens
   E.ctx.platformData_ = orig;
 });
 
-test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift, utbetalning via Stripe", () => {
+test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift, utbetalning till bankkontot", () => {
   const orig = E.ctx.reportOrders_;
   E.ctx.reportOrders_ = () => ({ archive: "ok", orders: [
     { d: "2026-10-14", online: true, payment: "Online kort", status: "Klar", paid: true, total: 489, tip: 0, refunded: 0 },
@@ -546,9 +546,9 @@ test("avstämningsrapport per vecka: momssatser, betalsätt, transaktionsavgift,
   assert.equal(w.payout.cards, 811); assert.equal(w.payout.total, 811 - 12 - 38.44);
   assert.equal(w.swishDirect, 200);
   const html = E.ctx.weeklyPdfHtml_(w);
-  ["Avstämningsrapport", "Försäljning per momssats", "Försäljning per betalmetod", "Avgifter per betalmetod", "Utbetalningssummering", "Transaktionsavgift", "Utbetalas via Stripe", "vecka 42"]
+  ["Avstämningsrapport", "Försäljning per momssats", "Försäljning per betalmetod", "Avgifter per betalmetod", "Utbetalningssummering", "Transaktionsavgift", "Till ert bankkonto för perioden", "vecka 42"]
     .forEach(t => assert.ok(html.includes(t), "saknar " + t));
-  assert.doesNotMatch(html, /Q89|plattform|application/i);
+  assert.doesNotMatch(html, /Q89|plattform|application|Stripe/i);
   E.props.REPORT_EMAIL = "agare@exempel.se";
   const n = E.log.mails.length; E.ctx.weeklyMail_("2026-10-11", "2026-10-17");
   const m = E.log.mails[n];

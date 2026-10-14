@@ -295,7 +295,7 @@ const PAY_ONLINE = !!SETTINGS.payOnline && !!ENDPOINT;   // onlinebetalning slå
 const PAY_SWISH = !!SETTINGS.paySwish || !PAY_ONLINE;     // manuell Swish (paySwish), alltid som reserv om online är av
 let SWISH_API = false;                                     // Swish Handel – servern säger till via /api/availability
 const payInfoText = pay => pay === "online"
-  ? `Säker kortbetalning via Stripe. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}`
+  ? `Säker kortbetalning – vi ser aldrig dina kortuppgifter. ${TABLE ? "Köket får beställningen så fort betalningen är klar." : "Vi börjar laga så fort betalningen är klar."}`
   : pay === "swishapi"
   ? `Swish-appen öppnas med beloppet ifyllt (på dator: skanna QR-koden med mobilen). ${TABLE ? "Köket får beställningen" : "Vi börjar laga"} så fort betalningen är klar.`
   : `Swish-nummer ${swishNo} (${SETTINGS.name}). Ange ditt ordernummer som meddelande.`;

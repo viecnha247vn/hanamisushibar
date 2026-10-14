@@ -106,8 +106,8 @@ function weeklyPdfHtml_(w) {
       (w.payout.refunded ? tr(['Återbetalningar kort', '', '', neg(w.payout.refunded)]) : '') +
       tr(['Transaktionsavgift', neg(w.fee.ex), neg(w.fee.vat), neg(w.fee.total)]) +
       tr(['Totala avgifter', neg(w.fee.ex), neg(w.fee.vat), neg(w.fee.total)], 'sum') +
-      tr(['Utbetalas via Stripe för perioden', '', '', K(w.payout.total)], 'pay') + '</table>' +
-    '<p class="note">Stripe betalar ut dagligen till ert bankkonto (de första veckorna med 7 dagars fördröjning), så beloppet kan fördelas på flera utbetalningar. ' +
+      tr(['Till ert bankkonto för perioden', '', '', K(w.payout.total)], 'pay') + '</table>' +
+    '<p class="note">Kortbetalningarna betalas ut till ert bankkonto varje bankdag (de första veckorna med 7 dagars fördröjning), så beloppet kan komma i flera insättningar. ' +
       'Swish ' + K(w.swishDirect) + ' har betalats direkt till ert Swish-konto utan avgift. Transaktionsavgiften behålls vid återbetalning.' +
       (w.cancelled ? ' Avbokade beställningar (' + w.cancelled + ') ingår inte.' : '') + '</p>' +
     (w.archive === 'error' ? '<p style="color:#9B2C2C">Arkivet kunde inte läsas – siffrorna kan vara ofullständiga.</p>' : '') +
@@ -127,11 +127,11 @@ function avstamningMail_(from, to) {
     '<table style="border-collapse:collapse;font-size:15px">' +
     '<tr><td style="padding:4px 18px 4px 0;color:#4B5261">Försäljning totalt</td><td style="text-align:right">' + krR_(w.sales.total - w.refunds.total) + '</td></tr>' +
     '<tr><td style="padding:4px 18px 4px 0;color:#4B5261">Transaktionsavgift</td><td style="text-align:right">−' + krR_(w.fee.total) + '</td></tr>' +
-    '<tr><td style="padding:4px 18px 4px 0"><b>Utbetalas via Stripe</b></td><td style="text-align:right"><b>' + krR_(w.payout.total) + '</b></td></tr>' +
+    '<tr><td style="padding:4px 18px 4px 0"><b>Till ert bankkonto (kort)</b></td><td style="text-align:right"><b>' + krR_(w.payout.total) + '</b></td></tr>' +
     '<tr><td style="padding:4px 18px 4px 0;color:#4B5261">Swish (direkt till er)</td><td style="text-align:right">' + krR_(w.swishDirect) + '</td></tr></table>' +
     '<p style="color:#4B5261;font-size:13px">Hela rapporten finns i bifogad PDF.</p></div>';
   MailApp.sendEmail({ to: rcpt, subject: '🧾 Avstämningsrapport ' + w.label + ' · ' + from + '–' + to, htmlBody: html,
-    body: 'Avstämningsrapport ' + w.label + ' (' + from + '–' + to + ')\nUtbetalas via Stripe: ' + krR_(w.payout.total), name: APP.NAME + ' rapport', attachments: [pdf] });
+    body: 'Avstämningsrapport ' + w.label + ' (' + from + '–' + to + ')\nTill ert bankkonto (kort): ' + krR_(w.payout.total) + '\nSwish (direkt till er): ' + krR_(w.swishDirect), name: APP.NAME + ' rapport', attachments: [pdf] });
   log_('INFO', 'Avstämningsrapport', w.label + ' → ' + rcpt);
   return w;
 }
