@@ -756,3 +756,8 @@ Bếp không phải làm gì thêm. Bấm **Klar** trong köksvyn thì số đơ
 - **Hiện cả đơn tại bàn:** dùng địa chỉ `hanamisushibar.se/skarm?bord=1`.
 - **Bảo mật:** màn hình chỉ hiện số đơn và giờ lấy, không hiện tên, số điện thoại hay số tiền. Dữ liệu lấy qua `/api/board` (`lib/routes/board.js`).
 - **TV đời cũ:** nếu trình duyệt của TV quá chậm hoặc không chạy được, cắm một **Chromecast with Google TV** hoặc **Fire TV Stick** (khoảng 500–700 kr) rồi mở cùng địa chỉ.
+
+### Lưu ý khi đăng bản mới (Vercel Hobby)
+- Gói miễn phí giới hạn số lần đăng mỗi ngày. Nếu GitHub hiện "Deployment rate limited", phải chờ khoảng 24 giờ, rồi push thêm một commit mới (hoặc bấm Redeploy trên Vercel) thì bản mới nhất mới lên.
+- Vì vậy nên gom nhiều thay đổi nhỏ vào một lần push.
+- Chữ hiển thị cho chủ quán và khách **không nhắc tên Stripe**: dùng "Till ditt bankkonto", "Transaktionsavgift", "Säker kortbetalning". Chỉ trang Köpvillkor còn nêu tên Stripe, vì GDPR yêu cầu nêu bên xử lý dữ liệu thẻ.
