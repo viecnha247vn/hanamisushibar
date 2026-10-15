@@ -363,6 +363,16 @@ test("payConfirm är idempotent – samma ref ger samma ordernummer, ingen ny or
   const r = E.call("payConfirm", { ref: pend.ref, sessionId: "cs_test_1", paymentIntent: "pi_1", method: "swish", amount: pend.total * 100 });
   assert.equal(r.already, true); assert.equal(E.sheets["Beställningar"].getLastRow(), before);
 });
+test("betald beställning för en senare dag: tacksidan, mejlet och arket säger samma dag (inte 'idag')", () => {
+  const d = new Date(Date.now() + 864e5), tomorrow = E.ctx.Utilities.formatDate(d, "Europe/Stockholm", "yyyy-MM-dd");
+  const p = E.call("payPending", { order: { kind: "pickup", name: "Sen", phone: "+46701112244", email: "sen@exempel.se", asap: false,
+    pickupDate: tomorrow, pickupTime: "12:30", whenText: "imorgon kl 12:30", payment: "online", items: [{ id: "maki-1", qty: 1 }] } });
+  E.call("paySession", { ref: p.ref, sessionId: "cs_test_sen" });
+  const r = E.call("payConfirm", { ref: p.ref, sessionId: "cs_test_sen", paymentIntent: "pi_sen", method: "card", amount: p.total * 100 });
+  assert.equal(r.whenText, "imorgon kl 12:30");
+  assert.ok(E.log.mails.some(m => m.to === "sen@exempel.se" && m.htmlBody.includes("imorgon kl 12:30")), "mejlet visar fel dag");
+  assert.equal(E.call("payStatus", { ref: p.ref, sessionId: "cs_test_sen" }).whenText, "imorgon kl 12:30");
+});
 test("payStatus kräver rätt session-id", () => {
   assert.equal(E.call("payStatus", { ref: pend.ref, sessionId: "cs_fel" }).status, 404);
 });

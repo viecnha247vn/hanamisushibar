@@ -105,7 +105,7 @@ function payStatus_(p) {
   let whenText = '', phone = '', email = '';
   if (r['Status'] === PAY_STATUS.PAID && r['Ordernr']) {
     const o = rows_(sheet_(SHEET.ORDERS), 300).filter(x => x['Ordernr'] === r['Ordernr'])[0];
-    if (o) { phone = pretty_(o['Telefon']); email = o['E-post'] || ''; if (order.kind !== 'table' && o['Hämtas tid']) whenText = 'idag kl ' + o['Hämtas tid']; }
+    if (o) { phone = pretty_(o['Telefon']); email = o['E-post'] || ''; if (order.kind !== 'table' && o['Hämtas tid']) whenText = whenText_(o['Hämtas datum'] || now_('yyyy-MM-dd'), o['Hämtas tid']); }   // rätt dag (idag/imorgon/…)
   }
   return { status: r['Status'], no: r['Ordernr'] || '', total: Number(r['Summa']) || 0, method: r['Metod'] || '',
            kind: order.kind || '', table: order.table || '', phone: phone, email: email, whenText: whenText };

@@ -23,3 +23,31 @@ assert.equal(S(at("2026-10-09", "22:00")), "2026-10-10 12:00 senare");     // fr
 assert.equal(S(at("2026-12-23", "21:00")), "2026-12-25 11:00 senare");     // stängd dag hoppas över
 assert.equal(S(at("2026-10-08", "22:00"), 60), "2026-10-09 11:00 senare"); // nästa dag alltid kl öppning
 console.log("pickup.test: OK");
+
+// "Hämta senare": dag + tid i kassan
+const { laterSlots, pickLaterSlot } = await import("../lib/pickup.js");
+settings.pickupDaysAhead = 3;
+let ls = laterSlots(at("2026-10-08", "14:02"), 30);                       // tors
+assert.deepEqual(ls.map(d => d.date), ["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-12"].slice(0, 3)); // sön stängt, 3 dagar fram
+assert.equal(ls[0].times[0], "14:45"); assert.equal(ls[0].times.at(-1), "20:00");
+assert.equal(ls[1].times[0], "11:00"); assert.equal(ls[2].times[0], "12:00");       // lör öppnar 12
+assert.equal(laterSlots(at("2026-10-08", "20:05"), 30)[0].date, "2026-10-09");      // efter stängning: idag finns inte
+assert.deepEqual(pickLaterSlot("2026-10-09", "12:30", at("2026-10-08", "21:00")), { date: "2026-10-09", time: "12:30" });
+assert.equal(pickLaterSlot("2026-10-09", "12:20", at("2026-10-08", "21:00")), null);  // inte en kvartstid
+assert.equal(pickLaterSlot("2026-10-11", "12:00", at("2026-10-08", "21:00")), null);  // söndag stängt
+assert.equal(pickLaterSlot("2026-10-08", "14:00", at("2026-10-08", "14:20")), null);  // passerad tid
+assert.equal(pickLaterSlot("2026-10-09", "20:15", at("2026-10-08", "21:00")), null);  // efter stängning
+console.log("pickup.test (hämta senare): OK");
+
+// buildOrder: vald senare dag → whenText och datum följer valet (inte "idag")
+{
+  const { buildOrder } = await import("../lib/routes/submit.js");
+  const { nowLocal } = await import("../lib/util.js");
+  settings.hours = { 0: [11, 20], 1: [11, 20], 2: [11, 20], 3: [11, 20], 4: [11, 20], 5: [11, 20], 6: [11, 20] }; settings.closedDates = [];
+  const day = laterSlots(nowLocal(), 0).find(d => d.date !== nowLocal().date);
+  const o = buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", items: [{ id: "maki-1", qty: 1 }], laterDate: day.date, laterTime: "12:30" });
+  assert.equal(o.asap, false); assert.equal(o.pickupDate, day.date); assert.equal(o.pickupTime, "12:30");
+  assert.match(o.whenText, /^(imorgon|[a-zåäö]+ \d+\/\d+) kl 12:30$/);
+  assert.throws(() => buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", items: [{ id: "maki-1", qty: 1 }], laterDate: day.date, laterTime: "21:00" }), /går inte längre/);
+  console.log("pickup.test (buildOrder senare dag): OK");
+}
