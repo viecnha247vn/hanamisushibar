@@ -28,15 +28,18 @@ console.log("pickup.test: OK");
 const { laterSlots, pickLaterSlot } = await import("../lib/pickup.js");
 settings.pickupDaysAhead = 3;
 let ls = laterSlots(at("2026-10-08", "14:02"), 30);                       // tors
-assert.deepEqual(ls.map(d => d.date), ["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-12"].slice(0, 3)); // sön stängt, 3 dagar fram
-assert.equal(ls[0].times[0], "14:45"); assert.equal(ls[0].times.at(-1), "20:00");
-assert.equal(ls[1].times[0], "11:00"); assert.equal(ls[2].times[0], "12:00");       // lör öppnar 12
+assert.deepEqual(ls.map(d => d.date), ["2026-10-08", "2026-10-09", "2026-10-10"]);  // sön stängt, 3 dagar fram
+assert.equal(ls[0].min, 14 * 60 + 32); assert.equal(ls[0].max, 20 * 60);
+assert.equal(ls[1].min, 11 * 60); assert.equal(ls[2].min, 12 * 60);                 // lör öppnar 12
 assert.equal(laterSlots(at("2026-10-08", "20:05"), 30)[0].date, "2026-10-09");      // efter stängning: idag finns inte
 assert.deepEqual(pickLaterSlot("2026-10-09", "12:30", at("2026-10-08", "21:00")), { date: "2026-10-09", time: "12:30" });
-assert.equal(pickLaterSlot("2026-10-09", "12:20", at("2026-10-08", "21:00")), null);  // inte en kvartstid
+assert.deepEqual(pickLaterSlot("2026-10-09", "12:20", at("2026-10-08", "21:00")), { date: "2026-10-09", time: "12:20" }); // valfri tid
+assert.deepEqual(pickLaterSlot("2026-10-08", "15:40", at("2026-10-08", "15:06")), { date: "2026-10-08", time: "15:40" });
 assert.equal(pickLaterSlot("2026-10-11", "12:00", at("2026-10-08", "21:00")), null);  // söndag stängt
 assert.equal(pickLaterSlot("2026-10-08", "14:00", at("2026-10-08", "14:20")), null);  // passerad tid
 assert.equal(pickLaterSlot("2026-10-09", "20:15", at("2026-10-08", "21:00")), null);  // efter stängning
+assert.equal(pickLaterSlot("2026-10-09", "10:45", at("2026-10-08", "21:00")), null);  // före öppning
+assert.equal(pickLaterSlot("2026-10-09", "12:3", at("2026-10-08", "21:00")), null);   // fel format
 console.log("pickup.test (hämta senare): OK");
 
 // buildOrder: vald senare dag → whenText och datum följer valet (inte "idag")

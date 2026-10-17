@@ -169,7 +169,7 @@
 .hhtag{display:inline-block;margin-left:.35rem;padding:.05rem .4rem;border-radius:2px;background:var(--gold-2);color:#fff;font:600 10px/1.5 var(--sans);letter-spacing:.12em;vertical-align:.15em}
 .hhsel{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:.6rem;margin-top:.35rem}
 .hhsel label{display:grid;gap:.25rem;font:500 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-2)}
-.hhsel select{width:100%;min-width:0;font:400 1rem/1.2 var(--sans);letter-spacing:0;text-transform:none;color:var(--ink);padding:.6rem .7rem;border:1px solid rgba(184,146,63,.6);border-radius:2px;background:#fff;min-height:44px}
+.hhsel select,.hhsel input{width:100%;min-width:0;font:400 1rem/1.2 var(--sans);letter-spacing:0;text-transform:none;color:var(--ink);padding:.6rem .7rem;border:1px solid rgba(184,146,63,.6);border-radius:2px;background:#fff;min-height:44px}
 .hhnote{display:flex;gap:.6rem;align-items:flex-start;margin:.9rem 0 0;padding:.75rem .9rem;border-left:3px solid var(--gold);background:var(--sakura-3);font-size:.92rem;line-height:1.45;color:var(--ink)}
 .hhnote b{font-weight:600}
 .choice.pay label{flex-wrap:wrap}.choice.pay .paymeth{display:block;width:100%;font-size:.78rem;color:var(--ink-2);margin:.15rem 0 0 1.6rem}
@@ -738,27 +738,29 @@ function renderDrawer() {
    (kvitto, köksvyn, mejl, sms, tacksidan, TV:n) – samma regel som lib/pickup.js (laterSlots). */
 let laterPick = null;                      // null = så snart som möjligt, annars { date, time }
 function laterSlots() {
+  // [{ date, label, min, max }] – gästen skriver/väljer valfri tid mellan min och max (minuter efter midnatt)
   const now = nowSE(), nowMin = now.getHours() * 60 + now.getMinutes(), lead = SETTINGS.pickupLeadMinutes, out = [];
   for (let i = 0; i <= (SETTINGS.pickupDaysAhead ?? 3); i++) {
     const d = new Date(now); d.setDate(d.getDate() + i);
     const hrs = hoursOn(d); if (!hrs) continue;
     const open = hrs[0] * 60, close = hrs[1] * 60;
-    if (i === 0 && nowMin > close) continue;
-    const earliest = i === 0 ? Math.max(open, nowMin + lead) : open, times = [];
-    for (let m = Math.ceil(earliest / 15) * 15; m <= close; m += 15) times.push(hm(m));
-    if (times.length) out.push({ date: isoDate(d), label: i === 0 ? "Idag" : i === 1 ? "Imorgon" : `${dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1)} ${d.getDate()}/${d.getMonth() + 1}`, times });
+    const min = Math.ceil((i === 0 ? Math.max(open, nowMin + lead) : open) / 5) * 5;
+    if (min > close) continue;
+    out.push({ date: isoDate(d), label: i === 0 ? "Idag" : i === 1 ? "Imorgon" : `${dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1)} ${d.getDate()}/${d.getMonth() + 1}`, min, max: close });
   }
   return out;
 }
+const toMin = t => { const m = /^(\d{1,2})[:.](\d{2})$/.exec(t || ""); return m ? Number(m[1]) * 60 + Number(m[2]) : NaN; };
 function currentLaterPick(slots = laterSlots()) {
   if (!laterPick) return null;
   const day = slots.find(x => x.date === laterPick.date);
   if (!day) return (laterPick = null);
-  if (!day.times.includes(laterPick.time)) laterPick.time = day.times[0];
+  const m = toMin(laterPick.time);
+  if (!(m >= day.min && m <= day.max)) laterPick.time = hm(Math.min(Math.max(isNaN(m) ? day.min : m, day.min), day.max));
   return laterPick;
 }
 const pickupLabel = (pi, slots, p) => p ? `${slots.find(x => x.date === p.date).label.toLowerCase()} kl ${p.time.replace(":", ".")}` : `${pi.day} ca kl ${pi.time.replace(":", ".")}`;
-const pickupHint = (pi, p) => p ? "Köket lagar maten till den tiden. Tiden står på kvittot och i bekräftelsen."
+const pickupHint = (pi, p, day) => p ? `Skriv eller välj tiden du vill hämta (${hm(day.min).replace(":", ".")}–${hm(day.max).replace(":", ".")}). Köket lagar maten till dess.`
   : pi.later ? `Vi har stängt just nu. Din beställning är klar när vi öppnar ${pi.day} kl ${pi.opens}.`
   : pi.early ? `Din beställning är klar när vi öppnar kl ${pi.opens}.` : `Köket behöver ca ${pi.lead} minuter just nu.`;
 function pickupHtml(pi) {
@@ -766,19 +768,29 @@ function pickupHtml(pi) {
   return `<div class="pickup" id="pkBox">
     <span class="lbl">Hämtning</span>
     <b id="pkWhen">Klar att hämta ${esc(pickupLabel(pi, slots, p))}</b>
-    <small id="pkHint">${esc(pickupHint(pi, p))}</small>
+    <small id="pkHint">${esc(pickupHint(pi, p, day))}</small>
     ${slots.length ? `<div class="hhsel">
       <label>När<select id="pkDay"><option value="">Så snart som möjligt</option>${slots.map(x => `<option value="${x.date}"${p && x.date === p.date ? " selected" : ""}>${esc(x.label)}</option>`).join("")}</select></label>
-      <label>Tid<select id="pkTime"${p ? "" : " disabled"}>${p ? day.times.map(t => `<option value="${t}"${t === p.time ? " selected" : ""}>${t.replace(":", ".")}</option>`).join("") : `<option value="">ca ${pi.time.replace(":", ".")}</option>`}</select></label>
+      <label>Tid${p ? `<input type="time" id="pkTime" value="${p.time}" min="${hm(day.min)}" max="${hm(day.max)}" step="300" required>`
+        : `<select id="pkTime" disabled><option value="">ca ${pi.time.replace(":", ".")}</option></select>`}</label>
     </div>` : ""}</div>`;
 }
 document.addEventListener("change", e => {
   if (e.target.id !== "pkDay" && e.target.id !== "pkTime") return;
   const slots = laterSlots();
-  if (e.target.id === "pkDay") { const d = slots.find(x => x.date === e.target.value); laterPick = d ? { date: d.date, time: d.times[0] } : null; }
-  else if (laterPick) laterPick.time = e.target.value;
-  const box = $("#pkBox"); if (!box) return;
-  const pi = pickupInfo(); box.outerHTML = pickupHtml(pi);
+  if (e.target.id === "pkDay") {
+    const d = slots.find(x => x.date === e.target.value);
+    laterPick = d ? { date: d.date, time: hm(d.min) } : null;
+    const box = $("#pkBox"); if (box) box.outerHTML = pickupHtml(pickupInfo());
+    return;
+  }
+  if (!laterPick) return;
+  // Tiden: rita inte om rutan (då stängs tidväljaren) – uppdatera bara texten, och flytta in en tid utanför öppettiden
+  const day = slots.find(x => x.date === laterPick.date), m = toMin(e.target.value);
+  laterPick.time = e.target.value;
+  currentLaterPick(slots);
+  if (e.target.value !== laterPick.time) { e.target.value = laterPick.time; toast(`Välj en tid mellan ${hm(day.min).replace(":", ".")} och ${hm(day.max).replace(":", ".")}`); }
+  $("#pkWhen").textContent = `Klar att hämta ${pickupLabel(pickupInfo(), slots, laterPick)}`;
 });
 
 /* Hämtning med happy hour: välj dag och tid (16–17). Valet sparas i happyPick så att det överlever omritning. */
