@@ -101,7 +101,9 @@ function createOrder_(p, pre) {
       const lead = lead_(), m = toMin_(p.pickupTime);
       // happy hour (gästen väljer 16.00–17.00, lib/happy.js): ingen förberedelsekontroll – bara att tiden inte passerat
       if (p.happy && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes - 5) throw new ApiError(400, 'Den hämtningstiden har redan passerat. Välj en ny tid.');
-      if (!p.happy && lead && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
+      // vald tid kl öppning (t.ex. 11.00) godkänns alltid – köket förbereder före öppning
+      const atOpening = Number(p.openFrom) >= 0 && m <= Number(p.openFrom);
+      if (!p.happy && lead && !atOpening && p.pickupDate === nowP.date && !isNaN(m) && m < nowP.minutes + lead - 10)
         throw new ApiError(400, 'Köket behöver ' + lead + ' minuter just nu. Välj en senare hämtningstid.');
     }
   }

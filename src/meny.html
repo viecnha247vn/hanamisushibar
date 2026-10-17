@@ -744,9 +744,11 @@ function laterSlots() {
     const d = new Date(now); d.setDate(d.getDate() + i);
     const hrs = hoursOn(d); if (!hrs) continue;
     const open = hrs[0] * 60, close = hrs[1] * 60;
-    const min = Math.ceil((i === 0 ? Math.max(open, nowMin + lead) : open) / 5) * 5;
-    if (min > close) continue;
-    out.push({ date: isoDate(d), label: i === 0 ? "Idag" : i === 1 ? "Imorgon" : `${dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1)} ${d.getDate()}/${d.getMonth() + 1}`, min, max: close });
+    // Före öppning: från öppningen (kl 11.00). Öppet till och med stängningsminuten: från nu + förberedelsetid,
+    // även efter stängning (beställt 20.00 → 20.15). Senare dagar: öppning–stängning.
+    if (i === 0 && nowMin > close) continue;
+    const min = i === 0 ? (nowMin < open ? open : Math.ceil((nowMin + lead) / 5) * 5) : open;
+    out.push({ date: isoDate(d), label: i === 0 ? "Idag" : i === 1 ? "Imorgon" : `${dayNames[d.getDay()][0].toUpperCase() + dayNames[d.getDay()].slice(1)} ${d.getDate()}/${d.getMonth() + 1}`, min, max: Math.max(close, min) });
   }
   return out;
 }

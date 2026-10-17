@@ -165,6 +165,14 @@ test("hämtning asap: tiden räknas av Apps Script från köksvyns förberedelse
   // nära stängning: tiden får bli efter stängning (beställt 20.00 → 20.15)
   r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin + 20 });
   assert.equal(r.pickupTime, want);
+  // vald tid (asap av) kl öppning godkänns även om förberedelsetiden inte räcker; annars nekas för tidig tid
+  if (nowMin < 1300) {
+    const o2 = nowMin + 10;
+    r = E.call("order", { ...base, asap: false, pickupTime: hhmm(o2), openFrom: o2 });
+    assert.equal(r.ok, true, JSON.stringify(r));
+    r = E.call("order", { ...base, asap: false, pickupTime: hhmm(o2), openFrom: 0 });
+    assert.equal(r.status, 400);
+  }
   // mer än 5 minuter efter stängning: nekas
   if (nowMin >= 10) {
     r = E.call("order", { ...base, openFrom: 0, closeAt: nowMin - 6 });

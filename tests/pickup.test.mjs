@@ -37,7 +37,11 @@ assert.deepEqual(pickLaterSlot("2026-10-09", "12:20", at("2026-10-08", "21:00"))
 assert.deepEqual(pickLaterSlot("2026-10-08", "15:40", at("2026-10-08", "15:06")), { date: "2026-10-08", time: "15:40" });
 assert.equal(pickLaterSlot("2026-10-11", "12:00", at("2026-10-08", "21:00")), null);  // söndag stängt
 assert.equal(pickLaterSlot("2026-10-08", "14:00", at("2026-10-08", "14:20")), null);  // passerad tid
-assert.equal(pickLaterSlot("2026-10-09", "20:15", at("2026-10-08", "21:00")), null);  // efter stängning
+assert.equal(pickLaterSlot("2026-10-09", "20:15", at("2026-10-08", "21:00")), null);  // efter stängning (annan dag)
+assert.deepEqual(pickLaterSlot("2026-10-08", "20:15", at("2026-10-08", "20:00")), { date: "2026-10-08", time: "20:15" }); // beställt 20.00
+assert.equal(pickLaterSlot("2026-10-08", "20:15", at("2026-10-08", "20:01")), null);  // efter stängning: inte idag
+assert.deepEqual(pickLaterSlot("2026-10-08", "11:00", at("2026-10-08", "10:50")), { date: "2026-10-08", time: "11:00" }); // morgon: kl 11
+assert.equal(pickLaterSlot("2026-10-08", "10:55", at("2026-10-08", "09:00")), null);  // före öppning
 assert.equal(pickLaterSlot("2026-10-09", "10:45", at("2026-10-08", "21:00")), null);  // före öppning
 assert.equal(pickLaterSlot("2026-10-09", "12:3", at("2026-10-08", "21:00")), null);   // fel format
 console.log("pickup.test (hämta senare): OK");
