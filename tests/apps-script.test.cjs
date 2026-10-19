@@ -379,6 +379,12 @@ test("betald beställning för en senare dag: tacksidan, mejlet och arket säger
   const r = E.call("payConfirm", { ref: p.ref, sessionId: "cs_test_sen", paymentIntent: "pi_sen", method: "card", amount: p.total * 100 });
   assert.equal(r.whenText, "imorgon kl 12:30");
   assert.ok(E.log.mails.some(m => m.to === "sen@exempel.se" && m.htmlBody.includes("imorgon kl 12:30")), "mejlet visar fel dag");
+  const kv = E.log.mails.filter(m => m.to === "sen@exempel.se").at(-1);
+  assert.match(kv.subject, /kvitto och bekräftelse/);
+  ["Kvitto", "Hanami Family Sushi AB", "559471-3587", "Moms 6 %", "Totalt betalt", "Kort online (betald)"].forEach(t => assert.ok(kv.htmlBody.includes(t), "kvittot saknar " + t));
+  assert.ok(!/Kortkvittot skickas separat|Stripe/.test(kv.htmlBody), "hänvisar till separat kvitto");
+  const vat = Math.round(p.total * 6 / 106 * 100) / 100;
+  assert.ok(kv.htmlBody.includes(String(vat).replace(".", ",") + " kr"), "fel momsbelopp, väntade " + vat);
   assert.equal(E.call("payStatus", { ref: p.ref, sessionId: "cs_test_sen" }).whenText, "imorgon kl 12:30");
 });
 test("payStatus kräver rätt session-id", () => {

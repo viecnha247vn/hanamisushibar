@@ -71,9 +71,32 @@ function sendGuestMail_(to, subject, html, text) {
   } catch (err) { log_('WARN', 'Bekräftelse till gäst misslyckades', err.message); return false; }
 }
 
-/** Kvittensmejl efter en beställning. */
+/** Säljaren på kvittot (bokföringslagen/mervärdesskattelagen: namn, org.nr, adress, datum, varor, moms). */
+const SELLER = { COMPANY: 'Hanami Family Sushi AB', ORGNR: '559471-3587', ADDRESS: 'Östergatan 53, 262 31 Ängelholm' };
+
+/** "1 234,50" – svensk formatering med två decimaler när det behövs */
+function krKv_(n) { const v = Math.round(Number(n) * 100) / 100; return (Number.isInteger(v) ? String(v) : v.toFixed(2).replace('.', ',')).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+
+/** Kvittodelen för betalda onlinebeställningar: moms 6 % ingår i maten, dricks är momsfri. */
+function receiptHtml_(o) {
+  const vatPct = Number(prop_('STRIPE_VAT_PCT', 6)) || 6, tip = Number(o.tip) || 0, goods = Number(o.total) - tip;
+  const vat = Math.round(goods * vatPct / (100 + vatPct) * 100) / 100, ex = Math.round((goods - vat) * 100) / 100;
+  const r = (k, v, strong) => '<tr><td style="padding:3px 0;color:#4C5B6B">' + k + '</td><td style="padding:3px 0;text-align:right;color:#1B2A3A">' + (strong ? '<b>' + v + '</b>' : v) + '</td></tr>';
+  return '<div style="margin-top:20px;border:1px solid #E5D6B8;border-radius:3px;padding:14px 16px;font-size:14px">' +
+    '<div style="font:600 11px/1 sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#9A7732;margin-bottom:10px">Kvitto</div>' +
+    '<table style="width:100%;border-collapse:collapse">' +
+      r('Säljare', esc_(SELLER.COMPANY)) + r('Org.nr', SELLER.ORGNR) + r('Adress', esc_(SELLER.ADDRESS)) +
+      r('Kvittonummer', esc_(o.no)) + r('Datum', now_('yyyy-MM-dd HH:mm')) +
+      r('Betalning', o.payment === 'online-swish' ? 'Swish (betald)' : 'Kort online (betald)') +
+      r('Varor exkl. moms', krKv_(ex) + ' kr') + r('Moms ' + vatPct + ' %', krKv_(vat) + ' kr') +
+      (tip ? r('Dricks (ingen moms)', krKv_(tip) + ' kr') : '') +
+      r('Totalt betalt', krKv_(o.total) + ' kr', true) +
+    '</table></div>';
+}
+
+/** Bekräftelse – och kvitto när beställningen är betald online – efter en beställning. */
 function mailOrderConfirmation_(o) {
-  const isTable = o.kind === 'table';
+  const isTable = o.kind === 'table', paid = isPaidOnline_(o);
   const rows = o.items.map(i =>
     '<tr><td style="padding:10px 0;border-top:1px solid #EFE7E9">' +
       '<b style="color:#1B2A3A">' + i.qty + ' × ' + esc_(i.name) + '</b>' +
@@ -92,16 +115,21 @@ function mailOrderConfirmation_(o) {
       '<td style="padding:12px 0;border-top:2px solid #1B2A3A;text-align:right;font-size:17px"><b>' + o.total + ' kr</b></td></tr></table>' +
     (o.message ? '<div style="margin-top:16px;background:#FBEEF2;border-radius:3px;padding:12px 14px;font-size:14px;color:#1B2A3A"><b>Meddelande till köket:</b><br>' + esc_(o.message) + '</div>' : '') +
     '<p style="margin:18px 0 0;color:#4C5B6B;font-size:14px">' +
-      (isPaidOnline_(o) ? '<b style="color:#1F6B42">Betald online</b> med ' + (o.payment === 'online-swish' ? 'Swish.' : 'kort. Kortkvittot skickas separat till din e-post.')
-                        : 'Betalning: ' + (o.payment === 'kort' ? 'kort i kassan' : 'Swish') + (isTable ? ' när ni går' : ' vid hämtning') + '.') + '</p>' +
+      (paid ? '<b style="color:#1F6B42">Betald online</b> med ' + (o.payment === 'online-swish' ? 'Swish' : 'kort') + '. Spara mejlet – det är ditt kvitto.'
+            : 'Betalning: ' + (o.payment === 'kort' ? 'kort i kassan' : 'Swish') + (isTable ? ' när ni går' : ' vid hämtning') + '.') + '</p>' +
+    (paid ? receiptHtml_(o) : '') +
     '<p style="margin:10px 0 0;color:#7A8794;font-size:13px">Behöver du ändra eller avboka? Ring oss på ' + esc_(APP.PHONE) + ' så löser vi det.</p>';
   const text = [APP.NAME, 'Bestallning ' + o.no,
     isTable ? 'Bord ' + o.table : 'Hamtas ' + o.when].concat(
     o.items.map(i => i.qty + ' x ' + i.name + (i.note ? ' (' + i.note + ')' : '')),
-    ['Summa: ' + o.total + ' kr', APP.STREET + ', Angelholm', APP.PHONE]).join('\n');
+    ['Summa: ' + o.total + ' kr'],
+    paid ? ['', 'KVITTO', SELLER.COMPANY + ', org.nr ' + SELLER.ORGNR, SELLER.ADDRESS, 'Kvittonummer ' + o.no + ', ' + now_('yyyy-MM-dd HH:mm'),
+      'Betalning: ' + (o.payment === 'online-swish' ? 'Swish' : 'kort online') + ' (betald)',
+      'Moms ' + (Number(prop_('STRIPE_VAT_PCT', 6)) || 6) + ' % ingar: ' + krKv_((Number(o.total) - (Number(o.tip) || 0)) * (Number(prop_('STRIPE_VAT_PCT', 6)) || 6) / (100 + (Number(prop_('STRIPE_VAT_PCT', 6)) || 6))) + ' kr'] : [APP.STREET + ', Angelholm'],
+    [APP.PHONE]).join('\n');
   return sendGuestMail_(o.email,
-    APP.NAME + ': bekräftelse ' + o.no + (isTable ? '' : ' – hämtas ' + o.when),
-    guestMail_({ eyebrow: isTable ? 'Beställning till bordet' : 'Beställning för hämtning', body: body }), text);
+    APP.NAME + ': ' + (paid ? 'kvitto och bekräftelse ' : 'bekräftelse ') + o.no + (isTable ? '' : ' – hämtas ' + o.when),
+    guestMail_({ eyebrow: (isTable ? 'Beställning till bordet' : 'Beställning för hämtning') + (paid ? ' · kvitto' : ''), body: body }), text);
 }
 
 /** Kvittensmejl efter en bordsbokning (förfrågan – bordet är inte bekräftat än). */
