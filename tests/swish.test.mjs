@@ -69,7 +69,7 @@ function fakeRes() { const r = { statusCode: 200, headers: {}, body: "" }; r.sta
 const call = async (req) => { const res = fakeRes(); await handler({ query: {}, headers: {}, ...req }, res); let json = null; try { json = JSON.parse(res.body || "null"); } catch {} return { status: res.statusCode, json, body: res.body, headers: res.headers }; };
 
 // Beställningen (öppettider m.m.) testas i pay.test.mjs – här kringgås buildOrder genom att låta payPending svara oavsett.
-const orderBody = { type: "pickup-order", payment: "swishapi", tip: 10, items: [{ id: "maki-1", qty: 2 }], name: "Bo Ek", phone: "0701234567", email: "", message: "" };
+const orderBody = { type: "pickup-order", payment: "swishapi", tip: 10, items: [{ id: "maki-1", qty: 2 }], name: "Bo Ek", phone: "0701234567", email: "bo@exempel.se", message: "" };
 const start = await call({ url: "/api/pay", method: "POST", query: { route: "pay" }, body: orderBody });
 if (start.status === 400) {
   console.log("  (hoppar över start – beställning stängd just nu:", start.json.error + ")");

@@ -51,7 +51,7 @@ assert.equal(pickHappySlot("2026-10-18", "16:00", at("2026-10-17", "09:00"), LEA
 ok("valideringen: 16.00–17.00 godkänns; 17.15, 15.45, passerad tid, för långt fram och stängd dag nekas");
 
 // --- buildOrder (det /api/submit och /api/pay kör) med verklig klocka: välj en giltig tid från happySlots() ---
-const base = { type: "pickup-order", name: "Anna", phone: "0701234567", payment: "online", items: [{ id: "happy-1", qty: 1 }] };
+const base = { type: "pickup-order", name: "Anna", phone: "0701234567", email: "anna@exempel.se", payment: "online", items: [{ id: "happy-1", qty: 1 }] };
 const live = happySlots();
 assert.ok(live.length > 0, "inga tider de närmaste dagarna");
 const last = live.at(-1), t = last.times.at(-1);

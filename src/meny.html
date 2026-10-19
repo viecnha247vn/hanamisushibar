@@ -712,7 +712,7 @@ function renderDrawer() {
       ${TABLE ? "" : hhMode ? happyPickupHtml(hhSlots) : pi.closed ? `<p class="err">${esc(pi.closed)}</p>` : pickupHtml(pi)}
       <div class="field"><label for="oName">Namn${TABLE ? " (valfritt)" : ""}</label><input id="oName" name="name" autocomplete="name"></div>
       <div class="field"><label for="oPhone">Mobilnummer${TABLE ? " (valfritt)" : ""}</label><input id="oPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel">${TABLE ? "" : "<small>Vi sms:ar när maten är klar.</small>"}</div>
-      <div class="field"><label for="oMail">E-post (valfritt)</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se"><small>Vi skickar en bekräftelse med hela beställningen.</small></div>
+      <div class="field"><label for="oMail">E-post</label><input id="oMail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="namn@exempel.se" required><small>Vi skickar bekräftelse och kvitto med hela beställningen hit.</small></div>
       <div class="field"><span class="lbl">Dricks (valfritt)</span>
         <div class="choice tips">${[0, 5, 10, 15, 20].map(v => `<label><input type="radio" name="tip" value="${v}"${tipPct === v ? " checked" : ""}>${v ? v + " %" : "Ingen"}</label>`).join("")}
           <label><input type="radio" name="tip" value="egen"${tipPct === "egen" ? " checked" : ""}>Egen summa</label></div>
@@ -827,6 +827,8 @@ async function submitOrder(e) {
   const f = e.target, err = $("#orderErr"), btn = $("#orderSubmit");
   const name = f.name.value.trim(), phone = f.phone.value.trim();
   if (!TABLE && (name.length < 2 || phone.replace(/\D/g, "").length < 8)) { err.textContent = "Fyll i namn och mobilnummer så vi kan nå dig."; err.hidden = false; return; }
+  const mail = f.email.value.trim();
+  if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(mail)) { err.textContent = mail ? "E-postadressen ser inte rätt ut." : "Fyll i din e-post – där får du bekräftelse och kvitto."; err.hidden = false; f.email.focus(); return; }
   if (TABLE && cartHas(isHappy) && !syncHappy()) { err.textContent = "Happy hour är slut. Rätterna har tagits bort – kontrollera beställningen."; err.hidden = false; return; }
   const hhp = !TABLE && cartHas(isHappy) ? currentHappyPick() : null;
   if (!TABLE && cartHas(isHappy) && !hhp) { err.textContent = `Det finns ingen hämtningstid för happy hour just nu. Ring ${SETTINGS.phone}.`; err.hidden = false; return; }

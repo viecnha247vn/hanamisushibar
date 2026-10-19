@@ -52,9 +52,15 @@ console.log("pickup.test (hämta senare): OK");
   const { nowLocal } = await import("../lib/util.js");
   settings.hours = { 0: [11, 20], 1: [11, 20], 2: [11, 20], 3: [11, 20], 4: [11, 20], 5: [11, 20], 6: [11, 20] }; settings.closedDates = [];
   const day = laterSlots(nowLocal(), 0).find(d => d.date !== nowLocal().date);
-  const o = buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", items: [{ id: "maki-1", qty: 1 }], laterDate: day.date, laterTime: "12:30" });
+  const o = buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", email: "bo@exempel.se", items: [{ id: "maki-1", qty: 1 }], laterDate: day.date, laterTime: "12:30" });
   assert.equal(o.asap, false); assert.equal(o.pickupDate, day.date); assert.equal(o.pickupTime, "12:30");
   assert.match(o.whenText, /^(imorgon|[a-zåäö]+ \d+\/\d+) kl 12:30$/);
-  assert.throws(() => buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", items: [{ id: "maki-1", qty: 1 }], laterDate: day.date, laterTime: "21:00" }), /går inte längre/);
+  assert.throws(() => buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", email: "bo@exempel.se", items: [{ id: "maki-1", qty: 1 }], laterDate: day.date, laterTime: "21:00" }), /går inte längre/);
   console.log("pickup.test (buildOrder senare dag): OK");
+}
+{
+  const { buildOrder } = await import("../lib/routes/submit.js");
+  assert.throws(() => buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", items: [{ id: "maki-1", qty: 1 }] }), /Fyll i din e-post/);
+  assert.throws(() => buildOrder({ type: "pickup-order", name: "Bo", phone: "0701234567", email: "bo@", items: [{ id: "maki-1", qty: 1 }] }), /ser inte rätt ut/);
+  console.log("pickup.test (e-post krävs): OK");
 }
