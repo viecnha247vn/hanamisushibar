@@ -152,9 +152,37 @@ function mailBookingConfirmation_(o) {
 }
 
 /** 46elks. Returnerar true om skickat. */
+/**
+ * Sms till gästen. Två sätt (Skriptegenskaper):
+ *   1. Egen Android-telefon med appen "SMS Gateway for Android" (sms-gate.app) – sms:en går ut via telefonens
+ *      abonnemang (fria sms = ingen kostnad per sms). Avsändare blir telefonens nummer.
+ *        SMSGATE_USER, SMSGATE_PASSWORD  – visas i appen under "Cloud server"
+ *        SMSGATE_URL                     – valfritt, standard https://api.sms-gate.app/3rdparty/v1/message
+ *   2. 46elks (betalt per sms, avsändarnamn "Hanami"): ELKS_USER, ELKS_PASSWORD, SMS_FROM
+ * Är båda inställda används telefonen först och 46elks som reserv om telefonen inte svarar.
+ */
 function sms_(to, message) {
+  if (!to) return false;
+  if (prop_('SMSGATE_USER') && prop_('SMSGATE_PASSWORD') && smsGate_(to, message)) return true;
+  return smsElks_(to, message);
+}
+
+function smsGate_(to, message) {
+  try {
+    const res = UrlFetchApp.fetch(prop_('SMSGATE_URL', 'https://api.sms-gate.app/3rdparty/v1/message'), {
+      method: 'post', contentType: 'application/json',
+      payload: JSON.stringify({ message: message, phoneNumbers: [String(to)] }),
+      headers: { Authorization: 'Basic ' + Utilities.base64Encode(prop_('SMSGATE_USER') + ':' + prop_('SMSGATE_PASSWORD')) },
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() >= 300) { log_('WARN', 'Sms via telefonen misslyckades', res.getResponseCode() + ' ' + res.getContentText().slice(0, 200)); return false; }
+    return true;
+  } catch (err) { log_('WARN', 'Sms via telefonen fel', err.message); return false; }
+}
+
+function smsElks_(to, message) {
   const user = prop_('ELKS_USER'), pass = prop_('ELKS_PASSWORD');
-  if (!user || !pass || !to) return false;
+  if (!user || !pass) return false;
   try {
     const res = UrlFetchApp.fetch('https://api.46elks.com/a1/sms', {
       method: 'post',

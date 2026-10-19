@@ -84,6 +84,18 @@ test("status Klar skickar sms en gång", () => {
   assert.equal(E.log.sms.length, before + 1);
   assert.match(E.log.sms.at(-1).payload.message, /klar att hämtas/);
 });
+test("sms via egen Android-telefon (sms-gate.app) när SMSGATE_* finns, annars 46elks", () => {
+  E.props.SMSGATE_USER = "u"; E.props.SMSGATE_PASSWORD = "p";
+  const hooks = E.log.hooks.length, elks = E.log.sms.length;
+  assert.equal(E.ctx.sms_("+46701234567", "Hej"), true);
+  const h = E.log.hooks.at(-1);
+  assert.equal(E.log.hooks.length, hooks + 1); assert.equal(E.log.sms.length, elks, "46elks ska inte användas");
+  assert.match(h.url, /sms-gate\.app\/3rdparty\/v1\/message$/);
+  assert.deepEqual(JSON.parse(h.payload), { message: "Hej", phoneNumbers: ["+46701234567"] });
+  assert.equal(h.headers.Authorization, "Basic " + Buffer.from("u:p").toString("base64"));
+  delete E.props.SMSGATE_USER; delete E.props.SMSGATE_PASSWORD;
+  E.ctx.sms_("+46701234567", "Hej"); assert.equal(E.log.sms.length, elks + 1);
+});
 test("bokning + bekräftelse via köksvyn", () => {
   const b = E.call("booking", { date: today, time: "19:00", guests: 3, name: "Erik", phone: "+46709876543", email: "erik@exempel.se", whenText: "idag kl 19:00" });
   assert.ok(E.log.mails.some(m => (m.to || "") === "erik@exempel.se"), "gästen fick ingen bokningsbekräftelse");

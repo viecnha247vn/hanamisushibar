@@ -761,3 +761,20 @@ Bếp không phải làm gì thêm. Bấm **Klar** trong köksvyn thì số đơ
 - Gói miễn phí giới hạn số lần đăng mỗi ngày. Nếu GitHub hiện "Deployment rate limited", phải chờ khoảng 24 giờ, rồi push thêm một commit mới (hoặc bấm Redeploy trên Vercel) thì bản mới nhất mới lên.
 - Vì vậy nên gom nhiều thay đổi nhỏ vào một lần push.
 - Chữ hiển thị cho chủ quán và khách **không nhắc tên Stripe**: dùng "Till ditt bankkonto", "Transaktionsavgift", "Säker kortbetalning". Chỉ trang Köpvillkor còn nêu tên Stripe, vì GDPR yêu cầu nêu bên xử lý dữ liệu thẻ.
+
+## SMS miễn phí qua điện thoại Android (sms-gate.app) — thêm ngày 2026-10-19
+
+Hệ thống gửi SMS cho khách qua một điện thoại Android của quán, dùng gói cước có SMS miễn phí của điện thoại đó. Không mất phí cho từng tin. Tin nhắn hiện **số điện thoại của máy** là người gửi, không hiện chữ "Hanami".
+
+1. Lấy một điện thoại Android, lắp SIM có gói **fria sms**. Để máy luôn cắm sạc và luôn có wifi hoặc 4G.
+2. Cài app **SMS Gateway for Android** (trên Google Play, hoặc tải tại sms-gate.app).
+3. Mở app, bật **Cloud server**, rồi bấm **Online**. App sẽ hiện **Username** và **Password**.
+4. Vào Google Sheet → Tiện ích → Apps Script → ⚙ Cài đặt dự án → **Thuộc tính tập lệnh**, thêm 2 dòng:
+   - `SMSGATE_USER` = Username trong app
+   - `SMSGATE_PASSWORD` = Password trong app
+5. Trong cài đặt pin của Android, chọn **Không tối ưu hoá pin** cho app này. Nếu không, máy sẽ tắt app khi tiết kiệm pin.
+6. Thử nghiệm: trong köksvyn, bấm **Klar** cho một đơn có số điện thoại của bạn.
+
+- Nếu vẫn còn `ELKS_USER`/`ELKS_PASSWORD` thì 46elks thành **dự phòng**: khi điện thoại tắt hoặc mất mạng, SMS vẫn được gửi qua 46elks (mất phí).
+- Gửi lỗi thì tab **Logg** trong Sheet ghi "Sms via telefonen misslyckades".
+- Nên kiểm tra điều khoản nhà mạng: có gói "fria sms" không cho phép gửi tin tự động hoặc gửi số lượng lớn.
