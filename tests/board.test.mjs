@@ -1,3 +1,4 @@
+process.env.HOURS_FORCE = "open";   // testerna ska inte bero på klockan (stängt-läget testas separat)
 // Kundskärmen /skarm: /api/board visar bara ordernummer och status – inga personuppgifter eller belopp.
 import assert from "node:assert/strict";
 process.env.GAS_URL = "https://script.google.com/macros/s/x/exec"; process.env.GAS_SECRET = "s";
@@ -22,4 +23,16 @@ console.log("  ✓ bara ordernummer och tid; Ny+Tillagas → Tillagas, Klar → 
 r = await call({ bord: "1" });
 assert.deepEqual(r.json.cooking.map(o => o.no), ["H2", "H4", "H5"]); assert.equal(r.json.cooking[1].table, "7");
 console.log("  ✓ ?bord=1 tar med bordsbeställningar");
-console.log("\n2 tester OK");
+process.env.HOURS_FORCE = "closed";
+globalThis.fetch = async () => { throw new Error("stängt: Apps Script ska inte anropas"); };
+r = await call({});
+assert.equal(r.json.closed, true); assert.deepEqual(r.json.cooking, []); assert.match(r.headers["cache-control"], /s-maxage=120/);
+console.log("  ✓ stängt: svarar direkt utan Apps Script, längre cache");
+const { openNow } = await import("../lib/hours.js");
+delete process.env.HOURS_FORCE;
+assert.equal(openNow(60, new Date("2026-10-28T09:30:00Z")), true);    // ons 10:30 (öppnar 11, marginal 1 h)
+assert.equal(openNow(60, new Date("2026-10-28T08:59:00Z")), false);   // ons 09:59
+assert.equal(openNow(60, new Date("2026-10-28T20:30:00Z")), false);   // ons 21:30 (stänger 20 + 1 h)
+assert.equal(openNow(60, new Date("2026-11-01T12:00:00Z")), false);   // söndag stängt
+console.log("  ✓ openNow: öppettid ± 1 h, söndag stängt");
+console.log("\n4 tester OK");

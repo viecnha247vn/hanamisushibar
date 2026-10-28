@@ -246,7 +246,7 @@ writeFileSync("dist/meny.html", page("src/meny.html", {
 writeFileSync("dist/tack.html", page("src/tack.html", { path: "/tack" }));
 writeFileSync("dist/villkor.html", page("src/villkor.html", { path: "/villkor" }));
 
-const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes, reportFrom: settings.reportFrom || "" }));
+const kok = read("src/kok.html").replace("/*SETTINGS*/", JSON.stringify({ tableCount: settings.tableCount, name: settings.name, pickupLeadMinutes: settings.pickupLeadMinutes, reportFrom: settings.reportFrom || "", hours: settings.hours, closedDates: settings.closedDates || [], timezone: settings.timezone }));
 writeFileSync("dist/kok.html", kok);
 writeFileSync("dist/skarm.html", read("src/skarm.html").replace("\"/*NAME*/\"", JSON.stringify(settings.name)));
 

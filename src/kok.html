@@ -584,7 +584,20 @@ $("#qCount").value = CFG.tableCount;
 $("#oDate").onchange = $("#oFilter").onchange = $("#oReload").onclick = loadOrders;
 $("#bFrom").onchange = $("#bReload").onclick = loadBookings;
 if (key) { showApp(); loadLead(); } else logout();
-setInterval(() => { if (key && !document.hidden) { loadOrders(); if (tab === "bookings") loadBookings(); } }, 20000);
+// Öppet (± 1 h): var 20:e sekund. Stängt: var 3:e minut – skrivaren skriver ändå ut nya beställningar (ägaren 2026-10-28).
+function kokOpen() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("sv-SE", { timeZone: CFG.timezone || "Europe/Stockholm", weekday: "short", hour: "2-digit", minute: "2-digit", year: "numeric", month: "2-digit", day: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  if ((CFG.closedDates || []).includes(`${p.year}-${p.month}-${p.day}`)) return false;
+  const h = (CFG.hours || {})[{ sön: 0, mån: 1, tis: 2, ons: 3, tors: 4, fre: 5, lör: 6 }[String(p.weekday).replace(".", "")]];
+  const m = Number(p.hour) * 60 + Number(p.minute);
+  return !!h && m >= h[0] * 60 - 60 && m < h[1] * 60 + 60;
+}
+let kokLast = 0;
+setInterval(() => {
+  if (!key || document.hidden) return;
+  if (!kokOpen() && Date.now() - kokLast < 180000) return;
+  kokLast = Date.now(); loadOrders(); if (tab === "bookings") loadBookings();
+}, 20000);
 setInterval(() => { if (key && !document.hidden) loadBookings(); }, 120000);
 </script>
 </body>

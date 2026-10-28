@@ -1,3 +1,4 @@
+process.env.HOURS_FORCE = "open";   // testerna ska inte bero på klockan (stängt-läget testas separat)
 // Testar api/index.js: att varje adress hamnar hos rätt hanterare, oavsett hur Vercel levererar sökvägen,
 // och att skrivarens adress /api/sdp/<nyckel> fungerar (det var den som gav Vercels 404 med catch-all-filen).
 import assert from "node:assert/strict";

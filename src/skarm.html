@@ -119,6 +119,7 @@ html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Ne
       if (x.readyState !== 4) return;
       var d = null;
       try { d = JSON.parse(x.responseText); } catch (e) {}
+      setTimeout(load, d && d.closed ? 300000 : 10000);   // stängt: fråga var 5:e minut
       if (x.status !== 200 || !d || !d.ok) { $("off").className = "off show"; return; }
       try { show(d); $("off").className = "off"; } catch (e) { $("off").textContent = "Fel: " + e.message; $("off").className = "off show"; }
     };
@@ -138,7 +139,7 @@ html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Ne
     if (ding) chime();
   }
   window.onerror = function (msg) { $("off").textContent = "Fel: " + msg; $("off").className = "off show"; };
-  load(); setInterval(load, 10000);
+  load();
 
   // Håll skärmen vaken där det går, och ladda om sidan varje natt (nya versioner, minnesläckor)
   try { if (navigator.wakeLock) navigator.wakeLock.request("screen").catch(function () {}); } catch (e) {}
