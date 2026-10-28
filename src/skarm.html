@@ -119,7 +119,7 @@ html,body{height:100%;background:#0B2240;color:#F6F1E7;font-family:"Helvetica Ne
       if (x.readyState !== 4) return;
       var d = null;
       try { d = JSON.parse(x.responseText); } catch (e) {}
-      setTimeout(load, d && d.closed ? 300000 : 10000);   // stängt: fråga var 5:e minut
+      setTimeout(load, d && d.closed ? (d.wait || 300000) : 10000);   // stängt: var 5:e minut, stängd dag var 30:e
       if (x.status !== 200 || !d || !d.ok) { $("off").className = "off show"; return; }
       try { show(d); $("off").className = "off"; } catch (e) { $("off").textContent = "Fel: " + e.message; $("off").className = "off show"; }
     };

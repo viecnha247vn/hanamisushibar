@@ -35,5 +35,8 @@ assert.equal(openNow(undefined, undefined, new Date("2026-10-28T08:00:00Z")), tr
 assert.equal(openNow(undefined, undefined, new Date("2026-10-28T07:59:00Z")), false);   // ons 08:59
 assert.equal(openNow(undefined, undefined, new Date("2026-10-28T20:30:00Z")), false);   // ons 21:30 (stänger 20 + 1 h)
 assert.equal(openNow(undefined, undefined, new Date("2026-11-01T12:00:00Z")), false);   // söndag stängt
-console.log("  ✓ openNow: 2 h före öppning – 1 h efter stängning, söndag stängt");
+const { closedDay } = await import("../lib/hours.js");
+assert.equal(closedDay(new Date("2026-11-01T12:00:00Z")), true);    // söndag
+assert.equal(closedDay(new Date("2026-10-31T22:00:00Z")), false);   // lördag 23:00
+console.log("  ✓ openNow: 2 h före öppning – 1 h efter stängning, söndag stängt; closedDay = söndag")
 console.log("\n4 tester OK");

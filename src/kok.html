@@ -592,10 +592,14 @@ function kokOpen() {
   const m = Number(p.hour) * 60 + Number(p.minute);
   return !!h && m >= h[0] * 60 - 120 && m < h[1] * 60 + 60;
 }
+function kokClosedDay() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("sv-SE", { timeZone: CFG.timezone || "Europe/Stockholm", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return (CFG.closedDates || []).includes(`${p.year}-${p.month}-${p.day}`) || !(CFG.hours || {})[{ sön: 0, mån: 1, tis: 2, ons: 3, tors: 4, fre: 5, lör: 6 }[String(p.weekday).replace(".", "")]];
+}
 let kokLast = 0;
 setInterval(() => {
   if (!key || document.hidden) return;
-  if (!kokOpen() && Date.now() - kokLast < 180000) return;
+  if (!kokOpen() && Date.now() - kokLast < (kokClosedDay() ? 1800000 : 180000)) return;   // stängd dag: var 30:e minut
   kokLast = Date.now(); loadOrders(); if (tab === "bookings") loadBookings();
 }, 20000);
 setInterval(() => { if (key && !document.hidden) loadBookings(); }, 120000);

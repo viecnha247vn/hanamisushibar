@@ -29,7 +29,7 @@ Vercel gói Hobby chỉ cho tối đa 12 serverless function mỗi lần deploy.
 | `/api/print` | `lib/routes/print.js` – cầu nối Raspberry Pi (dự phòng) |
 | `/api/sdp/<SDP_KEY>` | `lib/routes/sdp.js` – Epson Server Direct Print |
 | `/api/cloudprnt/<KEY>` | `lib/routes/cloudprnt.js` – Star CloudPRNT (dự phòng) |
-| `lib/hours.js` | `openNow()` – từ 2 h trước giờ mở cửa đến 1 h sau giờ đóng (giờ Thụy Điển; `BEFORE_MIN`/`AFTER_MIN`). Ngoài giờ: máy in (`/api/sdp`) chỉ hỏi hàng đợi Google Sheets 5 phút/lần, `/api/board` trả `closed` không gọi Sheets, `/skarm` hỏi 5 phút/lần, `/kok` 3 phút/lần (chủ trang 2026-10-28: giảm tải Vercel) |
+| `lib/hours.js` | `openNow()` – từ 2 h trước giờ mở cửa đến 1 h sau giờ đóng (giờ Thụy Điển; `BEFORE_MIN`/`AFTER_MIN`). Ngoài giờ: máy in (`/api/sdp`) chỉ hỏi hàng đợi Google Sheets 5 phút/lần, `/api/board` trả `closed` không gọi Sheets, `/skarm` hỏi 5 phút/lần, `/kok` 3 phút/lần (chủ trang 2026-10-28: giảm tải Vercel). Ngày đóng cả ngày (Chủ nhật, `closedDates`, `closedDay()`): máy in không hỏi Sheets lần nào (đơn in vào ngày mở cửa kế tiếp), `/skarm` và `/kok` 30 phút/lần |
 
 Thêm đường dẫn mới: viết handler trong `lib/routes/` rồi khai báo trong bảng `ROUTES` (một tầng, ví dụ `/api/x`) hoặc `KEYED` (hai tầng, khoá nằm trong địa chỉ, ví dụ `/api/x/<khoá>`) của `api/index.js`. Số lượng endpoint không còn bị giới hạn.
 
