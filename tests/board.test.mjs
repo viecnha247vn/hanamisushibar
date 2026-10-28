@@ -30,9 +30,10 @@ assert.equal(r.json.closed, true); assert.deepEqual(r.json.cooking, []); assert.
 console.log("  ✓ stängt: svarar direkt utan Apps Script, längre cache");
 const { openNow } = await import("../lib/hours.js");
 delete process.env.HOURS_FORCE;
-assert.equal(openNow(60, new Date("2026-10-28T09:30:00Z")), true);    // ons 10:30 (öppnar 11, marginal 1 h)
-assert.equal(openNow(60, new Date("2026-10-28T08:59:00Z")), false);   // ons 09:59
-assert.equal(openNow(60, new Date("2026-10-28T20:30:00Z")), false);   // ons 21:30 (stänger 20 + 1 h)
-assert.equal(openNow(60, new Date("2026-11-01T12:00:00Z")), false);   // söndag stängt
-console.log("  ✓ openNow: öppettid ± 1 h, söndag stängt");
+assert.equal(openNow(undefined, undefined, new Date("2026-10-28T09:30:00Z")), true);    // ons 10:30 (öppnar 11)
+assert.equal(openNow(undefined, undefined, new Date("2026-10-28T08:00:00Z")), true);    // ons 09:00 (2 h före)
+assert.equal(openNow(undefined, undefined, new Date("2026-10-28T07:59:00Z")), false);   // ons 08:59
+assert.equal(openNow(undefined, undefined, new Date("2026-10-28T20:30:00Z")), false);   // ons 21:30 (stänger 20 + 1 h)
+assert.equal(openNow(undefined, undefined, new Date("2026-11-01T12:00:00Z")), false);   // söndag stängt
+console.log("  ✓ openNow: 2 h före öppning – 1 h efter stängning, söndag stängt");
 console.log("\n4 tester OK");
